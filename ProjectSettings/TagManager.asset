@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Level
+  - NPC
+  - Projectile
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - Enemy
+  - Player
+  - Item
+  - Door
+  - Foreground
+  - Background
+  - Walls
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 404516861
+    locked: 0
+  - name: Details
+    uniqueID: 1369329465
+    locked: 0
+  - name: Items
+    uniqueID: 1460781113
+    locked: 0
+  - name: Player
+    uniqueID: 870627941
+    locked: 0
+  - name: Foreground
+    uniqueID: 1645797287
+    locked: 0
