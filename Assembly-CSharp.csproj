@@ -67,6 +67,7 @@
     <Compile Include="Assets\LevelCreator\Scripts\Grid.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\LevelGenerator.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\MeshGenerator.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\TextureGenerator.cs" />
     <Compile Include="Assets\Movement.cs" />
     <Compile Include="Assets\Scripts\Enums.cs" />
     <Compile Include="Assets\Stats.cs" />
