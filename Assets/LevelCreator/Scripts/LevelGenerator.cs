@@ -28,8 +28,12 @@ public class LevelGenerator : MonoBehaviour {
     public bool randomSeed;
 
     public GameObject overlay;
-    public enum OverlayType { Full, Room };
+    public enum OverlayType { Tile, Room };
     public OverlayType overlayType;
+
+    bool oldDrawGrid = true;
+    bool oldGenMesh = true;
+    OverlayType oldOverlay;
 
 
     [Range(1, 10)]
@@ -59,15 +63,13 @@ public class LevelGenerator : MonoBehaviour {
     public struct Tile
     {
         public Coord Coord; //Coordinates From Center
-        public Coord RoomCoord;
         public Coord RawCoord; //Coordinates From Map 0,0
         public Enums.tileType tileType;
         public int RoomID;
-        public Tile(Coord _RawCoord, Coord _Coord, Enums.tileType _tileType, int _RoomID)
+        public Tile(Coord _RawCoord, Coord _Coord, Enums.tileType _tileType = Enums.tileType.Wall, int _RoomID = -1)
         {
             RawCoord = _RawCoord;
             Coord = _Coord;
-            RoomCoord = RawCoord;
             tileType = _tileType;
             RoomID = _RoomID;
         }
@@ -103,20 +105,45 @@ public class LevelGenerator : MonoBehaviour {
 
 
     //UNITY METHODS
+
     private void Awake()
     {
         if (globalSeed == "")
             NewSeed();
+        oldGenMesh = !GenMesh;
+        oldDrawGrid = !drawGrid;
     }
     private void Start()
     {
-        LevelCreate(false);
+        LevelCreate();
     }
     private void Update()
     {
+        {
+            if(GenMesh != oldGenMesh)
+            {
+                oldGenMesh = GenMesh;
+                CreateMesh();
+                if(oldGenMesh == false)
+                {
+                    GetComponent<MeshFilter>().mesh = new Mesh();
+                }
+            }
+            if (drawGrid != oldDrawGrid)
+            {
+                oldDrawGrid = drawGrid;
+                Grid();
+            }
+
+            if (overlayType != oldOverlay)
+            {
+                oldOverlay = overlayType;
+                updateOverlay(globalMap);
+            }
+        }//Check If New
 
         mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2);
-        GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size/2 +.5f, (int)mousePos.y - size / 2 +.5f, 0);
+        GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size/2 +.5f, (int)mousePos.y - size / 2 +.5f, -2);
 
         overlay.SetActive(showOverlay);
 
@@ -167,7 +194,7 @@ public class LevelGenerator : MonoBehaviour {
 
     //CREATE STRUCTS
 
-    Room newRoom(int originX, int originY, Enums.roomSize _RoomSize, Enums.roomType _RoomType, Enums.roomClass _RoomClass)
+    Room newRoom(int originX, int originY, Enums.roomSize _RoomSize = Enums.roomSize.Medium, Enums.roomType _RoomType = Enums.roomType.None, Enums.roomClass _RoomClass = Enums.roomClass.Neutral)
     {
         Vector2Int origin = new Vector2Int(originX, originY);
     restart:
@@ -175,9 +202,10 @@ public class LevelGenerator : MonoBehaviour {
 
         Vector2Int RoomBoundMin = new Vector2Int(origin.x - (int)room.roomSize / 2, origin.y - (int)room.roomSize / 2);
         Vector2Int RoomBoundMax = new Vector2Int(origin.x + (int)room.roomSize / 2, origin.y + (int)room.roomSize / 2);
-
-        string _RoomSeed = newRoomSeed();
         
+        string _RoomSeed = newRoomSeed();
+
+        System.Random roomPrng = new System.Random(_RoomSeed.GetHashCode());
         room.roomSeed = _RoomSeed;
         
         {
@@ -191,7 +219,7 @@ public class LevelGenerator : MonoBehaviour {
                 RoomBoundMax.y = size;
         }
 
-        Tile[,] roomMap = new Tile[RoomBoundMax.x - RoomBoundMin.x, RoomBoundMax.y - RoomBoundMin.y];
+        Tile[,] roomMap = new Tile[RoomBoundMax.x - RoomBoundMin.x+2, RoomBoundMax.y - RoomBoundMin.y+2];
         int roomArea = (RoomBoundMax.x - RoomBoundMin.x) * (RoomBoundMax.y - RoomBoundMin.y);
         int tileCount = 0;
 
@@ -200,7 +228,6 @@ public class LevelGenerator : MonoBehaviour {
             for (int y = 0; y < roomMap.GetLength(1); y++)
             {
                 roomMap[x, y] = globalMap[x + RoomBoundMin.x, y + RoomBoundMin.y];
-                roomMap[x, y].RoomCoord = new Coord(x, y);
             }
         }
 
@@ -212,72 +239,65 @@ public class LevelGenerator : MonoBehaviour {
             {
                 for (int y = 0; y < roomMap.GetLength(1); y++)
                 {
-                    if (room.roomType != Enums.roomType.Spawn)
-                        roomMap[x, y].tileType = (globalPrng.Next(0,100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor;
-                    else
+                    if (x > 0 && x < roomMap.GetLength(0) - 2 && y > 0 && y < roomMap.GetLength(1) - 2)
                     {
-                        if (x > 1 && x < roomMap.GetLength(0) - 1 && y > 1 && y < roomMap.GetLength(1) - 1)
-                        {
-                            roomMap[x, y].tileType = Enums.tileType.Floor;
-                        }
+                        if (room.roomType != Enums.roomType.Spawn)
+                            roomMap[x, y].tileType = (roomPrng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor;
                         else
                         {
-                            roomMap[x, y].tileType = Enums.tileType.Wall;
+                            roomMap[x, y].tileType = Enums.tileType.Floor;
                         }
                     }
                 }
             }
         } // Room Creation
         {
-            Tile[,] smoothingMap = globalMap;
-            ApplyMap(roomMap,smoothingMap, RoomBoundMin);
             for (int i = 0; i < SmoothMultiplier; i++)
             {
                 for (int x = 0; x < roomMap.GetLength(0); x++)
                 {
                     for (int y = 0; y < roomMap.GetLength(1); y++)
                     {
-                        int neighbourWallTiles = GetSurroundingWallCount(x + RoomBoundMin.x, y + RoomBoundMin.y, smoothingMap);
+                        if (x > 0 && x < roomMap.GetLength(0) - 2 && y > 0 && y < roomMap.GetLength(1) - 2)
+                        {
+                            int neighbourWallTiles = GetSurroundingWallCount(x, y, roomMap);
 
-                        if (neighbourWallTiles > 4)
-                            roomMap[x, y].tileType = Enums.tileType.Wall;
-                        else if (neighbourWallTiles < 4)
-                            roomMap[x, y].tileType = Enums.tileType.Floor;
+                            if (neighbourWallTiles > 4)
+                                roomMap[x, y].tileType = Enums.tileType.Wall;
+                            else if (neighbourWallTiles < 4)
+                                roomMap[x, y].tileType = Enums.tileType.Floor;
+                        }
                     }
                 }
-                ApplyMap(roomMap, smoothingMap, RoomBoundMin);
             }
         } // Room Smoothing
-        origin = GetNearestTile((origin.x - RoomBoundMin.x)-1, (origin.y - RoomBoundMin.y)-1, Enums.tileType.Floor, roomMap).RoomCoord.coords;
         {
-            floorTiles = GetRoomTiles(origin.x, origin.y, room.RoomID, roomMap);
-            wallTiles = GetRoomWallTiles(origin.x, origin.y, room.RoomID, roomMap);
-            if(floorTiles.Count == 0 || wallTiles.Count == 0)
+            Tile[,] checkMap = globalMap;
+            floorTiles = GetFloorTiles(origin, ApplyMap(roomMap, checkMap, RoomBoundMin));
+            wallTiles = GetWallTiles(origin, ApplyMap(roomMap, checkMap, RoomBoundMin));
+            tileCount = floorTiles.Count;
+            if (floorTiles.Count == 0 || wallTiles.Count == 0)
             {
-                Debug.Log("Room is coliding, try again \n" + floorTiles.Count + "|" + wallTiles.Count);
+                Debug.Log("Room is coliding, try again");
                 room.isValid = false;
                 return room;
             }
-                
-            tileCount = floorTiles.Count + wallTiles.Count;
-            //Debug.Log(tileCount);
         } // Room Check
 
-        //if (tileCount > roomArea / 3f)
+        if (tileCount > roomArea / 3f && room.isValid)
         {
-            roomMap = ChangeRoomID(roomMap, floorTiles, wallTiles, room.RoomID);
+            roomMap = ChangeRoomID(roomMap, floorTiles, wallTiles, room.RoomID, RoomBoundMin);
 
             room.roomTiles = floorTiles;
             room.wallTiles = wallTiles;
 
             room.roomMap = roomMap;
-            ApplyMap(roomMap, globalMap, RoomBoundMin);
-
+            globalMap = ApplyMap(roomMap, globalMap, RoomBoundMin);
             return room;
         }
-        //else
+        else
         {
-            //goto restart;
+            goto restart;
         }
     }
 
@@ -349,7 +369,7 @@ public class LevelGenerator : MonoBehaviour {
         }
         return generatedString;
     }
-    public void LevelCreate(bool clean)
+    public void LevelCreate(bool clean = false)
     {
         Camera.main.orthographicSize = size / 2f + size / 20f;
         overlay.transform.localScale = new Vector3(-size/10f, -1, size/10f);
@@ -364,13 +384,13 @@ public class LevelGenerator : MonoBehaviour {
         {
             for (int y = 0; y < size; y++)
             {
-                globalMap[x, y] = new Tile(new Coord(x, y), new Coord(x - size/2,y - size/2), Enums.tileType.Wall, -1);
+                globalMap[x, y] = new Tile(new Coord(x, y), new Coord(x - size/2,y - size/2));
             }
         }
         Rooms = new List<Room>();
         if (!clean)
         {
-            Room room = newRoom(size / 2, size / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn, Enums.roomClass.Neutral);
+            Room room = newRoom(size / 2, size / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
             if (room.isValid)
             {
                 Rooms.Add(room);
@@ -379,12 +399,12 @@ public class LevelGenerator : MonoBehaviour {
         CreateMesh();
         Grid();
     }
-    Tile[,] BorderedMap(int _borderThickness)
+    Tile[,] BorderedMap(int _borderThickness = 2)
     {
         int borderThickness;
         Tile[,] borderedMap = new Tile[size, size];
-        if (_borderThickness == 0)
-            borderThickness = 2;
+        if (_borderThickness != 2)
+            borderThickness = _borderThickness;
         else
             borderThickness = _borderThickness;
 
@@ -395,7 +415,7 @@ public class LevelGenerator : MonoBehaviour {
                 borderedMap[x, y] = globalMap[x, y];
                 if (x < borderThickness || x > size - 1 - borderThickness || y < borderThickness || y > size - borderThickness - 1)
                 {
-                    globalMap[x, y].tileType = Enums.tileType.Wall;
+                    borderedMap[x, y].tileType = Enums.tileType.Wall;
                     if (x < borderThickness - 1 || x > size - borderThickness + 1 || y < borderThickness - 1 || y > size - borderThickness + 1)
                         borderedMap[x, y].RoomID = -1;
                 }
@@ -404,120 +424,55 @@ public class LevelGenerator : MonoBehaviour {
 
         return borderedMap;
     }
-    List<Tile> GetRoomTiles(int startX, int startY, int _RoomID, Tile[,] Map)
+    List<Tile> GetWallTiles(Vector2Int start, Tile[,] Map, int _RoomID = -1)
     {
-        //Debug.Log("Starting @ " + startX + "," + startY);
-
-        bool isColiding = false;
-        List<Tile> tiles = new List<Tile>();
-        int[,] mapFlags = new int[Map.GetLength(0), Map.GetLength(1)];
-        Enums.tileType tileType = Enums.tileType.Floor;
-
-        Queue<Tile> queue = new Queue<Tile>();
-        queue.Enqueue(Map[startX, startY]);
-        mapFlags[startX, startY] = 1;
-
-        while (queue.Count > 0)
-        {
-            if(isColiding == true)
-            {
-                queue.Clear();
-                break;
-            }
-            Tile tile = queue.Dequeue();
-            Vector2Int RawCoord = tile.RoomCoord.coords;
-
-            if (tile.RoomID == -1 || tile.RoomID == _RoomID)
-            {
-                //Debug.Log(tile.RoomCoord.coords +" Added to floor list");
-                tiles.Add(tile);
-            }
-            else
-            {
-                //Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
-                isColiding = true;
-            }
-
-            for (int x = RawCoord.x - 1; x <= RawCoord.x + 1; x++)
-            {
-                for (int y = RawCoord.y - 1; y <= RawCoord.y + 1; y++)
-                {
-                    if (IsInMapRange(x, y, false, Map) && (y == RawCoord.y || x == RawCoord.x))
-                    {
-                        //Debug.Log(mapFlags[x, y] + " & " + Map[x, y].tileType.ToString()+"\n"+ (mapFlags[x, y] == 0) +" & "+(Map[x, y].tileType == tileType));
-                        if (mapFlags[x, y] == 0 && Map[x, y].tileType == tileType)
-                        {
-                            mapFlags[x, y] = 1;
-                            //Debug.Log("Looking @ "+ Map[x, y].RoomCoord.coords);
-                            if (Map[x, y].RoomID == -1 || Map[x, y].RoomID == _RoomID)
-                            {
-                                //Debug.Log("Phase 3");
-                                queue.Enqueue(Map[x, y]);
-                            }
-                            else
-                            {
-                                Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
-                                isColiding = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (isColiding)
-            return new List<Tile>();
-        else
-            return tiles;
-    }
-    List<Tile> GetRoomWallTiles(int centerX, int centerY, int _RoomID, Tile[,] Map)
-    {
-        //Debug.Log("Starting @ " + centerX + "," + centerY);
-
         bool isColiding = false;
         List<Tile> wallTiles = new List<Tile>();
         int[,] mapFlags = new int[Map.GetLength(0), Map.GetLength(1)];
         Enums.tileType tileType = Enums.tileType.Wall;
 
         Queue<Tile> queue = new Queue<Tile>();
-        queue.Enqueue(Map[centerX, centerY]);
-        mapFlags[centerX, centerY] = 1;
+        queue.Enqueue(Map[start.x, start.y]);
+        mapFlags[start.x, start.y] = 1;
 
         while (queue.Count > 0)
         {
             Tile tile = queue.Dequeue();
-            Vector2Int RawCoord = tile.RoomCoord.coords;
-
-            for (int x = RawCoord.x - 1; x <= RawCoord.x + 1; x++)
+            if (!isColiding)
             {
-                for (int y = RawCoord.y - 1; y <= RawCoord.y + 1; y++)
+                for (int x = tile.RawCoord.coords.x - 1; x <= tile.RawCoord.coords.x + 1; x++)
                 {
-                    if (IsInMapRange(x, y, false, Map))
+                    for (int y = tile.RawCoord.coords.y - 1; y <= tile.RawCoord.coords.y + 1; y++)
                     {
-                        if (mapFlags[x, y] == 0)
+                        if (IsInMapRange(x, y, Map))
                         {
-                            if (Map[x, y].RoomID == -1 || Map[x, y].RoomID == _RoomID)
+                            if (mapFlags[x, y] == 0)
                             {
-                                mapFlags[x, y] = 1;
-                                //Debug.Log("Looking @ " + Map[x, y].RoomCoord.coords);
-                                if (Map[x, y].tileType == tileType)
+                                if (Map[x, y].RoomID == -1 || Map[x, y].RoomID == _RoomID)
                                 {
-                                    Map[x, y].RoomID = _RoomID;
-                                    //Debug.Log(Map[x,y].RoomCoord.coords + " Added to wall list");
-                                    wallTiles.Add(Map[x, y]);
+                                    mapFlags[x, y] = 1;
+                                    if (Map[x, y].tileType == tileType)
+                                    {
+                                        wallTiles.Add(Map[x, y]);
+                                    }
+                                    else
+                                    {
+                                        queue.Enqueue(Map[x, y]);
+                                    }
                                 }
                                 else
                                 {
-                                    queue.Enqueue(Map[x, y]);
+                                    isColiding = true;
                                 }
-                            }
-                            else
-                            {
-                                Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
-                                isColiding = true;
                             }
                         }
                     }
                 }
+            }
+            else
+            {
+                queue.Clear();
+                break;
             }
         }
         if (isColiding)
@@ -525,7 +480,68 @@ public class LevelGenerator : MonoBehaviour {
         else
             return wallTiles;
     }
-    
+    List<Tile> GetFloorTiles(Vector2Int start, Tile[,] Map, int _RoomID = -1)
+    {
+        bool isColiding = false;
+        List<Tile> tiles = new List<Tile>();
+        int[,] mapFlags = new int[Map.GetLength(0), Map.GetLength(1)];
+        Enums.tileType tileType = Enums.tileType.Floor;
+
+        Queue<Tile> queue = new Queue<Tile>();
+        queue.Enqueue(Map[start.x, start.y]);
+        mapFlags[start.x, start.y] = 1;
+
+        while (queue.Count > 0)
+        {
+            Tile tile = queue.Dequeue();
+
+            if (tile.RoomID == -1 || tile.RoomID == _RoomID)
+            {
+                tiles.Add(tile);
+            }
+            else
+            {
+                isColiding = true;
+            }
+            if (!isColiding)
+            {
+                for (int x = tile.RawCoord.coords.x - 1; x <= tile.RawCoord.coords.x + 1; x++)
+                {
+                    for (int y = tile.RawCoord.coords.y - 1; y <= tile.RawCoord.coords.y + 1; y++)
+                    {
+                        if (IsInMapRange(x, y, Map) && (y == tile.RawCoord.coords.y || x == tile.RawCoord.coords.x))
+                        {
+                            if (mapFlags[x, y] == 0 && Map[x, y].tileType == tileType)
+                            {
+                                mapFlags[x, y] = 1;
+                                if (Map[x, y].RoomID == -1 || Map[x, y].RoomID == _RoomID)
+                                {
+                                    queue.Enqueue(Map[x, y]);
+                                }
+                                else
+                                {
+                                    //Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
+                                    isColiding = true;
+                                    queue.Clear();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                queue.Clear();
+                break;
+            }
+        }
+        if (isColiding)
+            return new List<Tile>();
+        else
+            return tiles;
+    }
+
     //END MY METHODS
 
 
@@ -546,24 +562,20 @@ public class LevelGenerator : MonoBehaviour {
     }
     void CreateMesh()
     {
-        if(overlayType == OverlayType.Room)
-            overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.OverlayTexture(BorderedMap(0), Rooms);
-        if (overlayType == OverlayType.Full)
-            overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.TileOverlayTexture(BorderedMap(0));
-
+        updateOverlay(BorderedMap());
         if (GenMesh == true)
         {
             ProcessMap();
             MeshGenerator meshGen = GetComponent<MeshGenerator>();
-            meshGen.GenerateMesh(BorderedMap(0), 1);
+            meshGen.GenerateMesh(BorderedMap(),1);
         }
     }
-    public bool IsInMapRange(int x, int y,bool isFloat, Tile[,] Map)
+    void updateOverlay(Tile[,] Map)
     {
-        if (!isFloat)
-            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
-        else
-            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
+        if (overlayType == OverlayType.Room)
+            overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.OverlayTexture(Map, Rooms);
+        if (overlayType == OverlayType.Tile)
+            overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.TileOverlayTexture(Map);
     }
     int GetSurroundingWallCount(int gridX, int gridY, Tile[,] Map)
     {
@@ -572,7 +584,7 @@ public class LevelGenerator : MonoBehaviour {
         {
             for (int neighbourY = gridY - 1; neighbourY <= gridY + 1; neighbourY++)
             {
-                if (IsInMapRange(neighbourX, neighbourY, false, Map))
+                if (IsInMapRange(neighbourX, neighbourY, Map))
                 {
                     int x = neighbourX;
                     int y = neighbourY;
@@ -585,7 +597,7 @@ public class LevelGenerator : MonoBehaviour {
                     if (neighbourY > size)
                         y = size;
 
-                    if (IsInMapRange(x, y, false, Map))
+                    if (IsInMapRange(x, y, Map))
                     {
                         if ((neighbourX != gridX || neighbourY != gridY) && Map[x, y].tileType == Enums.tileType.Wall)
                         {
@@ -593,9 +605,49 @@ public class LevelGenerator : MonoBehaviour {
                         }
                     }
                 }
+                else
+                    WallCount++;
             }
         }
         return WallCount;
+    }
+    public bool IsInMapRange(int x, int y, Tile[,] Map, bool isFloat = false)
+    {
+        if (!isFloat)
+            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
+        else
+            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
+    }
+    Tile[,] ApplyMap(Tile[,] _fromMap, Tile[,] _toMap, Vector2Int RoomBoundMin)
+    {
+        Tile[,] fromMap = new Tile[_fromMap.GetLength(0), _fromMap.GetLength(1)];
+
+        for (int x = 0; x < fromMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < fromMap.GetLength(1); y++)
+            {
+                fromMap[x, y] = _fromMap[x, y];
+            }
+        }
+
+        Tile[,] toMap = new Tile[_toMap.GetLength(0), _toMap.GetLength(1)];
+
+        for (int x = 0; x < toMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < toMap.GetLength(1); y++)
+            {
+                toMap[x, y] = _toMap[x, y];
+            }
+        }
+
+        for (int x = 0; x < fromMap.GetLength(0); x++)
+        {
+            for (int y = 0; y < fromMap.GetLength(1); y++)
+            {
+                toMap[x + RoomBoundMin.x, y + RoomBoundMin.y] = fromMap[x, y];
+            }
+        }
+        return toMap;
     }
     Tile GetNearestTile(int startX, int startY, Enums.tileType tileType, Tile[,] Map)
     {
@@ -610,11 +662,11 @@ public class LevelGenerator : MonoBehaviour {
         {
             Tile tile = queue.Dequeue();
 
-            for (int x = tile.RoomCoord.coords.x - 1; x <= tile.RoomCoord.coords.x + 1; x++)
+            for (int x = tile.RawCoord.coords.x - 1; x <= tile.RawCoord.coords.x + 1; x++)
             {
-                for (int y = tile.RoomCoord.coords.y - 1; y <= tile.RoomCoord.coords.y + 1; y++)
+                for (int y = tile.RawCoord.coords.y - 1; y <= tile.RawCoord.coords.y + 1; y++)
                 {
-                    if (IsInMapRange(x, y, false, Map) && (y == tile.RoomCoord.coords.y || x == tile.RoomCoord.coords.x))
+                    if (IsInMapRange(x, y, Map) && (y == tile.RawCoord.coords.y || x == tile.RawCoord.coords.x))
                     {
                         if (mapFlags[x, y] == 0)
                         {
@@ -639,33 +691,21 @@ public class LevelGenerator : MonoBehaviour {
 
         return NearestTile;
     }
-    Tile[,] ChangeRoomID(Tile[,] _Map,List<Tile> floorTiles, List<Tile> wallTiles, int _RoomID)
+    Tile[,] ChangeRoomID(Tile[,] _Map,List<Tile> floorTiles, List<Tile> wallTiles, int _RoomID, Vector2Int RoomBoundMin)
     {
         Tile[,] Map = _Map;
 
         for (int i = 0; i < floorTiles.Count; i++)
         {
-            Map[floorTiles[i].RoomCoord.coords.x, floorTiles[i].RoomCoord.coords.y].RoomID = _RoomID;
+            Map[floorTiles[i].RawCoord.coords.x - RoomBoundMin.x, floorTiles[i].RawCoord.coords.y - RoomBoundMin.y ].RoomID = _RoomID;
         }
         for (int i = 0; i < wallTiles.Count; i++)
         {
-            Map[wallTiles[i].RoomCoord.coords.x, wallTiles[i].RoomCoord.coords.y].RoomID = _RoomID;
+            Map[wallTiles[i].RawCoord.coords.x - RoomBoundMin.x, wallTiles[i].RawCoord.coords.y - RoomBoundMin.y].RoomID = _RoomID;
         }
 
         return Map;
     }
-    void ApplyMap(Tile[,] fromMap, Tile[,] toMap, Vector2Int RoomBoundMin)
-    {
-        for (int x = 0; x < fromMap.GetLength(0); x++)
-        {
-            for (int y = 0; y < fromMap.GetLength(1); y++)
-            {
-                toMap[x + RoomBoundMin.x, y + RoomBoundMin.y] = fromMap[x, y];
-            }
-        }
-        CreateMesh();
-    }
 
     //END FOR EFFICIENCY
 }
-

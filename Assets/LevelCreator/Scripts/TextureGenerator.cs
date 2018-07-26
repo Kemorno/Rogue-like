@@ -54,9 +54,9 @@ public static class TextureGenerator {
             for (int y = 0; y < _Map.GetLength(1); y++)
             {
                 if (_Map[x, y].tileType == Enums.tileType.Wall)
-                    texture.SetPixel(x, y, Color.black);
+                    texture.SetPixel(x, y, new Color32(0,0,0,255/2));
                 if (_Map[x, y].tileType == Enums.tileType.Floor)
-                    texture.SetPixel(x, y, Color.white);
+                    texture.SetPixel(x, y, new Color32(255, 255, 255, 255 / 2));
             }
         }
         texture.Apply();

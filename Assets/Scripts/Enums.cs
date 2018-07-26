@@ -22,8 +22,8 @@ public struct Enums {
     }
     public enum roomType
     {
+        None,
         Spawn,
-        Neutral,
         Enemy,
         Secret,
         Boss,

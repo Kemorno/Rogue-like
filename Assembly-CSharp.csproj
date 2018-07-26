@@ -61,16 +61,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Attack.cs" />
-    <Compile Include="Assets\EnemySeekingAI.cs" />
-    <Compile Include="Assets\Generator.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\Grid.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\LevelGenerator.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\MeshGenerator.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\TextureGenerator.cs" />
-    <Compile Include="Assets\Movement.cs" />
+    <Compile Include="Assets\Scripts\Attack.cs" />
+    <Compile Include="Assets\Scripts\EnemySeekingAI.cs" />
     <Compile Include="Assets\Scripts\Enums.cs" />
-    <Compile Include="Assets\Stats.cs" />
+    <Compile Include="Assets\Scripts\Generator.cs" />
+    <Compile Include="Assets\Scripts\Movement.cs" />
+    <Compile Include="Assets\Scripts\Stats.cs" />
+    <None Include="Assets\GameData\Root\localization.txt" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>C:/Users/Pedro Costa/Documents/Rogue-like/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>

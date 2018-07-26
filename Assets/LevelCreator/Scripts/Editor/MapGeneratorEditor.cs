@@ -31,7 +31,7 @@ public class MapGeneratorEditor : Editor
                 if (lg.onMouse)
                     TileFinder = new Vector2Int(Mathf.FloorToInt(lg.mousePos.x), Mathf.FloorToInt(lg.mousePos.y));
 
-                if (lg.IsInMapRange(TileFinder.x, TileFinder.y, true, lg.globalMap) && lg.globalMap != null)
+                if (lg.IsInMapRange(TileFinder.x, TileFinder.y, lg.globalMap, true) && lg.globalMap != null)
                 {
                     int roomId = lg.globalMap[TileFinder.x, TileFinder.y].RoomID;
                     TileInfo = "Tile Info"
@@ -39,7 +39,6 @@ public class MapGeneratorEditor : Editor
                             + "\nTile Type: " + lg.globalMap[TileFinder.x, TileFinder.y].tileType.ToString()
                             + "\nCoord: " + lg.globalMap[TileFinder.x, TileFinder.y].Coord.coords
                             + "\nRaw Coord: " + lg.globalMap[TileFinder.x, TileFinder.y].RawCoord.coords;
-
                     if (lg.globalMap[TileFinder.x, TileFinder.y].RoomID >= 0)
                     {
 
@@ -66,7 +65,7 @@ public class MapGeneratorEditor : Editor
                             + "\nRoom Seed = NaN";
                     }
                 }
-                else if (!lg.IsInMapRange(TileFinder.x, TileFinder.y, true, lg.globalMap))
+                else if (!lg.IsInMapRange(TileFinder.x, TileFinder.y, lg.globalMap, true))
                 {
                     TileInfo = "Tile Info"
                             + "\nRoom ID: NaN"
@@ -79,14 +78,5 @@ public class MapGeneratorEditor : Editor
             EditorGUILayout.TextArea(TileInfo);
             EditorGUILayout.TextArea(RoomInfo);
         }
-
-        if (GUILayout.Button("Reset Prng"))
-            lg.resetPrng();
-        if (GUILayout.Button("Seed Gen"))
-            SeedGen = lg.newRoomSeed();
-        EditorGUILayout.LabelField(SeedGen);
-        if (GUILayout.Button("Global Seed Gen"))
-            lg.NewSeed();
-        EditorGUILayout.LabelField(lg.globalSeed);
     }
 }

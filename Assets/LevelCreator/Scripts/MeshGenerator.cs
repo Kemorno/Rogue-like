@@ -137,16 +137,16 @@ public class MeshGenerator : MonoBehaviour
 				for (int y = 0; y < squareGrid.squares.GetLength(1); y ++) {
 
 					Gizmos.color = (squareGrid.squares[x,y].topLeft.active)?Color.cyan : Color.white;
-					Gizmos.DrawCube(squareGrid.squares[x,y].topLeft.position, Vector3.one * .1f);
+					Gizmos.DrawCube(squareGrid.squares[x,y].topLeft.position, Vector3.one * .5f);
 
 					Gizmos.color = (squareGrid.squares[x,y].topRight.active)?Color.cyan : Color.white;
-					Gizmos.DrawCube(squareGrid.squares[x,y].topRight.position, Vector3.one * .1f);
+					Gizmos.DrawCube(squareGrid.squares[x,y].topRight.position, Vector3.one * .5f);
 
 					Gizmos.color = (squareGrid.squares[x,y].bottomRight.active)?Color.cyan : Color.white;
-					Gizmos.DrawCube(squareGrid.squares[x,y].bottomRight.position, Vector3.one * .1f);
+					Gizmos.DrawCube(squareGrid.squares[x,y].bottomRight.position, Vector3.one * .5f);
 
 					Gizmos.color = (squareGrid.squares[x,y].bottomLeft.active)?Color.cyan:Color.white;
-					Gizmos.DrawCube(squareGrid.squares[x,y].bottomLeft.position, Vector3.one * .1f);
+					Gizmos.DrawCube(squareGrid.squares[x,y].bottomLeft.position, Vector3.one * .5f);
 
                     Gizmos.color = Color.gray;
 

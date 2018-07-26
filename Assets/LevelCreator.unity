@@ -168,11 +168,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3d97bb1469ed9641be8cb924dd234b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: 500
+  size: 10
   drawGizmos: 0
   drawGrid: 0
-  GenMesh: 0
-  showOverlay: 1
+  GenMesh: 1
+  showOverlay: 0
   onMouse: 1
   isCreatingRooms: 0
   RoomSize: 10
@@ -180,7 +180,7 @@ MonoBehaviour:
   RoomType: 1
   mousePos: {x: 0, y: 0}
   globalSeed: 
-  randomSeed: 0
+  randomSeed: 1
   overlay: {fileID: 1929644257}
   overlayType: 0
   SmoothMultiplier: 3
