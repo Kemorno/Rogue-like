@@ -210,11 +210,12 @@ public class LevelGenerator : MonoBehaviour {
 
         Vector2Int RoomBoundMin = new Vector2Int(origin.x - (int)room.roomSize / 2, origin.y - (int)room.roomSize / 2);
         Vector2Int RoomBoundMax = new Vector2Int(origin.x + (int)room.roomSize / 2, origin.y + (int)room.roomSize / 2);
-        
-        string _RoomSeed = newRoomSeed();
 
-        System.Random roomPrng = new System.Random(_RoomSeed.GetHashCode());
-        room.roomSeed = _RoomSeed;
+        string roomSeed = Seed.GenerateSeed(globalPrng);
+        room.roomSeed = roomSeed;
+
+        System.Random roomPrng = new System.Random(roomSeed.GetHashCode());
+
         
         {
             if (RoomBoundMin.x <= 0)
@@ -314,11 +315,6 @@ public class LevelGenerator : MonoBehaviour {
 
 
     //MY METHODS
-
-    char NewChar()
-    {
-        return Alphanumeric[globalPrng.Next(0, Alphanumeric.Length)];
-    }
     void ProcessMap()
     {/*
         List<List<Coord>> wallRegions = GetRegions(Enums.tileType.Wall);
@@ -349,46 +345,18 @@ public class LevelGenerator : MonoBehaviour {
             }
         }*/
     }
-    public void NewSeed()
-    {
-        globalPrng = new System.Random();
-
-        string generatedString = "";
-
-        for (int i = 0; i < 8; i++)
-        {
-            generatedString += NewChar();
-        }
-
-        globalSeed = generatedString;
-        globalPrng = new System.Random(globalSeed.GetHashCode());
-    }
-    public void resetPrng()
-    {
-        globalPrng = new System.Random(globalSeed.GetHashCode());
-    }
-    public string newRoomSeed()
-    {
-        string generatedString = "";
-
-        for (int i = 0; i < 8; i++)
-        {
-            generatedString += NewChar();
-        }
-        return generatedString;
-    }
     public void LevelCreate(bool firstRoom = false)
     {
         Camera.main.orthographicSize = size / 2f + size / 20f;
-        overlay.transform.localScale = new Vector3(-size/10f, -1, size/10f);
+        overlay.transform.localScale = new Vector3(-size / 10f, -1, size / 10f);
         grid.transform.localScale = new Vector3(-size / 10f, -1, size / 10f);
 
         globalMap = new Tile[size, size];
         if (randomSeed)
         {
-            NewSeed();
+            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
         }
-        resetPrng();
+        globalPrng = new System.Random(globalSeed.GetHashCode());
         for (int x = 0; x < size; x++)
         {
             for (int y = 0; y < size; y++)

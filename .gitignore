@@ -33,3 +33,6 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+Assembly-CSharp.csproj
+Assembly-CSharp.csproj.user
+Assembly-CSharp.csproj
