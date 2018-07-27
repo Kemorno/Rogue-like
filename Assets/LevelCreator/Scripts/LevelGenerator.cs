@@ -6,14 +6,12 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour {
 
     public int size;
-    static int sizeStr;
     public bool drawGizmos = false;
     public bool showGrid = false;
     public bool GenMesh = false;
     public bool showOverlay = false;
     public bool onMouse;
-
-    public bool isCreatingRooms;
+    
     public Enums.roomSize RoomSize;
     public Enums.roomClass RoomClass;
     public Enums.roomType RoomType;
