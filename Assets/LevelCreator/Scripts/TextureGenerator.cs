@@ -46,8 +46,8 @@ public static class TextureGenerator {
     public static Texture2D TileOverlayTexture(LevelGenerator.Tile[,] _Map)
     {
         Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
         texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Point;
 
         for (int x = 0; x < _Map.GetLength(0); x++)
         {
@@ -63,13 +63,37 @@ public static class TextureGenerator {
         return texture;
     }
 
-    public static Texture2D GridTexture(int size)
+    public static Texture2D gridTexture(LevelGenerator.Tile[,] _Map, Texture2D _gridCell)
     {
-        Texture2D texture = new Texture2D(size, size, TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-        
+        int mapWidht = _Map.GetLength(0);
+        int mapHeight = _Map.GetLength(1);
 
+        int cellWidht = _gridCell.width;
+        int cellHeight = _gridCell.height;
+
+        Texture2D texture = new Texture2D(mapWidht * cellWidht, mapHeight * cellHeight, TextureFormat.ARGB32, false);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Point;
+
+        for(int x = 0; x < texture.width; x+=cellWidht)
+        {
+            for (int y = 0; y < texture.height; y+=cellHeight)
+            {
+                texture.SetPixels(x, y, cellWidht, cellHeight, _gridCell.GetPixels());
+            }
+        }
+        texture.Apply();
+        return texture;
+    }
+
+    public static Texture2D textureFromSprite(Sprite _sprite)
+    {
+        Texture2D texture = new Texture2D((int)_sprite.rect.width, (int)_sprite.rect.height);
+        Color[] spritePixels = _sprite.texture.GetPixels((int)_sprite.textureRect.x,
+                                                (int)_sprite.textureRect.y,
+                                                (int)_sprite.textureRect.width,
+                                                (int)_sprite.textureRect.height);
+        texture.SetPixels(spritePixels);
         texture.Apply();
         return texture;
     }

@@ -8,7 +8,7 @@ public class LevelGenerator : MonoBehaviour {
     public int size;
     static int sizeStr;
     public bool drawGizmos = false;
-    public bool drawGrid = false;
+    public bool showGrid = false;
     public bool GenMesh = false;
     public bool showOverlay = false;
     public bool onMouse;
@@ -28,11 +28,13 @@ public class LevelGenerator : MonoBehaviour {
     public bool randomSeed;
 
     public GameObject overlay;
+    public GameObject grid;
+    public Sprite gridCell;
     public enum OverlayType { Tile, Room };
     public OverlayType overlayType;
 
-    bool oldDrawGrid = true;
-    bool oldGenMesh = true;
+    bool oldshowGrid;
+    bool oldGenMesh;
     OverlayType oldOverlay;
 
 
@@ -111,7 +113,7 @@ public class LevelGenerator : MonoBehaviour {
         if (globalSeed == "")
             NewSeed();
         oldGenMesh = !GenMesh;
-        oldDrawGrid = !drawGrid;
+        oldshowGrid = !showGrid;
     }
     private void Start()
     {
@@ -129,23 +131,31 @@ public class LevelGenerator : MonoBehaviour {
                     GetComponent<MeshFilter>().mesh = new Mesh();
                 }
             }
-            if (drawGrid != oldDrawGrid)
+            if (showGrid != oldshowGrid)
             {
-                oldDrawGrid = drawGrid;
-                Grid();
+                oldshowGrid = showGrid;
+                updateOverlay(BorderedMap());
             }
-
             if (overlayType != oldOverlay)
             {
                 oldOverlay = overlayType;
-                updateOverlay(globalMap);
+                updateOverlay(BorderedMap());
             }
+
+            overlay.SetActive(showOverlay);
+            grid.SetActive(showGrid);
         }//Check If New
 
-        mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2);
-        GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size/2 +.5f, (int)mousePos.y - size / 2 +.5f, -2);
+        if (size % 2 == 0)
+            mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2);
+        else
+            mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2-.5f, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2-.5f);
 
-        overlay.SetActive(showOverlay);
+        if (size % 2 == 0)
+            GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size/2+.5f, (int)mousePos.y - size / 2+.5f, -2);
+        else
+            GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size / 2 + 1f, (int)mousePos.y - size / 2 + 1f, -2);
+
 
         if (Input.GetKeyDown(KeyCode.G)) {
             LevelCreate(true);
@@ -369,10 +379,11 @@ public class LevelGenerator : MonoBehaviour {
         }
         return generatedString;
     }
-    public void LevelCreate(bool clean = false)
+    public void LevelCreate(bool firstRoom = false)
     {
         Camera.main.orthographicSize = size / 2f + size / 20f;
         overlay.transform.localScale = new Vector3(-size/10f, -1, size/10f);
+        grid.transform.localScale = new Vector3(-size / 10f, -1, size / 10f);
 
         globalMap = new Tile[size, size];
         if (randomSeed)
@@ -388,7 +399,7 @@ public class LevelGenerator : MonoBehaviour {
             }
         }
         Rooms = new List<Room>();
-        if (!clean)
+        if (!firstRoom)
         {
             Room room = newRoom(size / 2, size / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
             if (room.isValid)
@@ -397,7 +408,6 @@ public class LevelGenerator : MonoBehaviour {
             }
         }
         CreateMesh();
-        Grid();
     }
     Tile[,] BorderedMap(int _borderThickness = 2)
     {
@@ -548,18 +558,6 @@ public class LevelGenerator : MonoBehaviour {
 
     //FOR EFFICIENCY
 
-    void Grid()
-    {
-        if (drawGrid)
-        {
-            Grid grid = FindObjectOfType<Grid>();
-            grid.DestroyGrid();
-            grid.rows = size;
-            grid.cols = size;
-            grid.gridSize = new Vector2(size, size);
-            grid.InitCells();
-        }
-    }
     void CreateMesh()
     {
         updateOverlay(BorderedMap());
@@ -576,6 +574,7 @@ public class LevelGenerator : MonoBehaviour {
             overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.OverlayTexture(Map, Rooms);
         if (overlayType == OverlayType.Tile)
             overlay.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.TileOverlayTexture(Map);
+        grid.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.gridTexture(Map, TextureGenerator.textureFromSprite(gridCell));
     }
     int GetSurroundingWallCount(int gridX, int gridY, Tile[,] Map)
     {
