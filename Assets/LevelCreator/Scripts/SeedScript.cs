@@ -16,7 +16,6 @@ public static class Seed
         
         return seed;
     }
-
     static char newChar(Random Prng)
     {
         return Alphanumeric[Prng.Next(0, Alphanumeric.Length)];
