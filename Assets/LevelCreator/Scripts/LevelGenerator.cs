@@ -6,7 +6,7 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour {
 
     public int size;
-    public bool drawGizmos = false;
+
     public bool showGrid = false;
     public bool GenMesh = false;
     public bool showOverlay = false;
@@ -36,13 +36,11 @@ public class LevelGenerator : MonoBehaviour {
     OverlayType oldOverlay;
 
 
-    [Range(1, 10)]
+    [Range(0, 5)]
     public int SmoothMultiplier;
 
     [Range(0, 100)]
     public int randomFillPercent;
-
-    string Alphanumeric = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     //STRUCTS
 
@@ -109,7 +107,7 @@ public class LevelGenerator : MonoBehaviour {
     private void Awake()
     {
         if (globalSeed == "")
-            NewSeed();
+            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
         oldGenMesh = !GenMesh;
         oldshowGrid = !showGrid;
     }
@@ -177,21 +175,6 @@ public class LevelGenerator : MonoBehaviour {
                 Rooms.Add(room);
 
                 CreateMesh();
-            }
-        }
-    }
-    void OnDrawGizmos()
-    {
-        if (globalMap != null && drawGizmos)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                for (int y = 0; y < size; y++)
-                {
-                    Gizmos.color = (BorderedMap(0)[x,y].tileType == Enums.tileType.Wall) ? Color.black : Color.white;
-                    Vector3 pos = new Vector3(-size / 2 + x + .5f, -size / 2 + y + .5f, 0);
-                    Gizmos.DrawCube(pos, Vector3.one);
-                }
             }
         }
     }
@@ -315,6 +298,7 @@ public class LevelGenerator : MonoBehaviour {
 
 
     //MY METHODS
+
     void ProcessMap()
     {/*
         List<List<Coord>> wallRegions = GetRegions(Enums.tileType.Wall);
