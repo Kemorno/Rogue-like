@@ -14,6 +14,8 @@ ExportedObj/
 .consulo/
 *.suo
 *.tmp
+*.csproj
+*.user
 *.pidb
 *.booproj
 *.svd
@@ -21,7 +23,8 @@ ExportedObj/
 *.opendb
 
 # Unity3D Obsolete files
-*.prefab*
+*.prefab
+*.unity
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -33,7 +36,3 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
-Assembly-CSharp.csproj
-Assembly-CSharp.csproj.user
-Assembly-CSharp.csproj
-Assembly-CSharp.csproj
