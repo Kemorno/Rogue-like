@@ -36,3 +36,9 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+Assets/LevelCreator/Scripts/Tilemap.cs.meta
+Assets/Prefabs/ARoom.prefab.meta
+Assets/Prefabs/BRoom.prefab.meta
+*.meta
+*.unity
+Assets/LevelCreator.unity
