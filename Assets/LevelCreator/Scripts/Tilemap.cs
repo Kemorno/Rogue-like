@@ -4,6 +4,67 @@ using UnityEngine;
 [RequireComponent(typeof(LevelGenerator))]
 public static class Tilemap
 {
+    public static LevelGenerator.Tile[,] newCircleMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
+    {
+        LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
+        Vector2Int center = new Vector2Int(width / 2, height / 2);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (Mathf.Abs(pos.x - center.x) < width && Mathf.Abs(pos.y - center.y) < height)
+                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+            }
+        }
+
+        return Map;
+    }
+    public static LevelGenerator.Tile[,] newHexagonMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
+    {
+        LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (y - height - (height / 2f) < x && x < y + height + (height / 2f) && x - width - (width / 2f) < y && y < x + width + (width / 2f))
+                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+            }
+        }
+
+        return Map;
+    }
+    public static LevelGenerator.Tile[,] newDiamondMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
+    {
+        LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (y - height < x && x < y + height && x - width < y && y < x + width)
+                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+            }
+        }
+
+        return Map;
+    }
+    public static LevelGenerator.Tile[,] newRectangleMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
+    {
+        LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+            }
+        }
+
+        return Map;
+    }
 
     public static LevelGenerator.Tile[,] TransferMap(LevelGenerator.Tile[,] _fromMap, LevelGenerator.Tile[,] _toMap, Vector2Int FromMapBoundMin)
     {

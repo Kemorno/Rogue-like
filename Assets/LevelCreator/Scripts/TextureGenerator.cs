@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(LevelGenerator))]
+[RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshRenderer))]
 public static class TextureGenerator {
 
     public static Texture2D textureFromSprite(Sprite _sprite)
@@ -39,7 +38,6 @@ public static class TextureGenerator {
         texture.Apply();
         return texture;
     }
-
 }
 public static class Overlay
 {

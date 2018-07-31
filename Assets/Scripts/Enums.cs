@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public struct Enums {
+﻿public struct Enums {
     
     public enum roomSize
     {
@@ -34,5 +30,20 @@ public struct Enums {
     {
         Floor,
         Wall
+    }
+    public enum mapShape
+    {
+        Square,
+        Rectangular,
+        Hexagon,
+        Diamond,
+        Circle
+    }
+    public enum OverlayType {
+        Tile,
+        RoomTiles,
+        RoomClass,
+        RoomSize,
+        RoomType
     }
 }
