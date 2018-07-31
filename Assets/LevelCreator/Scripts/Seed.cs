@@ -37,6 +37,10 @@ public static class Seed
         if (isValid == true)
         {
             for(int i = 0; i < 8; i++)
+            {
+                if (!Alphanumeric.Contains(_Seed[i].ToString()))
+                    isValid = false;
+            }
         }
 
         return isValid;
