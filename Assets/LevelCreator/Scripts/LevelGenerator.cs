@@ -1,17 +1,21 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour {
 
-    public int size;
+    public Enums.mapShape MapShape;
 
-    public bool showGrid = false;
+    public int width;
+    public int height;
+
     public bool GenMesh = false;
+    public bool showGrid = false;
+    public Sprite gridCell;
     public bool showOverlay = false;
+    public Enums.OverlayType overlayType;
     public bool onMouse;
-    
+
     public Enums.roomSize RoomSize;
     public Enums.roomClass RoomClass;
     public Enums.roomType RoomType;
@@ -25,15 +29,12 @@ public class LevelGenerator : MonoBehaviour {
     public string globalSeed;
     public bool randomSeed;
 
-    public GameObject overlay;
     public GameObject grid;
-    public Sprite gridCell;
-    public enum OverlayType { Tile, RoomTiles, RoomClass, RoomSize, RoomType };
-    public OverlayType overlayType;
+    public GameObject overlay;
 
     bool oldshowGrid;
     bool oldGenMesh;
-    OverlayType oldOverlay;
+    Enums.OverlayType oldOverlay;
 
 
     [Range(0, 5)]
@@ -142,30 +143,15 @@ public class LevelGenerator : MonoBehaviour {
             grid.SetActive(showGrid);
         }//Check If New
 
-        {
-            if (size % 2 == 0)
-                mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2);
-            else
-                mousePos = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + size / 2 - .5f, Camera.main.ScreenToWorldPoint(Input.mousePosition).y + size / 2 - .5f);
-
-            if (size % 2 == 0)
-                GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size / 2 + .5f, (int)mousePos.y - size / 2 + .5f, -2);
-            else
-                GameObject.Find("Guide").transform.position = new Vector3((int)mousePos.x - size / 2 + 1f, (int)mousePos.y - size / 2 + 1f, -2);
-        }//Guide and Mouse Position
-
         if (Input.GetKeyDown(KeyCode.G)) {
-            LevelCreate(true);
+            LevelCreate(false);
 
-            Room room = newRoom(size/2,size/2, RoomSize, RoomType, RoomClass);
+            Room room = newRoom(width / 2, height / 2, RoomSize, RoomType, RoomClass);
 
             if (room.isValid)
                 Rooms.Add(room);
         }
-
-        if (Input.GetMouseButtonDown(1))
-        {
-        }
+        
         if (Input.GetMouseButtonDown(0))
         {
             Room room = newRoom((int)mousePos.x, (int)mousePos.y, RoomSize, RoomType, RoomClass);
@@ -204,10 +190,10 @@ public class LevelGenerator : MonoBehaviour {
                 RoomBoundMin.x = 0;
             if (RoomBoundMin.y <= 0)
                 RoomBoundMin.y = 0;
-            if (RoomBoundMax.x >= size)
-                RoomBoundMax.x = size;
-            if (RoomBoundMax.y >= size)
-                RoomBoundMax.y = size;
+            if (RoomBoundMax.x >= width)
+                RoomBoundMax.x = width;
+            if (RoomBoundMax.y >= height)
+                RoomBoundMax.y = height;
         }// Check If In Map
 
         Tile[,] roomMap = new Tile[RoomBoundMax.x - RoomBoundMin.x+2, RoomBoundMax.y - RoomBoundMin.y+2];
@@ -261,7 +247,7 @@ public class LevelGenerator : MonoBehaviour {
             }
         } // Room Smoothing
         {
-            Tile[,] checkMap = Tilemap.transferMap(roomMap, globalMap, RoomBoundMin);
+            Tile[,] checkMap = Tilemap.TransferMap(roomMap, globalMap, RoomBoundMin);
             
             floorTiles = GetFloorTiles(origin, checkMap);
             wallTiles = GetWallTiles(origin, checkMap);
@@ -278,13 +264,13 @@ public class LevelGenerator : MonoBehaviour {
 
         if (tileCount > roomArea / 3f && room.isValid)
         {
-            roomMap = ChangeRoomID(roomMap, floorTiles, wallTiles, room.RoomID, RoomBoundMin);
+            roomMap = Tilemap.ChangeRoomID(roomMap, floorTiles, wallTiles, room.RoomID, RoomBoundMin);
 
             room.roomTiles = floorTiles;
             room.wallTiles = wallTiles;
 
             room.roomMap = roomMap;
-            globalMap = Tilemap.transferMap(roomMap, globalMap, RoomBoundMin);
+            globalMap = Tilemap.TransferMap(roomMap, globalMap, RoomBoundMin);
 
             CreateMesh();
 
@@ -301,58 +287,25 @@ public class LevelGenerator : MonoBehaviour {
     
     
     //MY METHODS
-
-    void ProcessMap()
-    {
-        {
-        /*
-        List<List<Coord>> wallRegions = GetRegions(Enums.tileType.Wall);
-        int wallThresholdSize = 30;
-
-        foreach (List<Coord> wallRegion in wallRegions)
-        {
-            if (wallRegion.Count < wallThresholdSize)
-            {
-                foreach (Coord tile in wallRegion)
-                {
-                    globalMap[tile.coords.x, tile.coords.y].tileType = Enums.tileType.Floor;
-                }
-            }
-        }
-
-        List<List<Coord>> roomRegions = GetRegions(Enums.tileType.Floor);
-        int roomThresholdSize = 30;
-
-        foreach (List<Coord> roomRegion in roomRegions)
-        {
-            if (roomRegion.Count < roomThresholdSize)
-            {
-                foreach (Coord tile in roomRegion)
-                {
-                    globalMap[tile.coords.x, tile.coords.y].tileType = Enums.tileType.Wall;
-                }
-            }
-        }*/
-        }
-    }
+    
     Tile[,] BorderedMap(int _borderThickness = 2)
     {
         int borderThickness;
-        Tile[,] borderedMap = new Tile[size, size];
+        Tile[,] borderedMap = new Tile[width, height];
         if (_borderThickness != 2)
             borderThickness = _borderThickness;
         else
             borderThickness = _borderThickness;
 
-        for (int x = 0; x < size; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < size; y++)
+            for (int y = 0; y < height; y++)
             {
                 borderedMap[x, y] = globalMap[x, y];
-                if (x < borderThickness || x > size - 1 - borderThickness || y < borderThickness || y > size - borderThickness - 1)
+                if (x < borderThickness || x > width - 1 - borderThickness || y < borderThickness || y > height - borderThickness - 1)
                 {
                     borderedMap[x, y].tileType = Enums.tileType.Wall;
-                    if (x < borderThickness - 1 || x > size - borderThickness + 1 || y < borderThickness - 1 || y > size - borderThickness + 1)
+                    if (x < borderThickness - 1 || x > width - borderThickness + 1 || y < borderThickness - 1 || y > height - borderThickness + 1)
                         borderedMap[x, y].RoomID = -1;
                 }
             }
@@ -360,29 +313,40 @@ public class LevelGenerator : MonoBehaviour {
 
         return borderedMap;
     }
-    public void LevelCreate(bool firstRoom = false)
+    public void LevelCreate(bool firstRoomIsSpawn = true)
     {
-        Camera.main.orthographicSize = size / 2f + size / 20f;
-        overlay.transform.localScale = new Vector3(-size / 10f, -1, size / 10f);
-        grid.transform.localScale = new Vector3(-size / 10f, -1, size / 10f);
+        Camera.main.orthographicSize = height / 2f + height / 20f;
+        overlay.transform.localScale = new Vector3(-width / 10f, -1, height / 10f);
+        grid.transform.localScale = new Vector3(-width / 10f, -1, height / 10f);
 
-        globalMap = new Tile[size, size];
+        switch (MapShape)
+        {
+            case Enums.mapShape.Square:
+                Tilemap.newRectangleMap(width, width);
+                break;
+            case Enums.mapShape.Rectangular:
+                Tilemap.newRectangleMap(width, height);
+                break;
+            case Enums.mapShape.Hexagon:
+                Tilemap.newHexagonMap(width, height);
+                break;
+            case Enums.mapShape.Diamond:
+                Tilemap.newDiamondMap(width, height);
+                break;
+            case Enums.mapShape.Circle:
+                Tilemap.newCircleMap(width, height);
+                break;
+        }
+
+        Rooms = new List<Room>();
         if (randomSeed)
         {
             globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
         }
         globalPrng = new System.Random(globalSeed.GetHashCode());
-        for (int x = 0; x < size; x++)
-        {
-            for (int y = 0; y < size; y++)
-            {
-                globalMap[x, y] = new Tile(new Coord(x, y), new Coord(x - size/2,y - size/2));
-            }
-        }
-        Rooms = new List<Room>();
         if (!firstRoom)
         {
-            Room room = newRoom(size / 2, size / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
+            Room room = newRoom(width / 2, height / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
             if (room.isValid)
             {
                 Rooms.Add(room);
@@ -519,7 +483,6 @@ public class LevelGenerator : MonoBehaviour {
         updateOverlay(BorderedMap());
         if (GenMesh == true)
         {
-            ProcessMap();
             MeshGenerator meshGen = GetComponent<MeshGenerator>();
             meshGen.GenerateMesh(BorderedMap(),1);
         }
@@ -530,19 +493,19 @@ public class LevelGenerator : MonoBehaviour {
 
         switch (overlayType)
         {
-            case OverlayType.Tile:
-                OverlayMesh.material.mainTexture = Overlay.Tile(Map);
+            case Enums.OverlayType.Tile:
+                OverlayMesh.material.mainTexture = Overlay.Tiles(Map);
                 break;
-            case OverlayType.RoomTiles:
+            case Enums.OverlayType.RoomTiles:
                 OverlayMesh.material.mainTexture = Overlay.RoomTiles(Map, Rooms);
                 break;
-            case OverlayType.RoomSize:
+            case Enums.OverlayType.RoomSize:
                 OverlayMesh.material.mainTexture = Overlay.RoomSize(Map, Rooms);
                 break;
-            case OverlayType.RoomClass:
+            case Enums.OverlayType.RoomClass:
                 OverlayMesh.material.mainTexture = Overlay.RoomClass(Map, Rooms);
                 break;
-            case OverlayType.RoomType:
+            case Enums.OverlayType.RoomType:
                 OverlayMesh.material.mainTexture = Overlay.RoomType(Map, Rooms);
                 break;
         }
@@ -564,10 +527,10 @@ public class LevelGenerator : MonoBehaviour {
                         x = 0;
                     if (neighbourY < 0)
                         y = 0;
-                    if (neighbourX > size)
-                        x = size;
-                    if (neighbourY > size)
-                        y = size;
+                    if (neighbourX > width)
+                        x = width;
+                    if (neighbourY > height)
+                        y = height;
 
                     if (IsInMapRange(x, y, Map))
                     {
@@ -586,9 +549,9 @@ public class LevelGenerator : MonoBehaviour {
     public bool IsInMapRange(int x, int y, Tile[,] Map, bool isFloat = false)
     {
         if (!isFloat)
-            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
+            return (x >= 0 && x < Map.GetLength(0)) && (y >= 0 && y < Map.GetLength(1));
         else
-            return (x >= 0 && x <= Map.GetLength(0) - 1) && (y >= 0 && y <= Map.GetLength(1) - 1);
+            return (x >= 0 && x < Map.GetLength(0)) && (y >= 0 && y < Map.GetLength(1));
     }
     Tile GetNearestTile(int startX, int startY, Enums.tileType tileType, Tile[,] Map)
     {
