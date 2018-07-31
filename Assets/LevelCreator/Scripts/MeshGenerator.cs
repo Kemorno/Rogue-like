@@ -31,7 +31,6 @@ public class MeshGenerator : MonoBehaviour
         mesh.RecalculateNormals();
 
     }
-
     void TriangulateSquare(Square square)
     {
         switch (square.configuration)
@@ -94,7 +93,6 @@ public class MeshGenerator : MonoBehaviour
         }
 
     }
-
     void MeshFromPoints(params Node[] points)
     {
         AssignVertices(points);
@@ -109,7 +107,6 @@ public class MeshGenerator : MonoBehaviour
             CreateTriangle(points[0], points[4], points[5]);
 
     }
-
     void AssignVertices(Node[] points)
     {
         for (int i = 0; i < points.Length; i++)
@@ -121,7 +118,6 @@ public class MeshGenerator : MonoBehaviour
             }
         }
     }
-
     void CreateTriangle(Node a, Node b, Node c)
     {
         triangles.Add(a.vertexIndex);
@@ -191,7 +187,6 @@ public class MeshGenerator : MonoBehaviour
 
         }
     }
-
     public class Square
     {
 
@@ -222,7 +217,6 @@ public class MeshGenerator : MonoBehaviour
         }
 
     }
-
     public class Node
     {
         public Vector3 position;
@@ -233,7 +227,6 @@ public class MeshGenerator : MonoBehaviour
             position = _pos;
         }
     }
-
     public class ControlNode : Node
     {
 

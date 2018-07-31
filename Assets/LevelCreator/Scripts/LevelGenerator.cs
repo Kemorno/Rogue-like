@@ -110,7 +110,11 @@ public class LevelGenerator : MonoBehaviour {
     private void Awake()
     {
         if (globalSeed == "")
+        {
+
             globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
+            globalPrng = new System.Random(globalSeed.GetHashCode());
+        }
         oldGenMesh = !GenMesh;
         oldshowGrid = !showGrid;
 
