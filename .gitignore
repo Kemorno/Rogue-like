@@ -39,3 +39,5 @@ sysinfo.txt
 
 # Builds
 *.apk
+
+git rm file.cs.meta
