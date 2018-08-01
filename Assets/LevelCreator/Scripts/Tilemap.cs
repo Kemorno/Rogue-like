@@ -9,13 +9,13 @@ public static class Tilemap
         LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
         Vector2Int center = new Vector2Int(width / 2, height / 2);
 
-        for (int x = 0; x < width; x++)
+        for (int x = -width / 2; x <= width / 2; x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = -height / 2; y <= height / 2; y++)
             {
-                Vector2Int pos = new Vector2Int(x, y);
+                Vector2Int pos = new Vector2Int(x + width, y + height);
                 if (Mathf.Abs(pos.x - center.x) < width && Mathf.Abs(pos.y - center.y) < height)
-                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+                    Map[x + width / 2, y + height / 2] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
             }
         }
 
@@ -23,14 +23,20 @@ public static class Tilemap
     }
     public static LevelGenerator.Tile[,] newHexagonMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
     {
+        if (width % 2 == 0)
+            width++;
+        if (height % 2 == 0)
+            height++;
+
         LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
 
-        for (int x = 0; x < width; x++)
+        for (int x = -width / 2; x <= width / 2; x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = -height / 2; y <= height / 2; y++)
             {
-                if (y - height - (height / 2f) < x && x < y + height + (height / 2f) && x - width - (width / 2f) < y && y < x + width + (width / 2f))
-                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+                if (y - height * (9 / 16f) < x && x < y + height * (9 / 16f))
+                    if (y - height * (9 / 16f) < -x && -x < y + height * (9 / 16f))
+                        Map[x + width / 2, y + height / 2] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
             }
         }
 
@@ -38,14 +44,20 @@ public static class Tilemap
     }
     public static LevelGenerator.Tile[,] newDiamondMap(int width, int height, Enums.tileType startingTile = Enums.tileType.Wall)
     {
+        if (width % 2 == 0)
+            width++;
+        if (height % 2 == 0)
+            height++;
+
         LevelGenerator.Tile[,] Map = new LevelGenerator.Tile[width, height];
 
-        for (int x = 0; x < width; x++)
+        for (int x = -width/2; x <= width/2; x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = -height/2; y <= height/2; y++)
             {
-                if (y - height < x && x < y + height && x - width < y && y < x + width)
-                    Map[x, y] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
+                if (y - width * .5f < x && x < y + width * .5f)
+                    if (y - width * .5f < -x && -x < y + width * .5f)
+                        Map[x + width / 2, y + height / 2] = new LevelGenerator.Tile(new LevelGenerator.Coord(x, y), new LevelGenerator.Coord(x - width / 2, y - height / 2), startingTile, -1);
             }
         }
 

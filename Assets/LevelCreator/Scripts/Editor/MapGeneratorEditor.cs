@@ -17,7 +17,7 @@ public class MapGeneratorEditor : Editor
         LevelGenerator lg = (LevelGenerator)target;
         if (GUILayout.Button("New"))
         {
-            lg.LevelCreate(false);
+            lg.LevelCreate(lg.createFirstRoom);
         }
 
         if (DrawDefaultInspector())

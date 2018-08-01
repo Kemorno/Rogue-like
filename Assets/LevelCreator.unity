@@ -197,7 +197,6 @@ GameObject:
   - component: {fileID: 762546429}
   - component: {fileID: 762546427}
   - component: {fileID: 762546425}
-  - component: {fileID: 762546430}
   m_Layer: 0
   m_Name: Creator
   m_TagString: Untagged
@@ -240,21 +239,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3d97bb1469ed9641be8cb924dd234b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: 50
-  showGrid: 1
-  GenMesh: 1
-  showOverlay: 0
+  MapShape: 2
+  width: 20
+  height: 20
+  GenMesh: 0
+  showGrid: 0
+  gridCell: {fileID: 21300000, guid: 5562bd8000bbe634ca03f842ceeda561, type: 3}
+  showOverlay: 1
+  overlayType: 0
   onMouse: 1
+  createFirstRoom: 1
   RoomSize: 10
   RoomClass: 0
   RoomType: 0
   mousePos: {x: 0, y: 0}
   globalSeed: 
   randomSeed: 1
-  overlay: {fileID: 1929644257}
   grid: {fileID: 396950660}
-  gridCell: {fileID: 21300000, guid: 5562bd8000bbe634ca03f842ceeda561, type: 3}
-  overlayType: 0
+  overlay: {fileID: 1929644257}
   SmoothMultiplier: 3
   randomFillPercent: 37
 --- !u!23 &762546428
@@ -299,23 +301,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 762546424}
   m_Mesh: {fileID: 0}
---- !u!114 &762546430
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 762546424}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a1319a338871f9e4f822780dccd2cbe5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rows: 0
-  cols: 0
-  gridSize: {x: 0, y: 0}
-  gridOffset: {x: NaN, y: NaN}
-  cellSprite: {fileID: 21300000, guid: 5562bd8000bbe634ca03f842ceeda561, type: 3}
-  grid: []
 --- !u!1 &977172760
 GameObject:
   m_ObjectHideFlags: 0

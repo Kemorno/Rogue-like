@@ -117,8 +117,6 @@ public static class Overlay
 
         for (int i = 0; i < Rooms.Count; i++)
         {
-            System.Random prng = new System.Random(Rooms[i].RoomID);
-
             Color color = Color.clear;
 
             switch (Rooms[i].roomClass)
@@ -140,6 +138,7 @@ public static class Overlay
 
                     break;
             }
+            color.a = 0.5f;
 
             for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
             {
@@ -173,8 +172,6 @@ public static class Overlay
 
         for (int i = 0; i < Rooms.Count; i++)
         {
-            System.Random prng = new System.Random(Rooms[i].RoomID);
-
             Color color = Color.clear;
 
             float biggestRoom = (float)Enums.roomSize.Big;
@@ -197,6 +194,7 @@ public static class Overlay
                     color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Big / biggestRoom);
                     break;
             }
+            color.a = 0.5f;
 
             for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
             {
@@ -230,8 +228,6 @@ public static class Overlay
 
         for (int i = 0; i < Rooms.Count; i++)
         {
-            System.Random prng = new System.Random(Rooms[i].RoomID);
-
             Color color = Color.clear;
 
             switch (Rooms[i].roomType)
@@ -258,6 +254,7 @@ public static class Overlay
                     color = Color.black;
                     break;
             }
+            color.a = 0.5f;
 
             for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
             {

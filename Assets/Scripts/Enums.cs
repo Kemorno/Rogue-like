@@ -2,11 +2,11 @@
     
     public enum roomSize
     {
-        Tiny = 10,
-        Small = 20,
-        Medium = 30,
-        Big = 40,
-        Large = 50
+        Tiny = 11,
+        Small = 21,
+        Medium = 31,
+        Big = 41,
+        Large = 51
     }
     public enum roomClass
     {

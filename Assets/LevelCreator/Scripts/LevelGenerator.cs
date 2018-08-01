@@ -16,6 +16,7 @@ public class LevelGenerator : MonoBehaviour {
     public Enums.OverlayType overlayType;
     public bool onMouse;
 
+    public bool createFirstRoom;
     public Enums.roomSize RoomSize;
     public Enums.roomClass RoomClass;
     public Enums.roomType RoomType;
@@ -111,14 +112,13 @@ public class LevelGenerator : MonoBehaviour {
     {
         if (globalSeed == "")
         {
-
             globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
             globalPrng = new System.Random(globalSeed.GetHashCode());
         }
         oldGenMesh = !GenMesh;
         oldshowGrid = !showGrid;
 
-        LevelCreate();
+        LevelCreate(createFirstRoom);
     }
     private void Update()
     {
@@ -135,12 +135,12 @@ public class LevelGenerator : MonoBehaviour {
             if (showGrid != oldshowGrid)
             {
                 oldshowGrid = showGrid;
-                updateOverlay(BorderedMap());
+                updateOverlay(globalMap);
             }
             if (overlayType != oldOverlay)
             {
                 oldOverlay = overlayType;
-                updateOverlay(BorderedMap());
+                updateOverlay(globalMap);
             }
 
             overlay.SetActive(showOverlay);
@@ -200,7 +200,7 @@ public class LevelGenerator : MonoBehaviour {
                 RoomBoundMax.y = height;
         }// Check If In Map
 
-        Tile[,] roomMap = new Tile[RoomBoundMax.x - RoomBoundMin.x+2, RoomBoundMax.y - RoomBoundMin.y+2];
+        Tile[,] roomMap = new Tile[(RoomBoundMax.x - RoomBoundMin.x)+2, (RoomBoundMax.y - RoomBoundMin.y)+2];
         int roomArea = (RoomBoundMax.x - RoomBoundMin.x) * (RoomBoundMax.y - RoomBoundMin.y);
         int tileCount = 0;
 
@@ -295,15 +295,15 @@ public class LevelGenerator : MonoBehaviour {
     Tile[,] BorderedMap(int _borderThickness = 2)
     {
         int borderThickness;
-        Tile[,] borderedMap = new Tile[width, height];
+        Tile[,] borderedMap = new Tile[globalMap.GetLength(0), globalMap.GetLength(1)];
         if (_borderThickness != 2)
             borderThickness = _borderThickness;
         else
             borderThickness = _borderThickness;
 
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < borderedMap.GetLength(0); x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < borderedMap.GetLength(1); y++)
             {
                 borderedMap[x, y] = globalMap[x, y];
                 if (x < borderThickness || x > width - 1 - borderThickness || y < borderThickness || y > height - borderThickness - 1)
@@ -326,29 +326,28 @@ public class LevelGenerator : MonoBehaviour {
         switch (MapShape)
         {
             case Enums.mapShape.Square:
-                Tilemap.newRectangleMap(width, width);
+                globalMap = Tilemap.newRectangleMap(width, width);
                 break;
             case Enums.mapShape.Rectangular:
-                Tilemap.newRectangleMap(width, height);
+                globalMap = Tilemap.newRectangleMap(width, height);
                 break;
             case Enums.mapShape.Hexagon:
-                Tilemap.newHexagonMap(width, height);
+                globalMap = Tilemap.newHexagonMap(width, height);
                 break;
             case Enums.mapShape.Diamond:
-                Tilemap.newDiamondMap(width, height);
+                globalMap = Tilemap.newDiamondMap(width, height);
                 break;
             case Enums.mapShape.Circle:
-                Tilemap.newCircleMap(width, height);
+                globalMap = Tilemap.newCircleMap(width, height);
                 break;
         }
 
         Rooms = new List<Room>();
         if (randomSeed)
-        {
             globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
-        }
+
         globalPrng = new System.Random(globalSeed.GetHashCode());
-        if (!firstRoom)
+        if (firstRoomIsSpawn)
         {
             Room room = newRoom(width / 2, height / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
             if (room.isValid)
@@ -484,11 +483,11 @@ public class LevelGenerator : MonoBehaviour {
 
     void CreateMesh()
     {
-        updateOverlay(BorderedMap());
+        updateOverlay(globalMap);
         if (GenMesh == true)
         {
             MeshGenerator meshGen = GetComponent<MeshGenerator>();
-            meshGen.GenerateMesh(BorderedMap(),1);
+            meshGen.GenerateMesh(globalMap,1);
         }
     }
     void updateOverlay(Tile[,] Map)

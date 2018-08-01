@@ -42,3 +42,6 @@ Assets/Prefabs/BRoom.prefab.meta
 *.meta
 *.unity
 Assets/LevelCreator.unity
+*.unity
+Assets/LevelCreator.unity
+*.meta
