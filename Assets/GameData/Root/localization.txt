@@ -1,8 +1,0 @@
-en-us
-{
-	#TILE_WALL = Wall
-}
-pt-br
-{
-	#TILE_WALL = Parede
-}
