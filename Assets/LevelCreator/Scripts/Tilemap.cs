@@ -113,15 +113,10 @@ public static class Tilemap
         LevelGenerator.Tile[,] Map = _Map;
 
         for (int i = 0; i < floorTiles.Count; i++)
-        {
             Map[floorTiles[i].RawCoord.coords.x - RoomBoundMin.x, floorTiles[i].RawCoord.coords.y - RoomBoundMin.y].RoomID = _RoomID;
-        }
         for (int i = 0; i < wallTiles.Count; i++)
-        {
             Map[wallTiles[i].RawCoord.coords.x - RoomBoundMin.x, wallTiles[i].RawCoord.coords.y - RoomBoundMin.y].RoomID = _RoomID;
-        }
 
         return Map;
     }
-
 }
