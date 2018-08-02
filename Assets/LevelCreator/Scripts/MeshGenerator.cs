@@ -19,7 +19,8 @@ public class MeshGenerator : MonoBehaviour
         {
             for (int y = 0; y < squareGrid.squares.GetLength(1); y++)
             {
-                TriangulateSquare(squareGrid.squares[x, y]);
+                if (map[x, y].RoomID != -1)
+                    TriangulateSquare(squareGrid.squares[x, y]);
             }
         }
 
