@@ -127,7 +127,7 @@ public class MeshGenerator : MonoBehaviour
     }
 
     void OnDrawGizmos()
-    {
+    {/*
 		if (squareGrid != null) {
 			for (int x = 0; x < squareGrid.squares.GetLength(0); x ++) {
 				for (int y = 0; y < squareGrid.squares.GetLength(1); y ++) {
@@ -152,7 +152,7 @@ public class MeshGenerator : MonoBehaviour
                     Gizmos.DrawLine(squareGrid.squares[x, y].topRight.position, squareGrid.squares[x, y].topLeft.position);
                 }
 			}
-		}
+		}*/
     }
 
     public class SquareGrid

@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshRenderer))]
-public static class TextureGenerator {
-
+public static class TextureGenerator
+{
     public static Texture2D textureFromSprite(Sprite _sprite)
     {
         Texture2D texture = new Texture2D((int)_sprite.rect.width, (int)_sprite.rect.height);
@@ -16,6 +14,8 @@ public static class TextureGenerator {
         texture.Apply();
         return texture;
     }
+}
+public static class Grid {
     public static Texture2D gridTexture(LevelGenerator.Tile[,] _Map, Texture2D _gridCell)
     {
         int mapWidht = _Map.GetLength(0);

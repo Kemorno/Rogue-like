@@ -320,8 +320,6 @@ public class LevelGenerator : MonoBehaviour {
     public void LevelCreate(bool firstRoomIsSpawn = true)
     {
         Camera.main.orthographicSize = height / 2f + height / 20f;
-        overlay.transform.localScale = new Vector3(-width / 10f, -1, height / 10f);
-        grid.transform.localScale = new Vector3(-width / 10f, -1, height / 10f);
 
         switch (MapShape)
         {
@@ -492,28 +490,32 @@ public class LevelGenerator : MonoBehaviour {
     }
     void updateOverlay(Tile[,] Map)
     {
-        MeshRenderer OverlayMesh = overlay.GetComponent<MeshRenderer>();
+        SpriteRenderer OverlaySprite = overlay.GetComponent<SpriteRenderer>();
+        SpriteRenderer GridSprite = grid.GetComponent<SpriteRenderer>();
 
         switch (overlayType)
         {
             case Enums.OverlayType.Tile:
-                OverlayMesh.material.mainTexture = Overlay.Tiles(Map);
+                OverlaySprite.sprite = Sprite.Create(Overlay.Tiles(Map), new Rect(0,0,width,height), Vector2.one * .5f,1);
                 break;
             case Enums.OverlayType.RoomTiles:
-                OverlayMesh.material.mainTexture = Overlay.RoomTiles(Map, Rooms);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomTiles(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomSize:
-                OverlayMesh.material.mainTexture = Overlay.RoomSize(Map, Rooms);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomSize(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomClass:
-                OverlayMesh.material.mainTexture = Overlay.RoomClass(Map, Rooms);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomClass(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomType:
-                OverlayMesh.material.mainTexture = Overlay.RoomType(Map, Rooms);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomType(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
                 break;
         }
-
-        grid.GetComponent<MeshRenderer>().material.mainTexture = TextureGenerator.gridTexture(Map, TextureGenerator.textureFromSprite(gridCell));
+        if (showGrid)
+        {
+            Texture2D gridCellTexture = TextureGenerator.textureFromSprite(gridCell);
+            GridSprite.sprite = Sprite.Create(Grid.gridTexture(Map, gridCellTexture), new Rect(0, 0, 24, 24), Vector2.one * .5f, 1);
+        }
     }
     int GetSurroundingWallCount(int gridX, int gridY, Tile[,] Map)
     {
