@@ -16,7 +16,6 @@ public class CreateLevel : MonoBehaviour
     {
         Start = new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.x));
     }
-
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -41,13 +40,57 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
-    List<Tile> GetNearestTiles(Tile Start, Enums.tileType tileToSearch, bool SearchDiagonal = false, int Radius = 1)
+    Tile GetNearestTile(Tile Start, Enums.tileType TypeToSearch = Enums.tileType.Floor)
+    {
+        Tile _tile;
+        List<Vector2Int> mapFlags = new List<Vector2Int>();
+
+        Queue<Tile> queue = new Queue<Tile>();
+        if (Start.Type == TypeToSearch)
+            _tile = Start;
+        else
+            queue.Enqueue(Start);
+
+        while (queue.Count > 0)
+        {
+            Tile tile = queue.Dequeue();
+            mapFlags.Add(tile.Coord);
+
+            for (int neighbourX = tile.Coord.x - 1; neighbourX <= tile.Coord.x + 1; neighbourX++)
+            {
+                for (int neighbourY = tile.Coord.y - 1; neighbourY <= tile.Coord.y + 1; neighbourY++)
+                {
+                    Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
+                    Tile nextTile = tile;
+
+                    foreach (Tile searchedTile in Tiles)
+                    {
+                        if (searchedTile.Coord == nextPos)
+                            nextTile = searchedTile;
+                    }
+
+                    if(!mapFlags.Contains(nextTile.Coord))
+                    {
+                        if (nextTile.Type != TypeToSearch)
+                            queue.Enqueue(nextTile);
+                        else {
+                            queue.Clear();
+                            _tile = nextTile;
+                        }
+                    }
+                }
+            }
+        }
+
+        return _tile;
+    }
+    List<Tile> GetTiles(Tile Start, Enums.tileType typeToSearch, bool SearchDiagonal = false, int Radius = 1)
     {
         List<Tile> tiles = new List<Tile>();
         List<Vector2Int> mapFlags = new List<Vector2Int>();
 
         Queue<Tile> queue = new Queue<Tile>();
-        queue.Enqueue(tile);
+        queue.Enqueue(Start);
 
         while(queue.Count > 0)
         {
@@ -55,21 +98,55 @@ public class CreateLevel : MonoBehaviour
             mapFlags.Add(tile.Coord);
             if (tile.Type == tileToSearch)
                 tiles.Add(tile);
-            for(int neighbourX = tile.Coord.x - Radius; neighbourX < tile.Coord.x + Radius; neighbourX++)
+
+            for(int neighbourX = tile.Coord.x - Radius; neighbourX <= tile.Coord.x + Radius; neighbourX++)
             {
-                for (int neighbourY = tile.Coord.y - Radius; neighbourY < tile.Coord.y + Radius; neighbourY++)
+                for (int neighbourY = tile.Coord.y - Radius; neighbourY <= tile.Coord.y + Radius; neighbourY++)
                 {
+                    Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
+                    Tile nextTile = tile;
+
                     if (!SearchDiagonal)
-                        if(neighbourX == tile.Coord.x || neighbourY == tile.Coord.y)
-                            if(tile.Type == tileToSearch && !mapFlags.Contains(curTile.Coord))
+                    {
+                        if (neighbourX == tile.Coord.x || neighbourY == tile.Coord.y)
+                        {
+                            foreach (Tile _tile in Tiles)
                             {
-                                queue.Enqueue()
+                                if (_tile.Coord == nextPos)
+                                    nextTile = _tile;
                             }
+
+                            if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
+                                queue.Enqueue(nextTile);
+                        }
+                    }
+                    else
+                    {
+                        foreach (Tile _tile in Tiles)
+                        {
+                            if (_tile.Coord == nextPos)
+                                nextTile = _tile;
+                        }
+
+                        if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
+                            queue.Enqueue(nextTile);
+                    }
                 }
             }
         }
 
         return tiles;
+    }
+
+    public class TileSearch
+    {
+        Tile _tile;
+        Vector2Int _pos;
+
+        public TileSearch(V tile)
+        {
+            _tile = tile;
+        }
     }
     public class Tile
     {
