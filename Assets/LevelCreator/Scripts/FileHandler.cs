@@ -32,13 +32,4 @@ public class SerializeINI
 }
 public class TextHandler
 {
-    public void Debug()
-    {
-        StreamWriter writer = new StringWriter();
-        string line = "["+System.DateTime.Now.ToLongTimeString()+"]:";
-        switch ((int)Enums.Debug)
-        {
-            case 
-        }
-    }
 }

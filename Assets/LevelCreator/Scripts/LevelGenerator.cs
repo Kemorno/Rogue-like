@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour {
-
-    public Enums.mapShape MapShape;
-
-    public int width;
-    public int height;
+    
+    public int size;
 
     public bool GenMesh = false;
     public bool showGrid = false;
@@ -147,10 +144,12 @@ public class LevelGenerator : MonoBehaviour {
             grid.SetActive(showGrid);
         }//Check If New
 
+        mousePos = new Vector2(Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).x) + size/2, Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).y)+ size/2);
+
         if (Input.GetKeyDown(KeyCode.G)) {
             LevelCreate(false);
 
-            Room room = newRoom(width / 2, height / 2, RoomSize, RoomType, RoomClass);
+            Room room = newRoom(size / 2, size / 2, RoomSize, RoomType, RoomClass);
 
             if (room.isValid)
                 Rooms.Add(room);
@@ -190,14 +189,14 @@ public class LevelGenerator : MonoBehaviour {
 
 
         {
-            if (RoomBoundMin.x <= 0)
+            if (RoomBoundMin.x < 0)
                 RoomBoundMin.x = 0;
-            if (RoomBoundMin.y <= 0)
+            if (RoomBoundMin.y < 0)
                 RoomBoundMin.y = 0;
-            if (RoomBoundMax.x >= width)
-                RoomBoundMax.x = width;
-            if (RoomBoundMax.y >= height)
-                RoomBoundMax.y = height;
+            if (RoomBoundMax.x > size)
+                RoomBoundMax.x = size;
+            if (RoomBoundMax.y > size)
+                RoomBoundMax.y = size;
         }// Check If In Map
 
         Tile[,] roomMap = new Tile[(RoomBoundMax.x - RoomBoundMin.x)+2, (RoomBoundMax.y - RoomBoundMin.y)+2];
@@ -306,10 +305,12 @@ public class LevelGenerator : MonoBehaviour {
             for (int y = 0; y < borderedMap.GetLength(1); y++)
             {
                 borderedMap[x, y] = globalMap[x, y];
-                if (x < borderThickness || x > width - 1 - borderThickness || y < borderThickness || y > height - borderThickness - 1)
+                if (y+1 - size * (3 / 4f) == x && x == y-1 + size * (3 / 4f))
+                    if (y+1 - size * (3 / 4f) == -x && -x == y-1 + size * (3 / 4f))
+                if (x < borderThickness || x > size - 1 - borderThickness || y < borderThickness || y > size - borderThickness - 1)
                 {
                     borderedMap[x, y].tileType = Enums.tileType.Wall;
-                    if (x < borderThickness - 1 || x > width - borderThickness + 1 || y < borderThickness - 1 || y > height - borderThickness + 1)
+                    if (x < borderThickness - 1 || x > size - borderThickness + 1 || y < borderThickness - 1 || y > size - borderThickness + 1)
                         borderedMap[x, y].RoomID = -1;
                 }
             }
@@ -319,26 +320,8 @@ public class LevelGenerator : MonoBehaviour {
     }
     public void LevelCreate(bool firstRoomIsSpawn = true)
     {
-        Camera.main.orthographicSize = height / 2f + height / 20f;
-
-        switch (MapShape)
-        {
-            case Enums.mapShape.Square:
-                globalMap = Tilemap.newRectangleMap(width, width);
-                break;
-            case Enums.mapShape.Rectangular:
-                globalMap = Tilemap.newRectangleMap(width, height);
-                break;
-            case Enums.mapShape.Hexagon:
-                globalMap = Tilemap.newHexagonMap(width, height);
-                break;
-            case Enums.mapShape.Diamond:
-                globalMap = Tilemap.newDiamondMap(width, height);
-                break;
-            case Enums.mapShape.Circle:
-                globalMap = Tilemap.newCircleMap(width, height);
-                break;
-        }
+        Camera.main.orthographicSize = size / 2f + size / 20f;
+        globalMap = Tilemap.newMap(size);
 
         Rooms = new List<Room>();
         if (randomSeed)
@@ -347,7 +330,7 @@ public class LevelGenerator : MonoBehaviour {
         globalPrng = new System.Random(globalSeed.GetHashCode());
         if (firstRoomIsSpawn)
         {
-            Room room = newRoom(width / 2, height / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
+            Room room = newRoom(size / 2, size / 2, Enums.roomSize.Tiny, Enums.roomType.Spawn);
             if (room.isValid)
             {
                 Rooms.Add(room);
@@ -445,13 +428,14 @@ public class LevelGenerator : MonoBehaviour {
                             if (mapFlags[x, y] == 0 && Map[x, y].tileType == tileType)
                             {
                                 mapFlags[x, y] = 1;
+                                Debug.Log(Map[x, y].RoomID);
                                 if (Map[x, y].RoomID == -1 || Map[x, y].RoomID == _RoomID)
                                 {
                                     queue.Enqueue(Map[x, y]);
                                 }
                                 else
                                 {
-                                    //Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
+                                    Debug.Log("Tile Coliding:" + tile.RawCoord.coords);
                                     isColiding = true;
                                     queue.Clear();
                                     break;
@@ -496,19 +480,19 @@ public class LevelGenerator : MonoBehaviour {
         switch (overlayType)
         {
             case Enums.OverlayType.Tile:
-                OverlaySprite.sprite = Sprite.Create(Overlay.Tiles(Map), new Rect(0,0,width,height), Vector2.one * .5f,1);
+                OverlaySprite.sprite = Sprite.Create(Overlay.Tiles(Map), new Rect(0,0, size, size), Vector2.one * .5f,1);
                 break;
             case Enums.OverlayType.RoomTiles:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomTiles(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomTiles(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomSize:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomSize(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomSize(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomClass:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomClass(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomClass(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
                 break;
             case Enums.OverlayType.RoomType:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomType(Map, Rooms), new Rect(0, 0, width, height), Vector2.one * .5f, 1);
+                OverlaySprite.sprite = Sprite.Create(Overlay.RoomType(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
                 break;
         }
         if (showGrid)
@@ -532,10 +516,10 @@ public class LevelGenerator : MonoBehaviour {
                         x = 0;
                     if (neighbourY < 0)
                         y = 0;
-                    if (neighbourX > width)
-                        x = width;
-                    if (neighbourY > height)
-                        y = height;
+                    if (neighbourX > size)
+                        x = size;
+                    if (neighbourY > size)
+                        y = size;
 
                     if (IsInMapRange(x, y, Map))
                     {
