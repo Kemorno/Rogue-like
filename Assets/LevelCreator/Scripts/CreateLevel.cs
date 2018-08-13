@@ -1,12 +1,13 @@
 using UnityEngine;
-using System.Diagnostics;
-using System.IO;
+using System;
+using Resources;
 using System.Collections.Generic;
 
 public class CreateLevel : MonoBehaviour
 {
+    Dictionary<Tuple<int, int>, Tile> mapDict;
+
     public bool drawGizmos = false;
-    public bool showDebug = false;
 
     public int size = 10;
     public int RoomPasses = 5;
@@ -20,29 +21,23 @@ public class CreateLevel : MonoBehaviour
     System.Random prng = new System.Random();
 
     Vector2Int Start;
-    List<List<Tile>> RoomOriginTiles = new List<List<Tile>>();
-    List<Vector2Int> TilePos = new List<Vector2Int>();
     List<Tile> Tiles = new List<Tile>();
     List<Room> Rooms = new List<Room>();
 
     private void Awake()
     {
+        mapDict = new Dictionary<Tuple<int, int>, Tile>();
         Start = new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.x));
-        //SetRoomOrigins();
     }
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            //SetRoomOrigins();
-        }
-        if (Input.GetMouseButtonDown(1))
-        {
-            Stopwatch roomCreation = new Stopwatch();
+            System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             roomCreation.Start();
             CreateRoom();
             roomCreation.Stop();
-            UnityEngine.Debug.Log("Took " + roomCreation.ElapsedMilliseconds + "ms to create the whole room");
+            Debug.Log("Took " + roomCreation.ElapsedMilliseconds + "ms to create the whole room");
         }
     }
 
@@ -50,52 +45,48 @@ public class CreateLevel : MonoBehaviour
     {
         Room room = new Room(Rooms.Count);
         Tiles = new List<Tile>();
-        TilePos = new List<Vector2Int>();
-        System.DateTime startTime = System.DateTime.Now;
-        prng = new System.Random(System.DateTime.Now.GetHashCode());
+        DateTime startTime = DateTime.Now;
+        prng = new System.Random(DateTime.Now.GetHashCode());
         Tile CenterTile = null;
 
-        Stopwatch assignTiles = new Stopwatch();
+        System.Diagnostics.Stopwatch assignTiles = new System.Diagnostics.Stopwatch();
         assignTiles.Start();
         for (int x = -size / 2; x <= size / 2; x++)
         {
             for (int y = -size/2; y <= size / 2; y++)
-            {/*
-                if (y - size * (3 / 4f) < x && x < y + size * (3 / 4f))
-                    if (y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f)) HEXAGON
-                    */
+            {
+                //if (y - size * (3 / 4f) < x && x < y + size * (3 / 4f))
+                    //if (y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f)) //HEXAGON
                 Vector2Int Pos = new Vector2Int(x, y);
-                //if (Vector2.Distance(Pos, Vector2Int.zero) < size/2)
+                Tuple<int, int> coord = new Tuple<int, int>(x, y);
+                //if (Vector2.Distance(Pos, Vector2Int.zero) < size/2) //CIRCLE
+                if(true)
                     {
-                        if (!TilePos.Contains(Pos))
-                        {
-                            Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
-                            TilePos.Add(Pos);
-                            Tiles.Add(tile);
-                            if (x == 0 && y == 0)
-                                CenterTile = tile;
-                        }
+                        Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
+                        mapDict.Add(coord, tile);
+                        if (x == 0 && y == 0)
+                            CenterTile = mapDict[coord];
                     }
             }
         }
         assignTiles.Stop();
-        UnityEngine.Debug.Log("Took " + assignTiles.ElapsedMilliseconds + "ms to assign all tiles");
+        Debug.Log("Took " + assignTiles.ElapsedMilliseconds + "ms to assign all tiles");
 
-        Stopwatch smoothing = new Stopwatch();
+        System.Diagnostics.Stopwatch smoothing = new System.Diagnostics.Stopwatch();
         smoothing.Start();
         for (int i = 0; i < smoothMultiplier; i++)
         {
-            Stopwatch foreachloop = new Stopwatch();
+            System.Diagnostics.Stopwatch foreachloop = new System.Diagnostics.Stopwatch();
             foreachloop.Start();
 
             long[] TileTimes = new long[Tiles.Count];
             for (int tile = 0; tile < Tiles.Count; tile++)
             {
-                Stopwatch eachTile = new Stopwatch();
+                System.Diagnostics.Stopwatch eachTile = new System.Diagnostics.Stopwatch();
                 eachTile.Start();
                 int wallCount = CountNearWallTiles(Tiles[tile].Coord);
 
-                if (wallCount >= 6)
+                if (wallCount > 6)
                     Tiles[tile].Type = Enums.tileType.Wall;
                 if (wallCount < 4)
                     Tiles[tile].Type = Enums.tileType.Floor;
@@ -109,14 +100,15 @@ public class CreateLevel : MonoBehaviour
                 timeDelta += time;
             }
 
-            UnityEngine.Debug.Log("Took " + foreachloop.ElapsedMilliseconds + "ms to smooth the room\nPass #" + (i+1) + "/" + smoothMultiplier +
+            Debug.Log("Took " + foreachloop.ElapsedMilliseconds + "ms to smooth the room\nPass #" + (i+1) + "/" + smoothMultiplier +
                 " Arround " + (timeDelta /= Tiles.Count) + "ticks per tile (" + Tiles.Count + " total)");
         }
         smoothing.Stop();
-        UnityEngine.Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
+        Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
         Tile Ntfc = GetNearestTile(CenterTile);//Nearest Tile From Center
     }
 
+    /*
     void SetRoomOrigins()
     {
         Tiles = new List<Tile>();
@@ -161,6 +153,7 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
+    */
 
     Tile GetNearestTile(Tile Start, Enums.tileType TypeToSearch = Enums.tileType.Floor)
     {
@@ -184,12 +177,10 @@ public class CreateLevel : MonoBehaviour
                 {
                     Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
                     Tile nextTile = tile;
-                    if (TilePos.Contains(nextPos))
-                    {
-                        nextTile = Tiles[TilePos.IndexOf(nextPos)];
-                    }
 
-                    if(!mapFlags.Contains(nextTile.Coord))
+                    nextTile = mapDict[new Tuple<int, int>(neighbourX, neighbourY)];
+
+                    if (!mapFlags.Contains(nextTile.Coord))
                     {
                         if (nextTile.Type != TypeToSearch)
                             queue.Enqueue(nextTile);
@@ -245,30 +236,7 @@ public class CreateLevel : MonoBehaviour
 
         return tiles;
     }
-    public class Tile
-    {
-        public int RoomId = -1;
-        public Vector2Int Coord = Vector2Int.zero;
-        public Enums.tileType Type = Enums.tileType.Wall;
-        public Enums.roomClass Class = Enums.roomClass.Neutral;
-        public bool walkable = false;
-        
-        public Tile(Vector2Int _Coord)
-        {
-            Coord = _Coord;
-        }
-        public Tile(Vector2Int _Coord, Enums.tileType _Type)
-        {
-            Coord = _Coord;
-            Type = _Type;
-            walkable = (_Type == Enums.tileType.Floor) ? true : false;
-        }
 
-        public string Info()
-        {
-            return "Tile from Room #"+ RoomId +" at Coords "+ Coord.ToString() +" is a "+ Type.ToString() +" and belongs to the "+ Class.ToString() +" Class." + ((walkable) ? " You CAN walk on it" : " You CANNOT walk on it");
-        }
-    }
     public class Room
     {
         public int RoomID;
@@ -292,8 +260,7 @@ public class CreateLevel : MonoBehaviour
                 Vector2Int curCoord = new Vector2Int(NeighbourX, NeighbourY);
                 if (curCoord != Coord)
                 {
-                    if (TilePos.Contains(curCoord))
-                        curTile = Tiles[TilePos.IndexOf(curCoord)];
+                    curTile = mapDict[new Tuple<int, int>(curCoord.x, curCoord.y)];
                     if (curTile != null)
                     {
                         if (curTile.Type == Enums.tileType.Wall)
