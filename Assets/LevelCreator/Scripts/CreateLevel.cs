@@ -1,5 +1,6 @@
 using UnityEngine;
-using System.Collections;
+using System.Diagnostics;
+using System.IO;
 using System.Collections.Generic;
 
 public class CreateLevel : MonoBehaviour
@@ -20,6 +21,7 @@ public class CreateLevel : MonoBehaviour
 
     Vector2Int Start;
     List<List<Tile>> RoomOriginTiles = new List<List<Tile>>();
+    List<Vector2Int> TilePos = new List<Vector2Int>();
     List<Tile> Tiles = new List<Tile>();
     List<Room> Rooms = new List<Room>();
 
@@ -36,31 +38,39 @@ public class CreateLevel : MonoBehaviour
         }
         if (Input.GetMouseButtonDown(1))
         {
+            Stopwatch roomCreation = new Stopwatch();
+            roomCreation.Start();
             CreateRoom();
+            roomCreation.Stop();
+            UnityEngine.Debug.Log("Took " + roomCreation.ElapsedMilliseconds + "ms to create the whole room");
         }
     }
 
     void CreateRoom()
     {
-        Tile[,] map = new Tile[size, size];
         Room room = new Room(Rooms.Count);
+        Tiles = new List<Tile>();
+        TilePos = new List<Vector2Int>();
         System.DateTime startTime = System.DateTime.Now;
         prng = new System.Random(System.DateTime.Now.GetHashCode());
         Tile CenterTile = null;
-        for(int x = -size / 2; x <= size / 2; x++)
+
+        Stopwatch assignTiles = new Stopwatch();
+        assignTiles.Start();
+        for (int x = -size / 2; x <= size / 2; x++)
         {
             for (int y = -size/2; y <= size / 2; y++)
-            {
+            {/*
                 if (y - size * (3 / 4f) < x && x < y + size * (3 / 4f))
-                    if (y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f))
+                    if (y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f)) HEXAGON
+                    */
+                Vector2Int Pos = new Vector2Int(x, y);
+                //if (Vector2.Distance(Pos, Vector2Int.zero) < size/2)
                     {
-                        Vector2Int Pos = new Vector2Int(x, y);
-                        if (true)
+                        if (!TilePos.Contains(Pos))
                         {
-                            Tile tile = new Tile(Pos)
-                            {
-                                Type = (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor
-                            };
+                            Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
+                            TilePos.Add(Pos);
                             Tiles.Add(tile);
                             if (x == 0 && y == 0)
                                 CenterTile = tile;
@@ -68,30 +78,43 @@ public class CreateLevel : MonoBehaviour
                     }
             }
         }
-        //Debug.Log("this Room has " + Tiles.Count + " Tiles");
+        assignTiles.Stop();
+        UnityEngine.Debug.Log("Took " + assignTiles.ElapsedMilliseconds + "ms to assign all tiles");
+
+        Stopwatch smoothing = new Stopwatch();
+        smoothing.Start();
         for (int i = 0; i < smoothMultiplier; i++)
         {
-            //System.DateTime startTime2 = System.DateTime.Now;
-            /*
-            foreach (Tile tile in Tiles)
+            Stopwatch foreachloop = new Stopwatch();
+            foreachloop.Start();
+
+            long[] TileTimes = new long[Tiles.Count];
+            for (int tile = 0; tile < Tiles.Count; tile++)
             {
-                int wallCount = CountNearWallTiles(tile.Coord);
+                Stopwatch eachTile = new Stopwatch();
+                eachTile.Start();
+                int wallCount = CountNearWallTiles(Tiles[tile].Coord);
 
-                if (wallCount > 6)
-                    tile.Type = Enums.tileType.Wall;
+                if (wallCount >= 6)
+                    Tiles[tile].Type = Enums.tileType.Wall;
                 if (wallCount < 4)
-                    tile.Type = Enums.tileType.Floor;
-            }*/
-                //System.TimeSpan timeTook2 = System.DateTime.Now - startTime2;
-                //Debug.Log("Took " + timeTook2.TotalMilliseconds.ToString("0.000") + "ms to loop through all Tiles, can you improve it?" +
-                    //"\nAbout " + (timeTook2.TotalMilliseconds / Tiles.Count).ToString("0.00000") + "ms per tile");
+                    Tiles[tile].Type = Enums.tileType.Floor;
+                eachTile.Stop();
+                TileTimes[tile] = eachTile.ElapsedTicks;
+            }
+            foreachloop.Stop();
+            long timeDelta = 0;
+            foreach(long time in TileTimes)
+            {
+                timeDelta += time;
+            }
+
+            UnityEngine.Debug.Log("Took " + foreachloop.ElapsedMilliseconds + "ms to smooth the room\nPass #" + (i+1) + "/" + smoothMultiplier +
+                " Arround " + (timeDelta /= Tiles.Count) + "ticks per tile (" + Tiles.Count + " total)");
         }
-
+        smoothing.Stop();
+        UnityEngine.Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
         Tile Ntfc = GetNearestTile(CenterTile);//Nearest Tile From Center
-
-        room.FloorTiles = GetTiles(Ntfc, Enums.tileType.Floor);
-            //System.TimeSpan timeTook = System.DateTime.Now - startTime;
-            //Debug.Log("Took " + timeTook.TotalMilliseconds.ToString("0.00") + "ms to create this Room");
     }
 
     void SetRoomOrigins()
@@ -161,6 +184,10 @@ public class CreateLevel : MonoBehaviour
                 {
                     Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
                     Tile nextTile = tile;
+                    if (TilePos.Contains(nextPos))
+                    {
+                        nextTile = Tiles[TilePos.IndexOf(nextPos)];
+                    }
 
                     if(!mapFlags.Contains(nextTile.Coord))
                     {
@@ -222,7 +249,6 @@ public class CreateLevel : MonoBehaviour
     {
         public int RoomId = -1;
         public Vector2Int Coord = Vector2Int.zero;
-        public Vector2Int mapCoord = Vector2Int.zero;
         public Enums.tileType Type = Enums.tileType.Wall;
         public Enums.roomClass Class = Enums.roomClass.Neutral;
         public bool walkable = false;
@@ -235,6 +261,12 @@ public class CreateLevel : MonoBehaviour
         {
             Coord = _Coord;
             Type = _Type;
+            walkable = (_Type == Enums.tileType.Floor) ? true : false;
+        }
+
+        public string Info()
+        {
+            return "Tile from Room #"+ RoomId +" at Coords "+ Coord.ToString() +" is a "+ Type.ToString() +" and belongs to the "+ Class.ToString() +" Class." + ((walkable) ? " You CAN walk on it" : " You CANNOT walk on it");
         }
     }
     public class Room
@@ -260,19 +292,16 @@ public class CreateLevel : MonoBehaviour
                 Vector2Int curCoord = new Vector2Int(NeighbourX, NeighbourY);
                 if (curCoord != Coord)
                 {
-                    foreach (Tile tile in Tiles)
-                    {
-                        if (tile.Coord == curCoord)
-                            curTile = tile;
-                    }
+                    if (TilePos.Contains(curCoord))
+                        curTile = Tiles[TilePos.IndexOf(curCoord)];
                     if (curTile != null)
                     {
                         if (curTile.Type == Enums.tileType.Wall)
                             Count++;
                     }
-                    else
+                    else if(NeighbourX == Coord.x || NeighbourY == Coord.y)
                     {
-                        Count = 7;
+                        Count = 16;
                     }
                 }
             }
@@ -311,6 +340,11 @@ public class CreateLevel : MonoBehaviour
                         Gizmos.color = Color.black;
                     Gizmos.DrawCube(pos, Vector3.one);
                 }
+            }
+            foreach(Tile tile in Tiles)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawCube(new Vector3(tile.Coord.x, tile.Coord.y, 0), Vector3.one * 0.1f);
             }
         }
     }
