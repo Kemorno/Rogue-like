@@ -11,6 +11,55 @@ namespace Resources
             First = _First;
             Second = _Second;
         }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 0;
+
+                hash = (First.GetHashCode() << 16) ^ (Second.GetHashCode() << 8);
+
+                return hash;
+            }
+        }
+        public static bool operator==(Tuple<T1, T2> obj1, Tuple<T1, T2> obj2)
+        {
+            if (ReferenceEquals(null, obj2))
+                return false;
+            return (obj1.GetHashCode() == obj2.GetHashCode());
+        }
+        public static bool operator!=(Tuple<T1, T2> obj1, Tuple<T1, T2> obj2)
+        {
+            if (ReferenceEquals(null, obj2))
+                return true;
+            return !(obj1.GetHashCode() == obj2.GetHashCode());
+        }
+        public bool Equals(Tuple<T1, T2> other)
+        {
+            if (other == null)
+                return false;
+
+            if (GetHashCode() == other.GetHashCode())
+                return true;
+            else
+                return false;
+
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            Tuple<T1, T2> other = obj as Tuple<T1, T2>;
+
+            return obj.GetType() == GetType() && Equals(other);
+        }
     }
     public static class Tuple
     {
