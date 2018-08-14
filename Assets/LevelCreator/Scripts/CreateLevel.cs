@@ -1,14 +1,16 @@
 using UnityEngine;
 using Resources;
+using System;
 using System.Collections.Generic;
 
 public class CreateLevel : MonoBehaviour
 {
-    Dictionary<Tuple<int, int>, Tile> mapDict = new Dictionary<Tuple<int, int>, Tile>();
+    Dictionary<CoordInt, Tile> mapDict = new Dictionary<CoordInt, Tile>();
 
     public bool drawGizmos = false;
 
-    public string seed;
+    public bool randomSeed = false;
+    public string seed = "";
 
     public int size = 10;
     //public int RoomPasses = 5;
@@ -19,13 +21,9 @@ public class CreateLevel : MonoBehaviour
     [Range(0,5)]
     public int smoothMultiplier = 4;
 
+    List<Room> Rooms;
+
     System.Random prng = new System.Random();
-
-    List<Tile> Tiles = new List<Tile>();
-
-    private void Start()
-    {
-    }
 
     private void Update()
     {
@@ -37,18 +35,22 @@ public class CreateLevel : MonoBehaviour
             roomCreation.Stop();
             Debug.Log("Took " + roomCreation.ElapsedMilliseconds + "ms to create the whole room");
         }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            seed = "";
+            Rooms = new List<Room>();
+            mapDict = new Dictionary<CoordInt, Tile>();
+        }
     }
 
     void CreateRoom()
     {
-        mapDict = new Dictionary<Tuple<int, int>, Tile>();
-        List<Tile> roomTiles = new List<Tile>();
-        Tiles = new List<Tile>();
-        if (seed == "")
+        Room room = new Room(Rooms.Count);
+        mapDict = new Dictionary<CoordInt, Tile>();
+        if (seed == "" || randomSeed)
             prng = new System.Random(System.DateTime.Now.GetHashCode());
         else
             prng = new System.Random(seed.GetHashCode());
-        Tile CenterTile = null;
 
         System.Diagnostics.Stopwatch assignTiles = new System.Diagnostics.Stopwatch();
         assignTiles.Start();
@@ -56,19 +58,15 @@ public class CreateLevel : MonoBehaviour
         {
             for (int y = -size/2; y <= size / 2; y++)
             {
-                //if (y - size * (3 / 4f) < x && x < y + size * (3 / 4f))
-                    //if (y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f)) //HEXAGON
-                Vector2Int Pos = new Vector2Int(x, y);
-                Tuple<int, int> coord = new Tuple<int, int>(x, y);
+                CoordInt Coord = new CoordInt(x,y);
                 //if (Vector2.Distance(Pos, Vector2Int.zero) < size/2) //CIRCLE
+                //if (y - size * (3 / 4f) < x && x < y + size * (3 / 4f) && y - size * (3 / 4f) < -x && -x < y + size * (3 / 4f)) //HEXAGON
                 if (true)
                 {
-                    Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
-                    //Debug.Log("Created tile @" + Pos + ":Hash " + coord.GetHashCode());
-                    mapDict.Add(coord, tile);
-                    Tiles.Add(tile);
+                    Tile tile = new Tile(Coord, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
+                    mapDict.Add(Coord, tile);
                     if (x == 0 && y == 0)
-                        CenterTile = mapDict[coord];
+                        room.CenterTile = mapDict[Coord];
                 }
             }
         }
@@ -82,35 +80,41 @@ public class CreateLevel : MonoBehaviour
             System.Diagnostics.Stopwatch foreachloop = new System.Diagnostics.Stopwatch();
             foreachloop.Start();
 
-            long[] TileTimes = new long[Tiles.Count];
-            for (int tile = 0; tile < Tiles.Count; tile++)
+            List<long> TileTimes = new List<long>();
+            foreach(Tile tile in mapDict.Values)
             {
                 System.Diagnostics.Stopwatch eachTile = new System.Diagnostics.Stopwatch();
                 eachTile.Start();
-                int wallCount = CountNearWallTiles(Tiles[tile].Coord);
+                int wallCount = CountNearWallTiles(tile.Coord);
 
                 if (wallCount > 6)
-                    Tiles[tile].Type = Enums.tileType.Wall;
-                if (wallCount < 4)
-                    Tiles[tile].Type = Enums.tileType.Floor;
+                    tile.Type = Enums.tileType.Wall;
+                else if (wallCount < 4)
+                    tile.Type = Enums.tileType.Floor;
                 eachTile.Stop();
-                TileTimes[tile] = eachTile.ElapsedTicks;
+                TileTimes.Add(eachTile.ElapsedTicks);
+
             }
             foreachloop.Stop();
+
             long timeDelta = 0;
             foreach(long time in TileTimes)
             {
                 timeDelta += time;
             }
-
             Debug.Log("Took " + foreachloop.ElapsedMilliseconds + "ms to smooth the room\nPass #" + (i+1) + "/" + smoothMultiplier +
                 " Arround " + (timeDelta /= mapDict.Count) + "ticks per tile (" + Tiles.Count + " total)");
         }
         smoothing.Stop();
         Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
-        Tile Ntfc = GetNearestTile(CenterTile);//Nearest Tile From Center
-        roomTiles = GetTiles(Ntfc, Enums.tileType.Floor);
-        Debug.Log("Amount of Floor tiles: " + roomTiles.Count);
+        Tile Ntfc = GetNearestTile(room.CenterTile);//Nearest Tile From Center
+        room.FloorTiles = GetTiles(Ntfc, Enums.tileType.Floor, room.RoomID);
+        room.WallTiles = GetWallTiles(Ntfc, room.RoomID);
+        if(room.FloorTiles == null || room.WallTiles == null)
+        {
+            Debug.Log("Room is Colliding");
+        }
+        Debug.Log(room.ToString());
     }
 
     /*
@@ -163,7 +167,7 @@ public class CreateLevel : MonoBehaviour
     Tile GetNearestTile(Tile Start, Enums.tileType TypeToSearch = Enums.tileType.Floor)
     {
         Tile _tile = null;
-        List<Vector2Int> mapFlags = new List<Vector2Int>();
+        List<CoordInt> mapFlags = new List<CoordInt>();
 
         Queue<Tile> queue = new Queue<Tile>();
         if (Start.Type == TypeToSearch)
@@ -176,21 +180,20 @@ public class CreateLevel : MonoBehaviour
             Tile tile = queue.Dequeue();
             mapFlags.Add(tile.Coord);
 
-            for (int neighbourX = tile.Coord.x - 1; neighbourX <= tile.Coord.x + 1; neighbourX++)
+            for (int NeighbourX = tile.Coord.X - 1; NeighbourX <= tile.Coord.X + 1; NeighbourX++)
             {
-                for (int neighbourY = tile.Coord.y - 1; neighbourY <= tile.Coord.y + 1; neighbourY++)
+                for (int NeighbourY = tile.Coord.Y - 1; NeighbourY <= tile.Coord.Y + 1; NeighbourY++)
                 {
-                    Tile nextTile = tile;
+                    CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
 
-                    nextTile = mapDict[new Tuple<int, int>(neighbourX, neighbourY)];
+                    Tile nextTile = mapDict.ContainsKey(curCoord) ? mapDict[curCoord] : null;
 
-                    if (!mapFlags.Contains(nextTile.Coord))
+                    if (nextTile != null)
                     {
                         if (nextTile.Type != TypeToSearch)
                             queue.Enqueue(nextTile);
                         else {
-                            queue.Clear();
-                            _tile = nextTile;
+                            return nextTile;
                         }
                     }
                 }
@@ -199,40 +202,98 @@ public class CreateLevel : MonoBehaviour
 
         return _tile;
     }
-    List<Tile> GetTiles(Tile Start, Enums.tileType typeToSearch, bool SearchDiagonal = false, int Radius = 1)
+    List<Tile> GetTiles(Tile Start, Enums.tileType typeToSearch,int RoomID = -1, bool SearchDiagonal = false, int Radius = 1)
     {
+        bool isColliding = false;
         List<Tile> tiles = new List<Tile>();
-        List<Vector2Int> mapFlags = new List<Vector2Int>();
+        List<CoordInt> mapFlags = new List<CoordInt>();
 
         Queue<Tile> queue = new Queue<Tile>();
-        queue.Enqueue(Start);
+        if (Start.RoomId == -1 || Start.RoomId == RoomID)
+            queue.Enqueue(Start);
+        else
+            return null;
 
-        while(queue.Count > 0)
+        while (queue.Count > 0)
         {
+
             Tile tile = queue.Dequeue();
             if (tile.Type == typeToSearch)
                 tiles.Add(tile);
 
-            for(int neighbourX = tile.Coord.x - Radius; neighbourX <= tile.Coord.x + Radius; neighbourX++)
+            for(int NeighbourX = tile.Coord.X - Radius; NeighbourX <= tile.Coord.X + Radius; NeighbourX++)
             {
-                for (int neighbourY = tile.Coord.y - Radius; neighbourY <= tile.Coord.y + Radius; neighbourY++)
+                for (int NeighbourY = tile.Coord.Y - Radius; NeighbourY <= tile.Coord.Y + Radius; NeighbourY++)
                 {
-                    mapFlags.Add(tile.Coord);
-                    Tile nextTile = (mapDict.ContainsKey(new Tuple<int, int>(neighbourX, neighbourY))) ? mapDict[new Tuple<int, int>(neighbourX, neighbourY)] : null;
-                    if (nextTile != null)
+                    CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
+                    if (!mapFlags.Contains(curCoord))
                     {
-                        if (!SearchDiagonal)
+                        Tile nextTile = mapDict.ContainsKey(curCoord) ? mapDict[curCoord] : null;
+                        if (nextTile != null)
                         {
-                            if (neighbourX == tile.Coord.x || neighbourY == tile.Coord.y)
+                            if (nextTile.RoomId == -1 || nextTile.RoomId == RoomID)
                             {
-                                if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
-                                    queue.Enqueue(nextTile);
+                                if (!SearchDiagonal)
+                                {
+                                    if (NeighbourX == tile.Coord.x || NeighbourY == tile.Coord.y)
+                                    {
+                                        if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
+                                            queue.Enqueue(nextTile);
+                                    }
+                                }
+                                else
+                                {
+                                    if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
+                                        queue.Enqueue(nextTile);
+                                }
+                            }
+                            else
+                            {
+                                return null;
                             }
                         }
-                        else
+                        mapFlags.Add(curCoord);
+                    }
+                }
+            }
+        }
+
+        return tiles;
+    }
+    List<Tile> GetWallTiles(Tile Start, int RoomID = -1, Enums.tileType typeToSearch = Enums.tileType.Wall)
+    {
+        List<Tile> tiles = new List<Tile>();
+        List<CoordInt> mapFlags = new List<CoordInt>();
+
+        Queue<Tile> queue = new Queue<Tile>();
+        if (Start.RoomId == -1)
+            queue.Enqueue(Start);
+        else
+            return null;
+
+        while (queue.Count > 0)
+        {
+            Tile tile = queue.Dequeue();
+
+            for (int NeighbourX = tile.Coord.X - 1; NeighbourX <= tile.Coord.X + 1; NeighbourX++)
+            {
+                for (int NeighbourY = tile.Coord.Y - 1; NeighbourY <= tile.Coord.Y + 1; NeighbourY++)
+                {
+                    CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
+                    if (!mapFlags.Contains(curCoord)) {
+                        Tile nextTile = mapDict.ContainsKey(curCoord) ? mapDict[curCoord] : null;
+                        if (nextTile != null)
                         {
-                            if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
-                                queue.Enqueue(nextTile);
+                            if (nextTile.RoomId == -1 || nextTile.RoomId == RoomID)
+                            {
+                                if (nextTile.Type == Enums.tileType.Floor)
+                                    queue.Enqueue(mapDict[curCoord]);
+                                else (nextTile.Type == Enums.tileType.Wall)
+                                    tiles.Add(mapDict[curCoord]);
+                            }
+                            else
+                                return null;
+                            mapFlags.Add(curCoord);
                         }
                     }
                 }
@@ -241,43 +302,22 @@ public class CreateLevel : MonoBehaviour
 
         return tiles;
     }
-
-    public class Room
-    {
-        public int RoomID;
-        public List<Tile> FloorTiles = new List<Tile>();
-        public List<Tile> WallTiles = new List<Tile>();
-
-        public Room(int _RoomID)
-        {
-            RoomID = _RoomID;
-        }
-    }
-    int CountNearWallTiles(Vector2Int Coord)
+    int CountNearWallTiles(CoordInt Coord)
     {
         int Count = 0;
 
-        for(int NeighbourX = Coord.x -1; NeighbourX <= Coord.x +1; NeighbourX++)
+        for(int NeighbourX = Coord.X -1; NeighbourX <= Coord.X +1; NeighbourX++)
         {
-            for (int NeighbourY = Coord.y - 1; NeighbourY <= Coord.y + 1; NeighbourY++)
+            for (int NeighbourY = Coord.Y - 1; NeighbourY <= Coord.Y + 1; NeighbourY++)
             {
-                Tile curTile = null;
-                Vector2Int curCoord = new Vector2Int(NeighbourX, NeighbourY);
-                Tuple<int, int> curTuple = new Tuple<int, int>(NeighbourX, NeighbourY);
+                CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                 if (curCoord != Coord)
                 {
-                    if(mapDict.ContainsKey(curTuple))
-                    {
-                        //Debug.Log("found a tile @ " + mapDict[curTuple].Coord);
-                        curTile = mapDict[curTuple];
-                        if (curTile.Type == Enums.tileType.Wall)
+                    if(mapDict.ContainsKey(curCoord))
+                        if (mapDict[curCoord].Type == Enums.tileType.Wall)
                             Count++;
-                    }
-                    else if(NeighbourX == Coord.x || NeighbourY == Coord.y)
-                    {
-                        //Debug.Log("mapDict doesn't contain " + curTuple.First + "," + curTuple.Second);
+                    else
                         Count = 16;
-                    }
                 }
             }
         }
@@ -287,13 +327,13 @@ public class CreateLevel : MonoBehaviour
     {
         if (drawGizmos)
         {
-            if (Tiles.Count != 0)
+            if (mapDict.Count != 0)
             {
-                for (int i = 0; i < Tiles.Count; i++)
+                foreach(Tile tile in mapDict.Values)
                 {
-                    Vector3 pos = new Vector3(Tiles[i].Coord.x, Tiles[i].Coord.y);
+                    Vector3 pos = new Vector3(tile.Coord.x, tile.Coord.y);
 
-                    switch (Tiles[i].Class)
+                    switch (tile.Class)
                     {
                         case Enums.roomClass.Neutral:
                             Gizmos.color = Color.white;
@@ -311,15 +351,13 @@ public class CreateLevel : MonoBehaviour
                             Gizmos.color = Color.green;
                             break;
                     }
-                    if (Tiles[i].Type == Enums.tileType.Wall)
+                    if (tile.Type == Enums.tileType.Wall)
                         Gizmos.color = Color.black;
                     Gizmos.DrawCube(pos, Vector3.one);
+
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawCube(pos, Vector3.one * 0.1f);
                 }
-            }
-            foreach(Tile tile in Tiles)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawCube(new Vector3(tile.Coord.x, tile.Coord.y, 0), Vector3.one * 0.1f);
             }
         }
     }
