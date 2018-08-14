@@ -5,13 +5,15 @@ using System.Collections.Generic;
 
 public class CreateLevel : MonoBehaviour
 {
-    Dictionary<Tuple<int, int>, Tile> mapDict;
+    Dictionary<Tuple<int, int>, Tile> mapDict = new Dictionary<Tuple<int, int>, Tile>();
 
     public bool drawGizmos = false;
 
+    public string seed;
+
     public int size = 10;
-    public int RoomPasses = 5;
-    public int DistanceBetweenRooms = 10;
+    //public int RoomPasses = 5;
+    //public int DistanceBetweenRooms = 10;
 
     [Range(0, 100)]
     public int randomFillPercent = 50;
@@ -20,15 +22,12 @@ public class CreateLevel : MonoBehaviour
 
     System.Random prng = new System.Random();
 
-    Vector2Int Start;
     List<Tile> Tiles = new List<Tile>();
-    List<Room> Rooms = new List<Room>();
 
-    private void Awake()
+    private void Start()
     {
-        mapDict = new Dictionary<Tuple<int, int>, Tile>();
-        Start = new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.x));
     }
+
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -43,10 +42,12 @@ public class CreateLevel : MonoBehaviour
 
     void CreateRoom()
     {
-        Room room = new Room(Rooms.Count);
+        mapDict = new Dictionary<Tuple<int, int>, Tile>();
         Tiles = new List<Tile>();
-        DateTime startTime = DateTime.Now;
-        prng = new System.Random(DateTime.Now.GetHashCode());
+        if (seed == "")
+            prng = new System.Random(DateTime.Now.GetHashCode());
+        else
+            prng = new System.Random(seed.GetHashCode());
         Tile CenterTile = null;
 
         System.Diagnostics.Stopwatch assignTiles = new System.Diagnostics.Stopwatch();
@@ -60,13 +61,15 @@ public class CreateLevel : MonoBehaviour
                 Vector2Int Pos = new Vector2Int(x, y);
                 Tuple<int, int> coord = new Tuple<int, int>(x, y);
                 //if (Vector2.Distance(Pos, Vector2Int.zero) < size/2) //CIRCLE
-                if(true)
-                    {
-                        Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
-                        mapDict.Add(coord, tile);
-                        if (x == 0 && y == 0)
-                            CenterTile = mapDict[coord];
-                    }
+                if (true)
+                {
+                    Tile tile = new Tile(Pos, (prng.Next(0, 100) < randomFillPercent) ? Enums.tileType.Wall : Enums.tileType.Floor);
+                    //Debug.Log("Created tile @" + Pos + ":Hash " + coord.GetHashCode());
+                    mapDict.Add(coord, tile);
+                    Tiles.Add(tile);
+                    if (x == 0 && y == 0)
+                        CenterTile = mapDict[coord];
+                }
             }
         }
         assignTiles.Stop();
@@ -101,7 +104,7 @@ public class CreateLevel : MonoBehaviour
             }
 
             Debug.Log("Took " + foreachloop.ElapsedMilliseconds + "ms to smooth the room\nPass #" + (i+1) + "/" + smoothMultiplier +
-                " Arround " + (timeDelta /= Tiles.Count) + "ticks per tile (" + Tiles.Count + " total)");
+                " Arround " + (timeDelta /= mapDict.Count) + "ticks per tile (" + Tiles.Count + " total)");
         }
         smoothing.Stop();
         Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
@@ -175,7 +178,6 @@ public class CreateLevel : MonoBehaviour
             {
                 for (int neighbourY = tile.Coord.y - 1; neighbourY <= tile.Coord.y + 1; neighbourY++)
                 {
-                    Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
                     Tile nextTile = tile;
 
                     nextTile = mapDict[new Tuple<int, int>(neighbourX, neighbourY)];
@@ -214,7 +216,6 @@ public class CreateLevel : MonoBehaviour
             {
                 for (int neighbourY = tile.Coord.y - Radius; neighbourY <= tile.Coord.y + Radius; neighbourY++)
                 {
-                    Vector2Int nextPos = new Vector2Int(neighbourX, neighbourY);
                     Tile nextTile = null;
 
                     if (!SearchDiagonal)
@@ -258,16 +259,19 @@ public class CreateLevel : MonoBehaviour
             {
                 Tile curTile = null;
                 Vector2Int curCoord = new Vector2Int(NeighbourX, NeighbourY);
+                Tuple<int, int> curTuple = new Tuple<int, int>(NeighbourX, NeighbourY);
                 if (curCoord != Coord)
                 {
-                    curTile = mapDict[new Tuple<int, int>(curCoord.x, curCoord.y)];
-                    if (curTile != null)
+                    if(mapDict.ContainsKey(curTuple))
                     {
+                        //Debug.Log("found a tile @ " + mapDict[curTuple].Coord);
+                        curTile = mapDict[curTuple];
                         if (curTile.Type == Enums.tileType.Wall)
                             Count++;
                     }
                     else if(NeighbourX == Coord.x || NeighbourY == Coord.y)
                     {
+                        //Debug.Log("mapDict doesn't contain " + curTuple.First + "," + curTuple.Second);
                         Count = 16;
                     }
                 }
