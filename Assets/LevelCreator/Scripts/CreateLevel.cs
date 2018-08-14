@@ -1,5 +1,4 @@
 using UnityEngine;
-using System;
 using Resources;
 using System.Collections.Generic;
 
@@ -43,9 +42,10 @@ public class CreateLevel : MonoBehaviour
     void CreateRoom()
     {
         mapDict = new Dictionary<Tuple<int, int>, Tile>();
+        List<Tile> roomTiles = new List<Tile>();
         Tiles = new List<Tile>();
         if (seed == "")
-            prng = new System.Random(DateTime.Now.GetHashCode());
+            prng = new System.Random(System.DateTime.Now.GetHashCode());
         else
             prng = new System.Random(seed.GetHashCode());
         Tile CenterTile = null;
@@ -109,6 +109,8 @@ public class CreateLevel : MonoBehaviour
         smoothing.Stop();
         Debug.Log("Took " + smoothing.ElapsedMilliseconds + "ms to smooth the room "+ smoothMultiplier + " times");
         Tile Ntfc = GetNearestTile(CenterTile);//Nearest Tile From Center
+        roomTiles = GetTiles(Ntfc, Enums.tileType.Floor);
+        Debug.Log("Amount of Floor tiles: " + roomTiles.Count);
     }
 
     /*
@@ -208,7 +210,6 @@ public class CreateLevel : MonoBehaviour
         while(queue.Count > 0)
         {
             Tile tile = queue.Dequeue();
-            mapFlags.Add(tile.Coord);
             if (tile.Type == typeToSearch)
                 tiles.Add(tile);
 
@@ -216,20 +217,23 @@ public class CreateLevel : MonoBehaviour
             {
                 for (int neighbourY = tile.Coord.y - Radius; neighbourY <= tile.Coord.y + Radius; neighbourY++)
                 {
-                    Tile nextTile = null;
-
-                    if (!SearchDiagonal)
+                    mapFlags.Add(tile.Coord);
+                    Tile nextTile = (mapDict.ContainsKey(new Tuple<int, int>(neighbourX, neighbourY))) ? mapDict[new Tuple<int, int>(neighbourX, neighbourY)] : null;
+                    if (nextTile != null)
                     {
-                        if (neighbourX == tile.Coord.x || neighbourY == tile.Coord.y)
+                        if (!SearchDiagonal)
+                        {
+                            if (neighbourX == tile.Coord.x || neighbourY == tile.Coord.y)
+                            {
+                                if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
+                                    queue.Enqueue(nextTile);
+                            }
+                        }
+                        else
                         {
                             if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
                                 queue.Enqueue(nextTile);
                         }
-                    }
-                    else
-                    {
-                        if (nextTile.Type == typeToSearch && !mapFlags.Contains(nextTile.Coord))
-                            queue.Enqueue(nextTile);
                     }
                 }
             }
