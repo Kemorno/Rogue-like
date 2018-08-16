@@ -1,11 +1,12 @@
-[Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
 [Rr]esources/
 [Ss]cenes/
+[Mm]etadata/
 [Aa][Pp][Ii]/
+[Ss]haderCache/
 [Pp]ackages/
 [Pp]rojectSettings/
 Assets/AssetStoreTools*
@@ -18,13 +19,13 @@ ExportedObj/
 .consulo/
 *.suo
 *.tmp
-*.csproj
 *.user
 *.pidb
 *.booproj
 *.svd
 *.pdb
 *.opendb
+*.mdb
 
 # Unity3D Obsolete files
 *.prefab
