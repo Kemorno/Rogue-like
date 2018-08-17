@@ -72,7 +72,6 @@
     <Compile Include="Assets\LevelCreator\Scripts\Tilemap.cs" />
     <Compile Include="Assets\Scripts\Attack.cs" />
     <Compile Include="Assets\Scripts\EnemySeekingAI.cs" />
-    <Compile Include="Assets\Scripts\Enums.cs" />
     <Compile Include="Assets\Scripts\Generator.cs" />
     <Compile Include="Assets\Scripts\Movement.cs" />
     <Compile Include="Assets\Scripts\QuadTree.cs" />
