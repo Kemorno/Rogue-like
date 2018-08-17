@@ -9,27 +9,48 @@ namespace Resources
     {
         public int RoomId { get; private set; }
         public RoomSettings Settings { get; private set; }
-        public Bound Bound { get; private set; }
-        public Tile CenterTile { get; private set; }
-        public List<Tile> FloorTiles { get; private set; }
-        public List<Tile> WallTiles { get; private set; }
-        public List<Tile> Tiles { get; private set; }
+        public Rect Bound { get; private set; } = new Rect();
+        public Tile CenterTile { get; private set; } = new Tile();
+        public List<Tile> FloorTiles { get; private set; }= new List<Tile>();
+        public List<Tile> WallTiles { get; private set; }= new List<Tile>();
+        public List<Tile> Tiles { get; private set; } = new List<Tile>();
 
+        #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
         {
             RoomId = _RoomId;
             Settings = _RoomSettings;
-            
-            Bound = null;
-            CenterTile = null;
-            FloorTiles = new List<Tile>();
-            WallTiles = new List<Tile>();
-            Tiles = new List<Tile>();
         }
-
-        public void SetBounds(Bound _Bound)
+        public Room(Room room)
         {
-            Bound = _Bound;
+            RoomId = room.RoomId;
+            Settings = room.Settings;
+            Bound = room.Bound;
+            CenterTile = room.CenterTile;
+            FloorTiles = room.FloorTiles;
+            WallTiles = room.WallTiles;
+            Tiles = room.Tiles;
+        }
+        #endregion
+
+        #region Methods
+        void SetBounds()
+        {
+            CoordInt Min = new CoordInt(CenterTile.Coord.x, CenterTile.Coord.y);
+            CoordInt Max = new CoordInt(CenterTile.Coord.x, CenterTile.Coord.y);
+
+            foreach(Tile tile in FloorTiles)
+            {
+                if (tile.Coord.x < Min.x)
+                    Min.x = tile.Coord.x;
+                if (tile.Coord.y < Min.y)
+                    Min.y = tile.Coord.y;
+                if (tile.Coord.x > Max.x)
+                    Max.x = tile.Coord.x;
+                if (tile.Coord.y > Max.y)
+                    Max.y = tile.Coord.y;
+            }
+            Bound = new Rect(Min.GetVector2Int(), (Max - Min).GetVector2Int());
         }
         public void SetCenterTile(Tile _CenterTile)
         {
@@ -47,15 +68,21 @@ namespace Resources
         {
             Tiles.AddRange(FloorTiles);
             Tiles.AddRange(WallTiles);
+            SetBounds();
         }
+        #endregion
 
         #region overrides
         public override string ToString()
         {
-                return ("ID:" + RoomId + " ###Total Tile Count:" + (FloorTiles.Count+ WallTiles.Count) +
-                    "\nFloor Tile Count:" + FloorTiles.Count +
-                    " ###Wall Tile Count:" + WallTiles.Count);
-
+                return "RoomID#"+ RoomId + " Bounds:" + Bound.ToString();
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return RoomId << 8 + Settings.GetHashCode() + Bound.GetHashCode() + CenterTile.GetHashCode() << 2 + ((FloorTiles.GetHashCode() + WallTiles.GetHashCode()) - Tiles.GetHashCode());
+            }
         }
         #endregion
     }
@@ -69,6 +96,7 @@ namespace Resources
         public int RandomFillPercent { get; private set; }
         public int ComparisonFactor { get; private set; }
 
+        #region Constructors
         public RoomSettings(int _SmoothingMultiplier, int _RandomFillPercent, int _ComparisonFactor, roomSize _Size, roomType _Type, roomClass _Class)
         {
             SmoothingMultiplier = _SmoothingMultiplier;
@@ -78,21 +106,46 @@ namespace Resources
             Type = _Type;
             Class = _Class;
         }
+        public RoomSettings(RoomSettings settings)
+        {
+            Seed = settings.Seed;
+            Size = settings.Size;
+            Type = settings.Type;
+            Class = settings.Class;
+            SmoothingMultiplier = settings.SmoothingMultiplier;
+            RandomFillPercent = settings.RandomFillPercent;
+            ComparisonFactor = settings.ComparisonFactor;
+        }
+        #endregion
+        
+        #region Methods
         public void SetSeed(string _Seed)
         {
             Seed = _Seed;
         }
+        #endregion
 
         #region overrides
+        public override string ToString()
+        {
+            return "Seed"+ '"' + Seed+ '"' + " Size:" + Size.ToString() + " Type:" + Type.ToString() + " Class:" + Class.ToString() + " Smoothing Multiplier#" + SmoothingMultiplier + " Random Fill Percentage#" + RandomFillPercent + " Comparison Factor#" + ComparisonFactor;
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return Seed.GetHashCode() * 17 + Size.ToString().GetHashCode() + Type.ToString().GetHashCode() + Class.ToString().GetHashCode() + SmoothingMultiplier * 13 + RandomFillPercent << 4 + ComparisonFactor;
+            }
+        }
         #endregion
     }
     public class Tile
     {
         public int RoomId = -1;
         public CoordInt Coord;
-        public tileType Type = tileType.Wall;
+        public tileType Type { get; private set; } = tileType.Wall;
         public roomClass Class = roomClass.Neutral;
-        public bool walkable = false;
+        public bool walkable { get; private set; }
 
         #region Constructors
         public Tile(Tile _Tile)
@@ -111,42 +164,80 @@ namespace Resources
         {
             Coord = _Coord;
             Type = _Type;
-            walkable = (_Type == tileType.Floor) ? true : false;
+            walkable = (Type == tileType.Floor) ? true : false;
         }
         #endregion
 
-        #region Overrides
-        #endregion
-
+        #region Methods
+        public void SetType(tileType _type)
+        {
+            Type = _type;
+            walkable = (Type == tileType.Floor) ? true : false;
+        }
         public string ToLongString()
         {
             return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
         }
+        #endregion
+
+        #region Overrides
+        public override string ToString()
+        {
+            return "RoomID#" + RoomId + " Coord" + Coord.GetVector2Int().ToString() + " Type:" + Type.ToString() + " Class:" + Class.ToString() + " isWalkable?" + walkable;
+        }
+        public override int GetHashCode()
+        {
+            return RoomId << 3 + Coord.GetHashCode() + Type.ToString().GetHashCode() * 23 + Class.ToString().GetHashCode() * 17 + walkable.GetHashCode() << 4;
+        }
+        #endregion
     }
     public class CoordInt
     {
-        public int X;
-        public int Y;
+        public int x;
+        public int y;
 
         #region Constructors
-        public CoordInt(int x, int y)
+        public CoordInt(int _x, int _y)
         {
-            X = x;
-            Y = y;
+            x = _x;
+            y = _y;
+        }
+        public CoordInt(CoordInt coord)
+        {
+            x = coord.x;
+            y = coord.y;
         }
         #endregion
 
-        public override int GetHashCode()
-        {
-            return new Tuple<int, int>(X, Y).GetHashCode();
-        }
+        #region Methods
         public bool Equals(CoordInt other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
 
-            return (X == other.X
-                && Y == other.Y);
+            return (x == other.x
+                && y == other.y);
+        }
+        public Vector2Int GetVector2Int()
+        {
+            return new Vector2Int(x, y);
+        }
+        public Tuple<int, int> GetTuple()
+        {
+            return new Tuple<int, int>(x, y);
+        }
+        public bool isAdjacent(CoordInt other)
+        {
+            if (other == null)
+                return false;
+            return (x == other.x || y == other.y);
+        }
+        #endregion
+
+        #region overrides
+        public override string ToString()
+        {
+            return (x + "," + y);
         }
         public override bool Equals(object obj)
         {
@@ -155,24 +246,11 @@ namespace Resources
             if (obj.GetType() != this.GetType()) return false;
             return Equals(obj as CoordInt);
         }
-        public Vector2Int GetVector2Int()
+        public override int GetHashCode()
         {
-            return new Vector2Int(X, Y);
+            return new Tuple<int, int>(x, y).GetHashCode();
         }
-        public override string ToString()
-        {
-            return (X + "," + Y);
-        }
-        public Tuple<int, int> GetTuple()
-        {
-            return new Tuple<int, int>(X, Y);
-        }
-        public bool isAdjacent(CoordInt other)
-        {
-            if (other == null)
-                return false;
-            return (X == other.X || Y == other.Y);
-        }
+        #endregion
 
         #region Operators
         public static bool operator==(CoordInt obj1, CoordInt obj2)
@@ -189,73 +267,35 @@ namespace Resources
         }
         public static bool operator<(CoordInt obj1, CoordInt obj2)
         {
-            return (obj1.X < obj2.X && obj1.Y < obj2.Y);
+            return (obj1.x < obj2.x && obj1.y < obj2.y);
         }
         public static bool operator >(CoordInt obj1, CoordInt obj2)
         {
-            return (obj1.X > obj2.X && obj1.Y > obj2.Y);
+            return (obj1.x > obj2.x && obj1.y > obj2.y);
         }
         public static bool operator <=(CoordInt obj1, CoordInt obj2)
         {
-            return (obj1.X <= obj2.X && obj1.Y <= obj2.Y);
+            return (obj1.x <= obj2.x && obj1.y <= obj2.y);
         }
         public static bool operator >=(CoordInt obj1, CoordInt obj2)
         {
-            return (obj1.X >= obj2.X && obj1.Y >= obj2.Y);
+            return (obj1.x >= obj2.x && obj1.y >= obj2.y);
         }
         public static CoordInt operator+(CoordInt obj1, CoordInt obj2)
         {
-            return new CoordInt(obj1.X + obj2.X, obj1.Y + obj2.Y);
+            return new CoordInt(obj1.x + obj2.x, obj1.y + obj2.y);
         }
         public static CoordInt operator-(CoordInt obj1, CoordInt obj2)
         {
-            return new CoordInt(obj1.X - obj2.X, obj1.Y - obj2.Y);
+            return new CoordInt(obj1.x - obj2.x, obj1.y - obj2.y);
         }
         public static CoordInt operator*(CoordInt obj1, CoordInt obj2)
         {
-            return new CoordInt(obj1.X * obj2.X, obj1.Y * obj2.Y);
+            return new CoordInt(obj1.x * obj2.x, obj1.y * obj2.y);
         }
         public static CoordInt operator/(CoordInt obj1, CoordInt obj2)
         {
-            return new CoordInt(obj1.X / obj2.X, obj1.Y / obj2.Y);
-        }
-        #endregion
-    }
-    public class Bound
-    {
-        public Vector2 Min { get; private set; }
-        public Vector2 Max { get; private set; }
-
-        public Bound(Vector2 min, Vector2 max)
-        {
-            Min = min;
-            Max = max;
-        }
-
-        #region overrides
-        public static bool operator ==(Bound obj1, Bound obj2)
-        {
-            return obj1.Equals(obj2);
-        }
-        public static bool operator !=(Bound obj1, Bound obj2)
-        {
-            return !obj1.Equals(obj2);
-        }
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            Bound other = obj as Bound;
-                return (Min == other.Min
-                    && Max == other.Max);
-        }
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return Min.GetHashCode() * 353 + Max.GetHashCode();
-            }
+            return new CoordInt(obj1.x / obj2.x, obj1.y / obj2.y);
         }
         #endregion
     }
