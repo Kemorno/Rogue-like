@@ -8,6 +8,7 @@ public class CreateLevel : MonoBehaviour
 {
     public static Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
 
+    public Sprite Cell;
     public bool drawGizmos = false;
 
     public bool randomSeed = false;
@@ -66,6 +67,9 @@ public class CreateLevel : MonoBehaviour
 
             roomCreation.Stop();
         }
+        if (Input.GetMouseButtonDown(1))
+        {
+        }
         if (Input.GetKeyDown(KeyCode.R))
         {
             globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
@@ -104,37 +108,39 @@ public class CreateLevel : MonoBehaviour
         {
             System.Random roomPrng = new System.Random(Settings.Seed.GetHashCode());
 
-            for (int x = startCoord.X - (int)Settings.Size; x <= startCoord.X + (int)Settings.Size; x++)
+            for (int x = startCoord.X - (int)room.Settings.Size; x <= startCoord.X + (int)room.Settings.Size; x++)
             {
-                for (int y = startCoord.Y - (int)Settings.Size; y <= startCoord.Y + (int)Settings.Size; y++)
+                for (int y = startCoord.Y - (int)room.Settings.Size; y <= startCoord.Y + (int)room.Settings.Size; y++)
                 {
                     CoordInt coord = new CoordInt(x, y);
 
-                    Tile tile = (Map.ContainsKey(coord)) ? Map[coord] : new Tile(coord, (roomPrng.Next(0, 100) < Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
+                    int random = roomPrng.Next(0, 100);
 
-
-                    if (x >= startCoord.X-1 && y >= startCoord.Y-1 && x <= startCoord.X+1 && y <= startCoord.Y+1)
-                    {
-                        tile.Type = tileType.Floor;
-                    }
+                    Tile tile = (Map.ContainsKey(coord)) ? new Tile(Map[coord]) : new Tile(coord, (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
                     roomMap.Add(coord, tile);
+                    
+                    if (x >= startCoord.X - 1 && y >= startCoord.Y - 1 && x <= startCoord.X + 1 && y <= startCoord.Y + 1)
+                    {
+                        if (startCoord == coord)
+                            room.SetCenterTile(roomMap[coord]);
+                        roomMap[coord].Type = tileType.Floor;
+                    }
                     if (Map.ContainsKey(coord))
-                        roomMap[tile.Coord].Type = tileType.Wall;
-                    if (startCoord == coord)
-                        room.SetCenterTile(tile);
+                        roomMap[coord].Type = (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor;
+
                 }
             }
         }//Room Creation
         {
-            for (int smooth = 0; smooth < Settings.SmoothingMultiplier; smooth++)
+            for (int smooth = 0; smooth < room.Settings.SmoothingMultiplier; smooth++)
             {
                 foreach (Tile tile in roomMap.Values)
                 {
                     int wallCount = CountNearWallTiles(tile.Coord, roomMap);
 
-                    if (wallCount > Settings.ComparisonFactor)
+                    if (wallCount > room.Settings.ComparisonFactor)
                         tile.Type = tileType.Wall;
-                    else if (wallCount < Settings.ComparisonFactor)
+                    else if (wallCount < room.Settings.ComparisonFactor)
                         tile.Type = tileType.Floor;
                 }
             }
@@ -143,50 +149,55 @@ public class CreateLevel : MonoBehaviour
             if (Settings.SmoothingMultiplier > 0)
             {
                 {
-                    Tile centerTile = GetNearestTile(room.CenterTile,room.RoomId, roomMap);
+                    Tile centerTile = GetNearestTile(room.CenterTile, room.RoomId, roomMap);
                     if (centerTile == null)
                         return null;
                     else
+                    {
+                        Debug.Log("Room Center Tile is Valid");
                         room.SetCenterTile(centerTile);
+                    }
                 }//Check Central Tile
                 {
                     List<Tile> FloorTiles = GetTiles(room.CenterTile, room.RoomId, roomMap);
                     if (FloorTiles == null)
                         return null;
                     else
+                    {
+                        Debug.Log("Room has no colliding Floor Tiles");
                         room.SetFloorTiles(FloorTiles);
+                    }
                 }//Check for Colliding Floor Tiles
                 {
                     List<Tile> WallTiles = GetWallTiles(room.CenterTile, room.RoomId, roomMap);
                     if (WallTiles == null)
                         return null;
                     else
+                    {
+                        Debug.Log("Room has no colliding Wall Tiles");
                         room.SetWallTiles(WallTiles);
+                    }
                 }//Check for Colliding Wall Tiles
                 {
-                    if (room.FloorTiles.Count < (size * size) / 3)
+                    if (room.FloorTiles.Count < ((int)room.Settings.Size * (int)room.Settings.Size) / 2)
                         return null;
                     else//Room is completly valid
                     {
+                        Debug.Log("Room is completly valid");
                         room.SetTiles();
 
-                        foreach (Tile tile in room.FloorTiles)
+                        foreach (Tile tile in room.Tiles)
                         {
-                            tile.RoomId = room.RoomId;
-                            tile.Class = room.Settings.Class;
-                            if (!Map.ContainsKey(tile.Coord))
-                                Map.Add(tile.Coord, tile);
-                            else
-                                Map[tile.Coord] = roomMap[tile.Coord];
-                        }
-                        foreach (Tile tile in room.WallTiles)
-                        {
-                            tile.RoomId = room.RoomId;
-                            tile.Class = room.Settings.Class;
-                            if (!Map.ContainsKey(tile.Coord))
-                                Map.Add(tile.Coord, tile);
-                            else
-                                Map[tile.Coord] = roomMap[tile.Coord];
+                            if (tile.RoomId == -1 || tile.RoomId == room.RoomId)
+                            {
+                                Debug.Log(tile.ToLongString());
+                                tile.RoomId = room.RoomId;
+                                tile.Class = room.Settings.Class;
+                                if (!Map.ContainsKey(tile.Coord))
+                                    Map.Add(tile.Coord, tile);
+                                else
+                                    Map[tile.Coord] = roomMap[tile.Coord];
+                            }
                         }
                     }
                 }//Check Room Size
@@ -342,7 +353,7 @@ public class CreateLevel : MonoBehaviour
         Tile _tile = Start;
         List<Tile> tiles = new List<Tile>();
         List<CoordInt> mapFlags = new List<CoordInt>();
-        Enums.tileType typeToSearch = Enums.tileType.Wall;
+        tileType typeToSearch = tileType.Wall;
 
         Queue<Tile> queue = new Queue<Tile>();
         if (_tile.RoomId == -1 || _tile.RoomId == RoomID)
@@ -435,7 +446,7 @@ public class CreateLevel : MonoBehaviour
                         case roomClass.Spiritual:
                             Gizmos.color = Color.yellow;
                             break;
-                        case .roomClass.Social:
+                        case roomClass.Social:
                             Gizmos.color = Color.green;
                             break;
                     }
@@ -452,32 +463,12 @@ public class CreateLevel : MonoBehaviour
                         Gizmos.DrawCube(pos, Vector3.one * 0.3f);
                     }
                 }
-
-                foreach (Room room in Rooms)
-                {/*
-                    foreach (Tile tile in room.Tiles)
-                    {
-                        Vector3 pos = new Vector3(tile.Coord.X, tile.Coord.Y);
-
-                        if (tile == room.CenterTile)
-                        {
-                            Gizmos.color = Color.green;
-                            Gizmos.DrawCube(pos, Vector3.one * 0.5f);
-                        }
-                        else
-                        {
-                            Gizmos.color = Color.cyan;
-                            Gizmos.DrawCube(pos, Vector3.one * 0.3f);
-                        }
-                    }*/
-                }
             }
         }
     }
     void GenerateMesh()
     {
         GameObject[] go = GameObject.FindGameObjectsWithTag("Map");
-
         foreach(GameObject GO in go)
         {
             Destroy(GO);
@@ -485,10 +476,13 @@ public class CreateLevel : MonoBehaviour
 
         foreach (Tile tile in Map.Values)
         {
-            GameObject mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject mesh = new GameObject();
+            mesh.AddComponent<SpriteRenderer>();
+            mesh.GetComponent<SpriteRenderer>().sprite = Cell;
+            mesh.GetComponent<SpriteRenderer>().color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
+
             mesh.tag = "Map";
             mesh.transform.position = new Vector3(tile.Coord.X, tile.Coord.Y);
-            mesh.GetComponent<MeshRenderer>().material.color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
         }
 
     }
