@@ -21,13 +21,14 @@ public class CreateLevel : MonoBehaviour
     public roomClass RoomClass;
     //public int RoomPasses = 5;
     //public int DistanceBetweenRooms = 10;
+    GameObject grouper;
 
     [Range(0, 100)]
     public int randomFillPercent = 50;
     [Range(0,5)]
     public int smoothMultiplier = 4;
 
-    public Vector2Int mousePos;
+    Vector2Int mousePos;
     public GameObject guide;
 
     List<Room> Rooms = new List<Room>();
@@ -38,9 +39,10 @@ public class CreateLevel : MonoBehaviour
     {
         if(globalSeed == "")
         {
-            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
+            globalSeed = Seed.GenerateSeed(new System.Random((DateTime.Now.ToString()+';'+DateTime.Now.Millisecond.ToString()).GetHashCode()));
             globalPrng = new System.Random(globalSeed.GetHashCode());
         }
+        grouper = new GameObject();
     }
 
     private void Update()
@@ -87,7 +89,7 @@ public class CreateLevel : MonoBehaviour
 
         if (room == null)
         {
-            if (Count <= 3)
+            if (Count <= 5)
             {
                 Count++;
                 goto restart;
@@ -98,7 +100,6 @@ public class CreateLevel : MonoBehaviour
         else
             return room;
     }
-
     Room newRoom(CoordInt startCoord, RoomSettings Settings)
     {
         Dictionary<CoordInt, Tile> roomMap = new Dictionary<CoordInt, Tile>();
@@ -108,9 +109,9 @@ public class CreateLevel : MonoBehaviour
         {
             System.Random roomPrng = new System.Random(Settings.Seed.GetHashCode());
 
-            for (int x = startCoord.X - (int)room.Settings.Size; x <= startCoord.X + (int)room.Settings.Size; x++)
+            for (int x = startCoord.x - (int)room.Settings.Size; x <= startCoord.x + (int)room.Settings.Size; x++)
             {
-                for (int y = startCoord.Y - (int)room.Settings.Size; y <= startCoord.Y + (int)room.Settings.Size; y++)
+                for (int y = startCoord.y - (int)room.Settings.Size; y <= startCoord.y + (int)room.Settings.Size; y++)
                 {
                     CoordInt coord = new CoordInt(x, y);
 
@@ -119,14 +120,14 @@ public class CreateLevel : MonoBehaviour
                     Tile tile = (Map.ContainsKey(coord)) ? new Tile(Map[coord]) : new Tile(coord, (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
                     roomMap.Add(coord, tile);
                     
-                    if (x >= startCoord.X - 1 && y >= startCoord.Y - 1 && x <= startCoord.X + 1 && y <= startCoord.Y + 1)
+                    if (x >= startCoord.x - 1 && y >= startCoord.y - 1 && x <= startCoord.x + 1 && y <= startCoord.y + 1)
                     {
                         if (startCoord == coord)
                             room.SetCenterTile(roomMap[coord]);
-                        roomMap[coord].Type = tileType.Floor;
+                        roomMap[coord].SetType(tileType.Floor);
                     }
                     if (Map.ContainsKey(coord))
-                        roomMap[coord].Type = (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor;
+                        roomMap[coord].SetType((random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
 
                 }
             }
@@ -139,9 +140,9 @@ public class CreateLevel : MonoBehaviour
                     int wallCount = CountNearWallTiles(tile.Coord, roomMap);
 
                     if (wallCount > room.Settings.ComparisonFactor)
-                        tile.Type = tileType.Wall;
+                        tile.SetType(tileType.Wall);
                     else if (wallCount < room.Settings.ComparisonFactor)
-                        tile.Type = tileType.Floor;
+                        tile.SetType(tileType.Floor);
                 }
             }
         }//Room Smoothing
@@ -203,6 +204,7 @@ public class CreateLevel : MonoBehaviour
                 }//Check Room Size
             }
         }//Check if Room Valid
+
         return room;
     }
     
@@ -268,9 +270,9 @@ public class CreateLevel : MonoBehaviour
         {
             Tile tile = queue.Dequeue();
 
-            for (int NeighbourX = tile.Coord.X - 1; NeighbourX <= tile.Coord.X + 1; NeighbourX++)
+            for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
             {
-                for (int NeighbourY = tile.Coord.Y - 1; NeighbourY <= tile.Coord.Y + 1; NeighbourY++)
+                for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
                 {
                     CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                     if (tile.Coord.isAdjacent(curCoord))
@@ -321,9 +323,9 @@ public class CreateLevel : MonoBehaviour
             if (tile.Type == typeToSearch)
                 tiles.Add(tile);
 
-            for(int NeighbourX = tile.Coord.X - 1; NeighbourX <= tile.Coord.X + 1; NeighbourX++)
+            for(int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
             {
-                for (int NeighbourY = tile.Coord.Y - 1; NeighbourY <= tile.Coord.Y + 1; NeighbourY++)
+                for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
                 {
                     CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                     if(tile.Coord.isAdjacent(curCoord))
@@ -368,9 +370,9 @@ public class CreateLevel : MonoBehaviour
         {
             Tile tile = queue.Dequeue();
 
-            for (int NeighbourX = tile.Coord.X - 1; NeighbourX <= tile.Coord.X + 1; NeighbourX++)
+            for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
             {
-                for (int NeighbourY = tile.Coord.Y - 1; NeighbourY <= tile.Coord.Y + 1; NeighbourY++)
+                for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
                 {
                     CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                     if (!mapFlags.Contains(curCoord))
@@ -402,9 +404,9 @@ public class CreateLevel : MonoBehaviour
     {
         int Count = 0;
 
-        for(int NeighbourX = Coord.X -1; NeighbourX <= Coord.X +1; NeighbourX++)
+        for(int NeighbourX = Coord.x -1; NeighbourX <= Coord.x +1; NeighbourX++)
         {
-            for (int NeighbourY = Coord.Y - 1; NeighbourY <= Coord.Y + 1; NeighbourY++)
+            for (int NeighbourY = Coord.y - 1; NeighbourY <= Coord.y + 1; NeighbourY++)
             {
                 CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                 if (curCoord != Coord)
@@ -430,7 +432,7 @@ public class CreateLevel : MonoBehaviour
             {
                 foreach (Tile tile in Map.Values)
                 {
-                    Vector3 pos = new Vector3(tile.Coord.X, tile.Coord.Y);
+                    Vector3 pos = new Vector3(tile.Coord.x, tile.Coord.y);
 
                     switch (tile.Class)
                     {
@@ -482,7 +484,9 @@ public class CreateLevel : MonoBehaviour
             mesh.GetComponent<SpriteRenderer>().color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
 
             mesh.tag = "Map";
-            mesh.transform.position = new Vector3(tile.Coord.X, tile.Coord.Y);
+            mesh.name = tile.ToCoordString();
+            mesh.transform.parent = grouper.transform;
+            mesh.transform.position = new Vector3(tile.Coord.x, tile.Coord.y);
         }
 
     }
