@@ -25,7 +25,7 @@ public class CameraMovement : MonoBehaviour {
         }
         if(Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            Camera.main.orthographicSize += Input.GetAxis("Mouse ScrollWheel") * ScrollSpeed * 30 * Time.deltaTime;
+            Camera.main.orthographicSize += -Input.GetAxis("Mouse ScrollWheel") * ScrollSpeed * 30 * Time.deltaTime;
         }
 	}
 }
