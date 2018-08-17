@@ -95,6 +95,14 @@ namespace Resources
         public bool walkable = false;
 
         #region Constructors
+        public Tile(Tile _Tile)
+        {
+            RoomId = _Tile.RoomId;
+            Coord = _Tile.Coord;
+            Type = _Tile.Type;
+            Class = _Tile.Class;
+            walkable = _Tile.walkable;
+        }
         public Tile(CoordInt _Coord)
         {
             Coord = _Coord;
@@ -108,15 +116,11 @@ namespace Resources
         #endregion
 
         #region Overrides
-        public override string ToString()
-        {
-            return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
-        }
         #endregion
 
-        public string Info()
+        public string ToLongString()
         {
-            return "Tile from Room #" + RoomId + " at Coords " + Coord.ToString() + " is a " + Type.ToString() + " and belongs to the " + Class.ToString() + " Class." + ((walkable) ? " You CAN walk on it" : " You CANNOT walk on it");
+            return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
         }
     }
     public class CoordInt
