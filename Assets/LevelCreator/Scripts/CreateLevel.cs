@@ -74,11 +74,16 @@ public class CreateLevel : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.R))
         {
-            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
-            globalPrng = new System.Random(globalSeed.GetHashCode());
-            Rooms = new List<Room>();
-            Map.Clear();
+            ResetMap();
         }
+    }
+
+    private void ResetMap()
+    {
+        globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
+        globalPrng = new System.Random(globalSeed.GetHashCode());
+        Rooms = new List<Room>();
+        Map.Clear();
     }
 
     Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
@@ -122,8 +127,11 @@ public class CreateLevel : MonoBehaviour
                     
                     if (x >= startCoord.x - 1 && y >= startCoord.y - 1 && x <= startCoord.x + 1 && y <= startCoord.y + 1)
                     {
+                        if (tile.RoomId != room.RoomId || tile.RoomId != -1)
+                            return null;
                         if (startCoord == coord)
                             room.SetCenterTile(roomMap[coord]);
+
                         roomMap[coord].SetType(tileType.Floor);
                     }
                     if (Map.ContainsKey(coord))
@@ -185,12 +193,13 @@ public class CreateLevel : MonoBehaviour
                     else//Room is completly valid
                     {
                         Debug.Log("Room is completly valid");
-                        room.SetTiles();
+                        room.FinishRoom();
 
                         foreach (Tile tile in room.Tiles)
                         {
                             if (tile.RoomId == -1 || tile.RoomId == room.RoomId)
                             {
+                                tile.Coord.tile = tile;
                                 Debug.Log(tile.ToLongString());
                                 tile.RoomId = room.RoomId;
                                 tile.Class = room.Settings.Class;
@@ -206,51 +215,6 @@ public class CreateLevel : MonoBehaviour
         }//Check if Room Valid
 
         return room;
-    }
-    
-    void SetRoomOrigins()
-    {/*
-        Tiles = new List<Tile>();
-        int rawDist = DistanceBetweenRooms;
-        for (int i = 0; i < RoomPasses; i++)
-        {
-            List<Tile> PassTiles = new List<Tile>();
-            rawDist += DistanceBetweenRooms;
-            for(int x = -rawDist; x <= rawDist; x++)
-            {
-                for (int y = -rawDist; y <= rawDist; y++)
-                {
-                    Vector2Int Pos = new Vector2Int(x, y);
-                    if (true)
-                    {
-                        if (Mathf.FloorToInt(Vector2.Distance(Pos, Start)) == rawDist)
-                        {
-                            PassTiles.Add(new Tile(Pos, Enums.tileType.Floor));
-                        }
-                        if (x == y)
-                            Tiles.Add(new Tile(Pos));
-                        if (x == -y)
-                            Tiles.Add(new Tile(Pos));
-                    }
-                }
-            }
-            RoomOriginTiles.Add(PassTiles);
-        }
-        foreach(Tile tile in Tiles)
-        {
-            Vector2Int Pos = tile.Coord;
-            if (tile.Type == Enums.tileType.Floor)
-            {
-                if (-Pos.y < Pos.x && Pos.x < Pos.y && Pos.y > 0)
-                    tile.Class = Enums.roomClass.Scientific;
-                if (Pos.y < -Pos.x && -Pos.x < -Pos.y && Pos.y < 0)
-                    tile.Class = Enums.roomClass.Physical;
-                if (-Pos.x > Pos.y && Pos.y > Pos.x && Pos.x < 0)
-                    tile.Class = Enums.roomClass.Social;
-                if (Pos.x > -Pos.y && -Pos.y > -Pos.x && Pos.x > 0)
-                    tile.Class = Enums.roomClass.Spiritual;
-            }
-        }*/
     }
 
     Tile GetNearestTile(Tile Start, int RoomId, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
