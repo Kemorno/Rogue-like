@@ -9,11 +9,12 @@ namespace Resources
     {
         public int RoomId { get; private set; }
         public RoomSettings Settings { get; private set; }
-        public Rect Bound { get; private set; } = new Rect();
-        public Tile CenterTile { get; private set; } = new Tile();
+        public Rect Bound { get; private set; }
+        public Tile CenterTile { get; private set; }
         public List<Tile> FloorTiles { get; private set; }= new List<Tile>();
         public List<Tile> WallTiles { get; private set; }= new List<Tile>();
         public List<Tile> Tiles { get; private set; } = new List<Tile>();
+        public Color Color { get; private set; }
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -64,11 +65,21 @@ namespace Resources
         {
             WallTiles = _WallTiles;
         }
-        public void SetTiles()
+        public void FinishRoom()
         {
             Tiles.AddRange(FloorTiles);
             Tiles.AddRange(WallTiles);
             SetBounds();
+            SetColor();
+        }
+        public void SetColor()
+        {
+            System.Random prng = new System.Random(Settings.Seed.GetHashCode());
+            Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
+        }
+        public bool isFinished()
+        {
+            return Tiles.Count > 0 && Color != null && Bound !=null;
         }
         #endregion
 
@@ -83,6 +94,17 @@ namespace Resources
             {
                 return RoomId << 8 + Settings.GetHashCode() + Bound.GetHashCode() + CenterTile.GetHashCode() << 2 + ((FloorTiles.GetHashCode() + WallTiles.GetHashCode()) - Tiles.GetHashCode());
             }
+        }
+        #endregion
+
+        #region Conversion
+        public static implicit operator CoordInt(Room other)
+        {
+            return other.CenterTile.Coord;
+        }
+        public static implicit operator Tile(Room other)
+        {
+            return other.CenterTile;
         }
         #endregion
     }
@@ -178,6 +200,12 @@ namespace Resources
         {
             return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
         }
+        public bool IsValid()
+        {
+            if (Coord == null || RoomId < -1)
+                return false;
+            return true;
+        }
         #endregion
 
         #region Overrides
@@ -190,11 +218,19 @@ namespace Resources
             return RoomId << 3 + Coord.GetHashCode() + Type.ToString().GetHashCode() * 23 + Class.ToString().GetHashCode() * 17 + walkable.GetHashCode() << 4;
         }
         #endregion
+
+        #region Conversion
+        public static implicit operator CoordInt(Tile other)
+        {
+            return other.Coord;
+        }
+        #endregion
     }
     public class CoordInt
     {
-        public int x;
-        public int y;
+        public int x { get; private set; }
+        public int y { get; private set; }
+        public Tile tile { get; private set; }
 
         #region Constructors
         public CoordInt(int _x, int _y)
@@ -202,10 +238,23 @@ namespace Resources
             x = _x;
             y = _y;
         }
+        public CoordInt(int _x, int _y, Tile _tile)
+        {
+            x = _x;
+            y = _y;
+            tile = _tile;
+        }
         public CoordInt(CoordInt coord)
         {
             x = coord.x;
             y = coord.y;
+            tile = coord.tile;
+        }
+        public CoordInt(CoordInt coord, Tile _tile)
+        {
+            x = coord.x;
+            y = coord.y;
+            tile = _tile;
         }
         #endregion
 
@@ -232,6 +281,21 @@ namespace Resources
                 return false;
             return (x == other.x || y == other.y);
         }
+        public bool HasATile()
+        {
+            return tile != null;
+        }
+        public bool HasATile(Dictionary<CoordInt, Tile> map)
+        {
+            if (!map.ContainsKey(this))
+                return false;
+
+            return map[this].IsValid();
+        }
+        public void SetTile(Tile _tile)
+        {
+            tile = _tile;
+        }
         #endregion
 
         #region overrides
@@ -243,7 +307,7 @@ namespace Resources
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals(obj as CoordInt);
         }
         public override int GetHashCode()
@@ -253,19 +317,19 @@ namespace Resources
         #endregion
 
         #region Operators
-        public static bool operator==(CoordInt obj1, CoordInt obj2)
+        public static bool operator ==(CoordInt obj1, CoordInt obj2)
         {
             if (ReferenceEquals(null, obj2)) return false;
             if (ReferenceEquals(obj1, obj2)) return true;
             return (obj1.Equals(obj2));
         }
-        public static bool operator!=(CoordInt obj1, CoordInt obj2)
+        public static bool operator !=(CoordInt obj1, CoordInt obj2)
         {
             if (ReferenceEquals(null, obj2)) return true;
             if (ReferenceEquals(obj1, obj2)) return false;
             return !(obj1.Equals(obj2));
         }
-        public static bool operator<(CoordInt obj1, CoordInt obj2)
+        public static bool operator <(CoordInt obj1, CoordInt obj2)
         {
             return (obj1.x < obj2.x && obj1.y < obj2.y);
         }
@@ -281,21 +345,56 @@ namespace Resources
         {
             return (obj1.x >= obj2.x && obj1.y >= obj2.y);
         }
-        public static CoordInt operator+(CoordInt obj1, CoordInt obj2)
+        public static CoordInt operator +(CoordInt obj1, CoordInt obj2)
         {
             return new CoordInt(obj1.x + obj2.x, obj1.y + obj2.y);
         }
-        public static CoordInt operator-(CoordInt obj1, CoordInt obj2)
+        public static CoordInt operator -(CoordInt obj1, CoordInt obj2)
         {
             return new CoordInt(obj1.x - obj2.x, obj1.y - obj2.y);
         }
-        public static CoordInt operator*(CoordInt obj1, CoordInt obj2)
+        public static CoordInt operator *(CoordInt obj1, CoordInt obj2)
         {
             return new CoordInt(obj1.x * obj2.x, obj1.y * obj2.y);
         }
-        public static CoordInt operator/(CoordInt obj1, CoordInt obj2)
+        public static CoordInt operator /(CoordInt obj1, CoordInt obj2)
         {
             return new CoordInt(obj1.x / obj2.x, obj1.y / obj2.y);
+        }
+        #endregion
+
+        #region Conversion
+        public static implicit operator CoordInt(Vector3 other)
+        {
+            return new CoordInt(Mathf.FloorToInt(other.x), Mathf.FloorToInt(other.y));
+        }
+        public static implicit operator CoordInt(Vector3Int other)
+        {
+            return new CoordInt(other.x, other.y);
+        }
+        public static implicit operator CoordInt(Vector2 other)
+        {
+            return new CoordInt(Mathf.FloorToInt(other.x), Mathf.FloorToInt(other.y));
+        }
+        public static implicit operator CoordInt(Vector2Int other)
+        {
+            return new CoordInt(other.x, other.y);
+        }
+        public static implicit operator Vector2(CoordInt other)
+        {
+            return new Vector2(other.x, other.y);
+        }
+        public static implicit operator Vector2Int(CoordInt other)
+        {
+            return new Vector2Int(other.x, other.y);
+        }
+        public static implicit operator Vector3(CoordInt other)
+        {
+            return new Vector3(other.x, other.y);
+        }
+        public static implicit operator Vector3Int(CoordInt other)
+        {
+            return new Vector3Int(other.x, other.y);
         }
         #endregion
     }
