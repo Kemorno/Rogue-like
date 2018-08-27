@@ -28,10 +28,11 @@ public class CreateLevel : MonoBehaviour
     [Range(0,5)]
     public int smoothMultiplier = 4;
 
-    Vector2Int mousePos;
+    public Vector2Int mousePos;
     public GameObject guide;
 
-    List<Room> Rooms = new List<Room>();
+    public List<Room> Rooms = new List<Room>();
+    public RoomSettings Settings;
 
     System.Random globalPrng = new System.Random();
 
@@ -47,6 +48,7 @@ public class CreateLevel : MonoBehaviour
 
     private void Update()
     {
+        Settings = new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass);
         mousePos = new Vector2Int(Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).x), Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).y));
         if(guide != null)
             guide.transform.position = new Vector3(mousePos.x + .5f, mousePos.y + .5f);
@@ -86,7 +88,7 @@ public class CreateLevel : MonoBehaviour
         Map.Clear();
     }
 
-    Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
+    public Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
     {
         int Count = 0;
         restart:

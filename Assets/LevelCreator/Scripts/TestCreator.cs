@@ -1,14 +1,65 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Resources;
 
 public class TestCreator : MonoBehaviour
 {
+    public int Size;
+
     int amountOfRooms;
     int RoomPasses;
     int DistanceBetweenRooms;
     List<List<Vector2Int>> guideTiles = new List<List<Vector2Int>>();
+    CreateLevel Creator;
 
     List<Vector2Int> Tiles = new List<Vector2Int>();
+    private void Awake()
+    {
+        Creator = FindObjectOfType<CreateLevel>();
+    }
+    void CreateMap()
+    {
+        List<CoordInt> mapCheck = new List<CoordInt>();
+        for(int x = -Size; x <= Size; x++)
+        {
+            for (int y = -Size; y <= Size; y++)
+            {
+                Room room;
+                CoordInt curCoord = new CoordInt(x, y);
+                bool compatible = true;
+                for(int neighbourX = x-2; neighbourX <= x+2; x++)
+                {
+                    for (int neighbourY = x - 2; neighbourY <= x + 2; y++)
+                    {
+                        CoordInt neighbourCoord = new CoordInt(neighbourX, neighbourY);
+                        if (mapCheck.Contains(neighbourCoord))
+                        {
+                            compatible = false;
+                            break;
+                        }
+                    }
+                    if (!compatible)
+                        break;
+                }
+                if (compatible)
+                {
+                    room = Creator.CreateRoom(Creator.mousePos, Creator.Settings);
+                    if (room != null)
+                    {
+                        foreach (CoordInt tile in room.Tiles)
+                        {
+                            if (!mapCheck.Contains(tile))
+                                mapCheck.Add(tile);
+                        }
+                        Creator.Rooms.Add(room);
+                    }
+                }
+                else
+                    Debug.Log("Couldn't Create Room");
+            }
+        }
+        Debug.Log("Map Info - Size " + Size + " Number of Rooms " + Creator.Rooms.Count);
+    }
 
     void SetRoomOrigins()
     {
