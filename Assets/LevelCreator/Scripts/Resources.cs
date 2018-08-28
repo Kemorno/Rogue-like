@@ -37,8 +37,8 @@ namespace Resources
         #region Methods
         void SetBounds()
         {
-            CoordInt Min = new CoordInt(CenterTile.Coord.x, CenterTile.Coord.y);
-            CoordInt Max = new CoordInt(CenterTile.Coord.x, CenterTile.Coord.y);
+            Vector2Int Min = new Vector2Int(CenterTile.Coord.x, CenterTile.Coord.y);
+            Vector2Int Max = new Vector2Int(CenterTile.Coord.x, CenterTile.Coord.y);
 
             foreach(Tile tile in FloorTiles)
             {
@@ -51,7 +51,7 @@ namespace Resources
                 if (tile.Coord.y > Max.y)
                     Max.y = tile.Coord.y;
             }
-            Bound = new Rect(Min.GetVector2Int(), (Max - Min).GetVector2Int());
+            Bound = new Rect(Min, (Max - Min));
         }
         public void SetCenterTile(Tile _CenterTile)
         {
@@ -79,7 +79,7 @@ namespace Resources
         }
         public bool isFinished()
         {
-            return Tiles.Count > 0 && Color != null && Bound !=null;
+            return Tiles.Count > 0 && Color != new Color() && Bound != new Rect();
         }
         #endregion
 
@@ -394,7 +394,7 @@ namespace Resources
         }
         public static implicit operator Vector3Int(CoordInt other)
         {
-            return new Vector3Int(other.x, other.y);
+            return new Vector3Int(other.x, other.y, 0);
         }
         #endregion
     }

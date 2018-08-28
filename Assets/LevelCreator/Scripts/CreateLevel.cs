@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class CreateLevel : MonoBehaviour
 {
-    public static Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
+    public Dictionary<CoordInt, Tile> Map;
 
     public Sprite Cell;
     public bool drawGizmos = false;
@@ -31,7 +31,7 @@ public class CreateLevel : MonoBehaviour
     public Vector2Int mousePos;
     public GameObject guide;
 
-    public List<Room> Rooms = new List<Room>();
+    public List<Room> Rooms;
     public RoomSettings Settings;
 
     System.Random globalPrng = new System.Random();
@@ -44,6 +44,8 @@ public class CreateLevel : MonoBehaviour
             globalPrng = new System.Random(globalSeed.GetHashCode());
         }
         grouper = new GameObject();
+        Map = new Dictionary<CoordInt, Tile>();
+        Rooms = new List<Room>();
     }
 
     private void Update()
@@ -58,10 +60,11 @@ public class CreateLevel : MonoBehaviour
             System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             roomCreation.Start();
 
-            Room room = newRoom(new CoordInt(mousePos.x, mousePos.y), new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass));
+            Room room = CreateRoom(new CoordInt(mousePos.x, mousePos.y), new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass));
             if (room != null)
             {
                 Rooms.Add(room);
+                roomCreation.Stop();
                 Debug.Log("Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create the whole room");
                 Debug.Log(room.ToString());
                 GenerateMesh();
@@ -69,7 +72,6 @@ public class CreateLevel : MonoBehaviour
             else
                 Debug.Log("Could not create Room");
 
-            roomCreation.Stop();
         }
         if (Input.GetMouseButtonDown(1))
         {
@@ -129,7 +131,7 @@ public class CreateLevel : MonoBehaviour
                     
                     if (x >= startCoord.x - 1 && y >= startCoord.y - 1 && x <= startCoord.x + 1 && y <= startCoord.y + 1)
                     {
-                        if (tile.RoomId != room.RoomId || tile.RoomId != -1)
+                        if (tile.RoomId != room.RoomId && tile.RoomId != -1)
                             return null;
                         if (startCoord == coord)
                             room.SetCenterTile(roomMap[coord]);
@@ -201,7 +203,7 @@ public class CreateLevel : MonoBehaviour
                         {
                             if (tile.RoomId == -1 || tile.RoomId == room.RoomId)
                             {
-                                tile.Coord.tile = tile;
+                                tile.Coord.SetTile(tile);
                                 Debug.Log(tile.ToLongString());
                                 tile.RoomId = room.RoomId;
                                 tile.Class = room.Settings.Class;
@@ -392,7 +394,7 @@ public class CreateLevel : MonoBehaviour
     }
     private void OnDrawGizmos()
     {
-        if (drawGizmos)
+        if (drawGizmos && Map != null)
         {
             if (Map.Count > 0)
             {
@@ -450,10 +452,52 @@ public class CreateLevel : MonoBehaviour
             mesh.GetComponent<SpriteRenderer>().color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
 
             mesh.tag = "Map";
-            mesh.name = tile.ToCoordString();
+            mesh.name = tile.Coord.ToString();
             mesh.transform.parent = grouper.transform;
             mesh.transform.position = new Vector3(tile.Coord.x, tile.Coord.y);
         }
 
+    }
+    public void CreateMap(int Size)
+    {
+        List<CoordInt> mapCheck = new List<CoordInt>();
+        for (int x = -Size; x <= Size; x++)
+        {
+            for (int y = -Size; y <= Size; y++)
+            {
+                Room room;
+                CoordInt curCoord = new CoordInt(x, y);
+                bool compatible = true;
+                for (int neighbourX = x - 2; neighbourX <= x + 2; x++)
+                {
+                    for (int neighbourY = x - 2; neighbourY <= x + 2; y++)
+                    {
+                        CoordInt neighbourCoord = new CoordInt(neighbourX, neighbourY);
+                        if (mapCheck.Contains(neighbourCoord))
+                        {
+                            compatible = false;
+                            goto incompatible;
+                        }
+                    }
+                }
+                incompatible:
+                if (compatible)
+                {
+                    room = CreateRoom(curCoord, Settings);
+                    if (room != null)
+                    {
+                        foreach (CoordInt tile in room.Tiles)
+                        {
+                            if (!mapCheck.Contains(tile))
+                                mapCheck.Add(tile);
+                        }
+                        Rooms.Add(room);
+                    }
+                }
+                else
+                    Debug.Log("Couldn't Create Room");
+            }
+        }
+        Debug.Log("Map Info - Size " + Size + " Number of Rooms " + Rooms.Count);
     }
 }
