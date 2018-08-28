@@ -19,8 +19,6 @@ public class CreateLevel : MonoBehaviour
     public roomSize RoomSize;
     public roomType RoomType;
     public roomClass RoomClass;
-    //public int RoomPasses = 5;
-    //public int DistanceBetweenRooms = 10;
     GameObject grouper;
 
     [Range(0, 100)]
@@ -38,13 +36,13 @@ public class CreateLevel : MonoBehaviour
 
     private void Awake()
     {
-        if(globalSeed == "")
-        {
-            globalSeed = Seed.GenerateSeed(new System.Random((DateTime.Now.ToString()+';'+DateTime.Now.Millisecond.ToString()).GetHashCode()));
-            globalPrng = new System.Random(globalSeed.GetHashCode());
-        }
-        grouper = new GameObject();
         Map = new Dictionary<CoordInt, Tile>();
+        if (globalSeed == "" || !Seed.isSeedValid(globalSeed))
+            ResetMap(true);
+        else
+            ResetMap();
+
+        grouper = new GameObject();
         Rooms = new List<Room>();
     }
 
@@ -60,7 +58,7 @@ public class CreateLevel : MonoBehaviour
             System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             roomCreation.Start();
 
-            Room room = CreateRoom(new CoordInt(mousePos.x, mousePos.y), new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass));
+            Room room = CreateRoom(mousePos, Settings);
             if (room != null)
             {
                 Rooms.Add(room);
@@ -82,14 +80,22 @@ public class CreateLevel : MonoBehaviour
         }
     }
 
-    private void ResetMap()
+    private void ResetMap(bool newSeed = false)
     {
-        globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
-        globalPrng = new System.Random(globalSeed.GetHashCode());
+        if (newSeed)
+        {
+            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
+            globalPrng = new System.Random(globalSeed.GetHashCode());
+        }
+        else
+        {
+            globalPrng = new System.Random(globalSeed.GetHashCode());
+        }
+
         Rooms = new List<Room>();
         Map.Clear();
+        GenerateMesh();
     }
-
     public Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
     {
         int Count = 0;
@@ -220,7 +226,6 @@ public class CreateLevel : MonoBehaviour
 
         return room;
     }
-
     Tile GetNearestTile(Tile Start, int RoomId, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
     {
         List<CoordInt> mapFlags = new List<CoordInt>();
@@ -460,20 +465,19 @@ public class CreateLevel : MonoBehaviour
     }
     public void CreateMap(int Size)
     {
+        ResetMap();
         List<CoordInt> mapCheck = new List<CoordInt>();
         for (int x = -Size; x <= Size; x++)
         {
             for (int y = -Size; y <= Size; y++)
             {
-                Room room;
                 CoordInt curCoord = new CoordInt(x, y);
                 bool compatible = true;
-                for (int neighbourX = x - 2; neighbourX <= x + 2; x++)
+                for (int neighbourX = x - 2; neighbourX <= x + 2; neighbourX++)
                 {
-                    for (int neighbourY = x - 2; neighbourY <= x + 2; y++)
+                    for (int neighbourY = y - 2; neighbourY <= y + 2; neighbourY++)
                     {
-                        CoordInt neighbourCoord = new CoordInt(neighbourX, neighbourY);
-                        if (mapCheck.Contains(neighbourCoord))
+                        if (mapCheck.Contains(new CoordInt(neighbourX, neighbourY)))
                         {
                             compatible = false;
                             goto incompatible;
@@ -483,15 +487,15 @@ public class CreateLevel : MonoBehaviour
                 incompatible:
                 if (compatible)
                 {
-                    room = CreateRoom(curCoord, Settings);
+                    Room room = CreateRoom(curCoord, Settings);
                     if (room != null)
                     {
+                        Rooms.Add(room);
                         foreach (CoordInt tile in room.Tiles)
                         {
                             if (!mapCheck.Contains(tile))
                                 mapCheck.Add(tile);
                         }
-                        Rooms.Add(room);
                     }
                 }
                 else
@@ -499,5 +503,46 @@ public class CreateLevel : MonoBehaviour
             }
         }
         Debug.Log("Map Info - Size " + Size + " Number of Rooms " + Rooms.Count);
+    }
+    public Tile[,] DictionaryToArray(Dictionary<CoordInt, Tile> map)
+    {
+        int minX = 0;
+        int minY = 0;
+        int maxX = 0;
+        int maxY = 0;
+
+        bool firstLoop = true;
+
+        List<int> X = new List<int>();
+        List<int> Y = new List<int>();
+
+        foreach (CoordInt coord in map.Keys)
+        {
+            if (firstLoop)
+            {
+                minX = coord.x;
+                minY = coord.y;
+                maxX = coord.x;
+                maxY = coord.y;
+                firstLoop = false;
+            }
+            else
+            {
+                if (coord.x < minX)
+                    minX = coord.x;
+                if (coord.y < minY)
+                    minY = coord.y;
+                if (coord.x > maxX)
+                    maxX = coord.x;
+                if (coord.y > maxY)
+                    maxY = coord.y;
+            }
+        }
+        Tile[,] array = new Tile[maxX - minX, maxY - minY];
+        foreach (CoordInt coord in map.Keys)
+        {
+            array[coord.x - minX, coord.y - minY] = map[coord];
+        }
+        return array;
     }
 }
