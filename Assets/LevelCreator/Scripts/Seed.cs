@@ -21,11 +21,16 @@ public static class Seed
     }
     public static string FormatedSeed(string _Seed)
     {
-        string seed = _Seed;
-        if (seed.Length == 8)
-            seed = seed.Insert(4, " ");
+        if (isSeedValid(_Seed))
+        {
+            string seed = _Seed;
+            if (seed.Length == 8)
+                seed = seed.Insert(4, " ");
 
-        return seed;
+            return seed;
+        }
+        else
+            return "";
     }
     public static bool isSeedValid(string _Seed)
     {
@@ -35,13 +40,11 @@ public static class Seed
             isValid = false;
 
         if (isValid == true)
-        {
             for(int i = 0; i < 8; i++)
             {
                 if (!Alphanumeric.Contains(_Seed[i].ToString()))
                     isValid = false;
             }
-        }
 
         return isValid;
     }
