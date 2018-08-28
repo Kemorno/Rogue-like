@@ -14,7 +14,7 @@ public class CreateLevel : MonoBehaviour
     public bool randomSeed = false;
     public string globalSeed = "";
 
-    public int size = 10;
+    public int Size = 10;
     public int comparisonFactor = 4;
     public roomSize RoomSize;
     public roomType RoomType;
@@ -29,7 +29,7 @@ public class CreateLevel : MonoBehaviour
     public Vector2Int mousePos;
     public GameObject guide;
 
-    public List<Room> Rooms;
+    List<Room> Rooms;
     public RoomSettings Settings;
 
     System.Random globalPrng = new System.Random();
@@ -71,13 +71,10 @@ public class CreateLevel : MonoBehaviour
                 Debug.Log("Could not create Room");
 
         }
-        if (Input.GetMouseButtonDown(1))
-        {
-        }
+        if (Input.GetKeyDown(KeyCode.G))
+            CreateMap(Size);
         if (Input.GetKeyDown(KeyCode.R))
-        {
             ResetMap();
-        }
     }
 
     private void ResetMap(bool newSeed = false)

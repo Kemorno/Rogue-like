@@ -4,24 +4,12 @@ using Resources;
 
 public class TestCreator : MonoBehaviour
 {
-    public int Size;
-
     int amountOfRooms;
     //int RoomPasses;
     //int DistanceBetweenRooms;
     List<List<Vector2Int>> guideTiles = new List<List<Vector2Int>>();
-    CreateLevel Creator;
 
     //List<Vector2Int> Tiles = new List<Vector2Int>();
-    private void Awake()
-    {
-        Creator = FindObjectOfType<CreateLevel>();
-    }
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.G))
-            Creator.CreateMap(Size);
-    }
 
     void SetRoomOrigins()
     {
