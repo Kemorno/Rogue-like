@@ -45,7 +45,6 @@ public class CreateLevel : MonoBehaviour
         grouper = new GameObject();
         Rooms = new List<Room>();
     }
-
     private void Update()
     {
         Settings = new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass);
@@ -101,7 +100,7 @@ public class CreateLevel : MonoBehaviour
 
         if (room == null)
         {
-            if (Count <= 5)
+            if (Count <= 2)
             {
                 Count++;
                 goto restart;

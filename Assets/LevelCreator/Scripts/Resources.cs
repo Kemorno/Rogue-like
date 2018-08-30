@@ -398,6 +398,60 @@ namespace Resources
         }
         #endregion
     }
+    public class Map
+    {
+        public Dictionary<CoordInt, Tile> Map { get; private set; }
+        public List<Room> Rooms { get; private set; }
+
+        #region Constructor
+        public Map()
+        {
+            Rooms = new List<Room>();
+            Map = new Dictionary<CoordInt, Tile>();
+        }
+        public Map(Dictionary<CoordInt, Tile> map)
+        {
+            Map = map;
+            Rooms = new List<Room>();
+        }
+        public Map(List<Room> rooms)
+        {
+            Map = new Dictionary<CoordInt, Tile>();
+            Rooms = rooms;
+        }
+        public Map(Dictionary<CoordInt, Tile> map, List<Room> rooms)
+        {
+            Map = map;
+            Rooms = rooms;
+        }
+        #endregion
+
+        #region Methods
+        public bool ContainsTile(Tile other)
+        {
+            return Map.ContainsValue(other);
+        }
+        public bool ContainsCoord(CoordInt other)
+        {
+            return Map.ContainsKey(other);
+        }
+        public bool ContainsCoord(Tile other)
+        {
+            return Map.ContainsKey(other);
+        }
+        public void SetTile(Tile tile)
+        {
+            if (ContainsCoord(tile))
+                Map[tile] = tile;
+            else
+                Map.Add(tile, tile);
+        }
+        public void AddRoom(Room other)
+        {
+            Rooms.Add(other);
+        }
+        #endregion
+    }
 }
 namespace Enums
 {
