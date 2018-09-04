@@ -15,6 +15,7 @@ namespace Resources
         public List<Tile> WallTiles { get; private set; }= new List<Tile>();
         public List<Tile> Tiles { get; private set; } = new List<Tile>();
         public Color Color { get; private set; }
+        public Dictionary<CoordInt, Tile> Map { get; private set; } = new Dictionary<CoordInt, Tile>();
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -64,6 +65,10 @@ namespace Resources
         public void SetWallTiles(List<Tile> _WallTiles)
         {
             WallTiles = _WallTiles;
+        }
+        public void SetMap(Dictionary<CoordInt, Tile> _map)
+        {
+            Map = _map;
         }
         public void FinishRoom()
         {

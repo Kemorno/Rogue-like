@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Resources;
 
 public class MeshGenerator : MonoBehaviour
 {
@@ -8,7 +9,7 @@ public class MeshGenerator : MonoBehaviour
     List<Vector3> vertices;
     List<int> triangles;
 
-    public void GenerateMesh(LevelGenerator.Tile[,] map, float squareSize)
+    public void GenerateMesh(Tile[,] map, float squareSize)
     {
         squareGrid = new SquareGrid(map, squareSize);
 
@@ -158,7 +159,7 @@ public class MeshGenerator : MonoBehaviour
     {
         public Square[,] squares;
 
-        public SquareGrid(LevelGenerator.Tile[,] map, float squareSize)
+        public SquareGrid(Tile[,] map, float squareSize)
         {
             int nodeCountX = map.GetLength(0);
             int nodeCountY = map.GetLength(1);
@@ -172,7 +173,7 @@ public class MeshGenerator : MonoBehaviour
                 for (int y = 0; y < nodeCountY; y++)
                 {
                     Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
-                    controlNodes[x, y] = new ControlNode(pos, (int)map[x, y].tileType == 1, squareSize);
+                    controlNodes[x, y] = new ControlNode(pos, (int)map[x, y].Type == 1, squareSize);
                 }
             }
 

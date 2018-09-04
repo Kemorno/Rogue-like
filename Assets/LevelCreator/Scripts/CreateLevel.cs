@@ -64,7 +64,8 @@ public class CreateLevel : MonoBehaviour
                 roomCreation.Stop();
                 Debug.Log("Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create the whole room");
                 Debug.Log(room.ToString());
-                GenerateMesh();
+                GenerateMeshCube();
+                RoomMesh(Rooms[room.RoomId]);
             }
             else
                 Debug.Log("Could not create Room");
@@ -199,6 +200,7 @@ public class CreateLevel : MonoBehaviour
                     else//Room is completly valid
                     {
                         Debug.Log("Room is completly valid");
+                        room.SetMap(roomMap);
                         room.FinishRoom();
 
                         foreach (Tile tile in room.Tiles)
@@ -437,7 +439,7 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
-    void GenerateMesh()
+    void GenerateMeshCube()
     {
         GameObject[] go = GameObject.FindGameObjectsWithTag("Map");
         foreach(GameObject GO in go)
@@ -463,15 +465,15 @@ public class CreateLevel : MonoBehaviour
     {
         ResetMap();
         List<CoordInt> mapCheck = new List<CoordInt>();
-        for (int x = -Size; x <= Size; x++)
+        for (int x = -Size; x <= Size; x += 2)
         {
-            for (int y = -Size; y <= Size; y++)
+            for (int y = -Size; y <= Size; y += 2)
             {
                 CoordInt curCoord = new CoordInt(x, y);
                 bool compatible = true;
-                for (int neighbourX = x - 2; neighbourX <= x + 2; neighbourX++)
+                for (int neighbourX = x - 1; neighbourX <= x + 1; neighbourX++)
                 {
-                    for (int neighbourY = y - 2; neighbourY <= y + 2; neighbourY++)
+                    for (int neighbourY = y - 1; neighbourY <= y + 1; neighbourY++)
                     {
                         if (mapCheck.Contains(new CoordInt(neighbourX, neighbourY)))
                         {
@@ -491,14 +493,35 @@ public class CreateLevel : MonoBehaviour
                         {
                             if (!mapCheck.Contains(tile))
                                 mapCheck.Add(tile);
+                            else
+                                Debug.Log("colliding tile found");
                         }
                     }
+                    else
+                        Debug.Log("Couldn't Create Room");
                 }
-                else
-                    Debug.Log("Couldn't Create Room");
             }
         }
         Debug.Log("Map Info - Size " + Size + " Number of Rooms " + Rooms.Count);
+    }
+    void RoomMesh(Room room)
+    {
+        GameObject roomGo = new GameObject()
+        {
+            name = "Room #" + room.RoomId
+        };
+        roomGo.AddComponent<MeshGenerator>();
+        MeshGenerator meshGen = roomGo.GetComponent<MeshGenerator>();
+        meshGen.GenerateMesh(DictionaryToArray(room.Map), 1);
+    }
+    public Dictionary<CoordInt, Tile> ListToDictionary(List<Tile> list)
+    {
+        Dictionary<CoordInt, Tile> map = new Dictionary<CoordInt, Tile>();
+        foreach(Tile tile in list)
+        {
+            map.Add(tile, tile);
+        }
+        return map;
     }
     public Tile[,] DictionaryToArray(Dictionary<CoordInt, Tile> map)
     {
