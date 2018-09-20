@@ -56,12 +56,12 @@ public class CreateLevel : MonoBehaviour
         {
             System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             roomCreation.Start();
-
             Room room = CreateRoom(mousePos, Settings);
+            roomCreation.Stop();
+
             if (room != null)
             {
                 Rooms.Add(room);
-                roomCreation.Stop();
                 Debug.Log("Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create the whole room");
                 Debug.Log(room.ToString());
                 GenerateMeshCube();
@@ -224,12 +224,12 @@ public class CreateLevel : MonoBehaviour
 
         return room;
     }
-    Tile GetNearestTile(Tile Start, int RoomId, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
+    Tile GetNearestTile(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
     {
         List<CoordInt> mapFlags = new List<CoordInt>();
         Queue<Tile> queue = new Queue<Tile>();
 
-        if (Start.Type == TypeToSearch && (Start.RoomId == -1 || Start.RoomId == RoomId))
+        if (Start.Type == TypeToSearch && (Start.RoomId == -1 || Start.RoomId == RoomID))
             return Start;
         else
         {
@@ -254,7 +254,7 @@ public class CreateLevel : MonoBehaviour
 
                             if (nextTile != null)
                             {
-                                if (nextTile.RoomId == -1 || nextTile.RoomId == RoomId)
+                                if (nextTile.RoomId == -1 || nextTile.RoomId == RoomID)
                                 {
                                     if (nextTile.Type == TypeToSearch)
                                         return nextTile;

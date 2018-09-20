@@ -31,7 +31,9 @@ namespace Resources
             CenterTile = room.CenterTile;
             FloorTiles = room.FloorTiles;
             WallTiles = room.WallTiles;
+            Color = room.Color;
             Tiles = room.Tiles;
+            Map = room.Map;
         }
         #endregion
 
@@ -457,6 +459,30 @@ namespace Resources
         }
         #endregion
     }
+    public class Mob
+    {
+        public int ID;
+        public int Health { get; private set; } = 1;
+        public int Mana { get; private set; } = 0;
+        public MobType Type { get; private set; } = MobType.Neutral;
+        public AttackType AttackType { get; private set; } = AttackType.None;
+        public double AttackDamage { get; private set; } = 0.0;
+        public double AttackSpeed { get; private set; } = 0.0;
+        public List<AttackEffects> AttackEffects { get; private set; } = new List<AttackEffects>();
+        public double MovementSpeed { get; private set; } = 0.0;
+        public List<MobMovementEnv> MovementEnviroment { get; private set; } = new List<MobMovementEnv>();
+        public MobMovementPattern MovementPattern { get; private set; } = MobMovementPattern.None;
+        public double Height { get; private set; } = 0.0;
+
+        #region Constructor
+        public Mob(int _ID)
+        {
+            ID = _ID;
+        }
+        #endregion
+
+
+    }
 }
 namespace Enums
 {
@@ -486,11 +512,13 @@ namespace Enums
         MiniBoss,
         Shop
     }
+
     public enum tileType
     {
         Floor,
         Wall
     }
+
     public enum OverlayType
     {
         Tile,
@@ -498,5 +526,48 @@ namespace Enums
         RoomClass,
         RoomSize,
         RoomType
+    }
+
+    public enum MobType
+    {
+        Neutral,
+        Player,
+        SmallEnemy,
+        Enemy,
+        BigEnemy,
+        MiniBoss,
+        Boss,
+        Static,
+        Friendly
+    }
+    public enum AttackType
+    {
+        None,
+        Ranged,
+        Meele,
+        Universal
+    }
+    public enum AttackEffects
+    {
+        Poison,
+        Bleed,
+        Dilaceration,
+        Blunt,
+        Contagious,
+        Slow,
+        Confusion
+    }
+    public enum MobMovementPattern
+    {
+        None,
+        Cubed,
+        Round,
+        Free
+    }
+    public enum MobMovementEnv
+    {
+        Ground,
+        Sky,
+        Water
     }
 }
