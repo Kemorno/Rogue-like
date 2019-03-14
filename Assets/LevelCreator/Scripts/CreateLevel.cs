@@ -56,19 +56,22 @@ public class CreateLevel : MonoBehaviour
         {
             System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             roomCreation.Start();
-
             Room room = CreateRoom(mousePos, Settings);
-            if (room != null)
+            room.ExtraInformation.Add("Room Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create.");
+            roomCreation.Stop();
+
+            if (!room.CheckIfHasError())
             {
+                PasteRoom(room);
                 Rooms.Add(room);
-                roomCreation.Stop();
                 Debug.Log("Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create the whole room");
                 Debug.Log(room.ToString());
                 GenerateMeshCube();
                 RoomMesh(Rooms[room.RoomId]);
             }
             else
-                Debug.Log("Could not create Room");
+                Debug.Log("Could not create Room" +
+                    "\n Room error message: " + room.ErrorMessage);
 
         }
         if (Input.GetKeyDown(KeyCode.G))
@@ -95,22 +98,24 @@ public class CreateLevel : MonoBehaviour
     }
     public Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
     {
-        int Count = 0;
-        restart:
+        int Tries = 0;
+        while(Tries < 3) {
         Room room = newRoom(startCoord, Settings);
 
-        if (room == null)
-        {
-            if (Count <= 2)
+            if (room.CheckIfHasError())
             {
-                Count++;
-                goto restart;
+                if (Tries < 2)
+                {
+                    Tries++;
+                    continue;
+                }
+                else
+                    return room;
             }
-            else
-                return null;
-        }
-        else
             return room;
+        }
+        Debug.Log("Did not enter while loop");
+        return null;
     }
     Room newRoom(CoordInt startCoord, RoomSettings Settings)
     {
@@ -166,70 +171,55 @@ public class CreateLevel : MonoBehaviour
             {
                 {
                     Tile centerTile = GetNearestTile(room.CenterTile, room.RoomId, roomMap);
-                    if (centerTile == null)
-                        return null;
+                    if (centerTile.Collided)
+                    {
+                        room.SetError("Cannot set center tile. " +
+                            "\n Center Tile Collides with Tile In Position " + centerTile.Coord.ToString() +
+                            "\n Tile belongs to room # " + Map[centerTile.Coord].RoomId);
+                    }
                     else
                     {
-                        Debug.Log("Room Center Tile is Valid");
                         room.SetCenterTile(centerTile);
                     }
                 }//Check Central Tile
                 {
                     List<Tile> FloorTiles = GetTiles(room.CenterTile, room.RoomId, roomMap);
                     if (FloorTiles == null)
-                        return null;
+                        room.SetError("Floor tiles have collided.");
                     else
                     {
-                        Debug.Log("Room has no colliding Floor Tiles");
                         room.SetFloorTiles(FloorTiles);
                     }
                 }//Check for Colliding Floor Tiles
                 {
                     List<Tile> WallTiles = GetWallTiles(room.CenterTile, room.RoomId, roomMap);
                     if (WallTiles == null)
-                        return null;
+                        room.SetError("Wall tiles have collided.");
                     else
                     {
-                        Debug.Log("Room has no colliding Wall Tiles");
                         room.SetWallTiles(WallTiles);
                     }
                 }//Check for Colliding Wall Tiles
                 {
                     if (room.FloorTiles.Count < ((int)room.Settings.Size * (int)room.Settings.Size) / 2)
-                        return null;
-                    else//Room is completly valid
                     {
-                        Debug.Log("Room is completly valid");
-                        room.SetMap(roomMap);
-                        room.FinishRoom();
-
-                        foreach (Tile tile in room.Tiles)
-                        {
-                            if (tile.RoomId == -1 || tile.RoomId == room.RoomId)
-                            {
-                                tile.Coord.SetTile(tile);
-                                Debug.Log(tile.ToLongString());
-                                tile.RoomId = room.RoomId;
-                                tile.Class = room.Settings.Class;
-                                if (!Map.ContainsKey(tile.Coord))
-                                    Map.Add(tile.Coord, tile);
-                                else
-                                    Map[tile.Coord] = roomMap[tile.Coord];
-                            }
-                        }
+                        room.SetError("Room area is too small." +
+                            "\n Floor Tiles Count:" + room.FloorTiles.Count + " is lower than half the room maximum area.");
                     }
+                    else
+                        room.FinishRoom();
                 }//Check Room Size
             }
         }//Check if Room Valid
 
         return room;
     }
-    Tile GetNearestTile(Tile Start, int RoomId, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
+    Tile GetNearestTile(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
     {
         List<CoordInt> mapFlags = new List<CoordInt>();
         Queue<Tile> queue = new Queue<Tile>();
 
-        if (Start.Type == TypeToSearch && (Start.RoomId == -1 || Start.RoomId == RoomId))
+        if (Start.Type == TypeToSearch && (Start.RoomId == -1 || Start.RoomId == RoomID))
             return Start;
         else
         {
@@ -254,7 +244,7 @@ public class CreateLevel : MonoBehaviour
 
                             if (nextTile != null)
                             {
-                                if (nextTile.RoomId == -1 || nextTile.RoomId == RoomId)
+                                if (nextTile.RoomId == -1 || nextTile.RoomId == RoomID)
                                 {
                                     if (nextTile.Type == TypeToSearch)
                                         return nextTile;
@@ -264,8 +254,7 @@ public class CreateLevel : MonoBehaviour
                             }
                             else
                             {
-                                Debug.Log("Could not find center tile");
-                                return null;
+                                tile.hasCollided();
                             }
                         }
                 }
@@ -394,6 +383,33 @@ public class CreateLevel : MonoBehaviour
             }
         }
         return Count;
+    }
+    public void PasteRoom(Room room)
+    {
+        if (room.isFinished())
+        {
+            room.SetMap(room.Map);
+
+            foreach (Tile tile in room.Tiles)
+            {
+                if (tile.RoomId == -1 || tile.RoomId == room.RoomId)
+                {
+                    tile.Coord.SetTile(tile);
+                    Debug.Log(tile.ToLongString());
+                    tile.RoomId = room.RoomId;
+                    tile.Class = room.Settings.Class;
+                    if (!Map.ContainsKey(tile.Coord))
+                        Map.Add(tile.Coord, tile);
+                    else
+                        Map[tile.Coord] = room.Map[tile.Coord];
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("Tried to paste an unifinished room.");
+            return;
+        }
     }
     private void OnDrawGizmos()
     {

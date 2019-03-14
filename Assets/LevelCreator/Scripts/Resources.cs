@@ -16,6 +16,9 @@ namespace Resources
         public List<Tile> Tiles { get; private set; } = new List<Tile>();
         public Color Color { get; private set; }
         public Dictionary<CoordInt, Tile> Map { get; private set; } = new Dictionary<CoordInt, Tile>();
+        public bool HasError { get; private set; } = false;
+        public string ErrorMessage { get; private set; } = null;
+        public List<String> ExtraInformation { get; private set; } = new List<string>();
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -31,10 +34,11 @@ namespace Resources
             CenterTile = room.CenterTile;
             FloorTiles = room.FloorTiles;
             WallTiles = room.WallTiles;
+            Color = room.Color;
             Tiles = room.Tiles;
+            Map = room.Map;
         }
         #endregion
-
         #region Methods
         void SetBounds()
         {
@@ -70,12 +74,22 @@ namespace Resources
         {
             Map = _map;
         }
+        public void SetError(string Message)
+        {
+            HasError = true;
+            ErrorMessage = Message;
+        }
         public void FinishRoom()
         {
-            Tiles.AddRange(FloorTiles);
-            Tiles.AddRange(WallTiles);
-            SetBounds();
-            SetColor();
+            if (!isFinished())
+            {
+                Tiles.AddRange(FloorTiles);
+                Tiles.AddRange(WallTiles);
+                SetBounds();
+                SetColor();
+                return;
+            }
+            return;
         }
         public void SetColor()
         {
@@ -84,14 +98,17 @@ namespace Resources
         }
         public bool isFinished()
         {
-            return Tiles.Count > 0 && Color != new Color() && Bound != new Rect();
+            return Tiles.Count > 0 && Color != new Color() && Bound != new Rect() && CheckIfHasError();
+        }
+        public bool CheckIfHasError()
+        {
+            return HasError == true && ErrorMessage != null;
         }
         #endregion
-
         #region overrides
         public override string ToString()
         {
-                return "RoomID#"+ RoomId + " Bounds:" + Bound.ToString();
+                return "RoomID#"+ RoomId + " Bounds:" + Bound.ToString() + "Tile Count:" + Tiles.Count + "\n" + Settings.ToString();
         }
         public override int GetHashCode()
         {
@@ -101,7 +118,6 @@ namespace Resources
             }
         }
         #endregion
-
         #region Conversion
         public static implicit operator CoordInt(Room other)
         {
@@ -113,6 +129,7 @@ namespace Resources
         }
         #endregion
     }
+
     public class RoomSettings
     {
         public string Seed { get; private set; }
@@ -173,6 +190,7 @@ namespace Resources
         public tileType Type { get; private set; } = tileType.Wall;
         public roomClass Class = roomClass.Neutral;
         public bool walkable { get; private set; }
+        public bool Collided { get; private set; } = false;
 
         #region Constructors
         public Tile(Tile _Tile)
@@ -210,6 +228,10 @@ namespace Resources
             if (Coord == null || RoomId < -1)
                 return false;
             return true;
+        }
+        public void hasCollided()
+        {
+            Collided = true;
         }
         #endregion
 
@@ -457,6 +479,63 @@ namespace Resources
         }
         #endregion
     }
+    public class Mob
+    {
+        public int ID;
+        public int Health { get; private set; } = 1;
+        public int Mana { get; private set; } = 0;
+        public MobType Type { get; private set; } = MobType.Neutral;
+        public AttackType AttackType { get; private set; } = AttackType.None;
+        public double AttackDamage { get; private set; } = 0.0;
+        public double AttackSpeed { get; private set; } = 0.0;
+        public List<AttackEffects> AttackEffects { get; private set; } = new List<AttackEffects>();
+        public double MovementSpeed { get; private set; } = 0.0;
+        public List<MobMovementEnv> MovementEnviroment { get; private set; } = new List<MobMovementEnv>();
+        public MobMovementPattern MovementPattern { get; private set; } = MobMovementPattern.None;
+        public double Height { get; private set; } = 0.0;
+
+        #region Constructor
+        public Mob(int _ID)
+        {
+            ID = _ID;
+        }
+        #endregion
+
+
+    }
+    /*
+    public class Seed
+    {
+        public string seed { get; private set; }
+
+        public Seed()
+        {
+            seed = Seed.GenerateSeed(new Random(DateTime.UtcNow.GetHashCode()));
+        }
+
+        public Seed(Random Prng)
+        {
+            seed = Seed.GenerateSeed(Prng);
+        }
+
+        public Seed(Seed _seed)
+        {
+            seed = _seed.seed;
+        }
+
+        public override string ToString()
+        {
+            if (seed.Length == 8)
+                seed = seed.Insert(4, " ");
+
+            return seed;
+        }
+
+        public static implicit operator string(Seed other)
+        {
+            return other.ToString();
+        }
+    }*/
 }
 namespace Enums
 {
@@ -486,11 +565,13 @@ namespace Enums
         MiniBoss,
         Shop
     }
+
     public enum tileType
     {
         Floor,
         Wall
     }
+
     public enum OverlayType
     {
         Tile,
@@ -498,5 +579,48 @@ namespace Enums
         RoomClass,
         RoomSize,
         RoomType
+    }
+
+    public enum MobType
+    {
+        Neutral,
+        Player,
+        SmallEnemy,
+        Enemy,
+        BigEnemy,
+        MiniBoss,
+        Boss,
+        Static,
+        Friendly
+    }
+    public enum AttackType
+    {
+        None,
+        Ranged,
+        Meele,
+        Universal
+    }
+    public enum AttackEffects
+    {
+        Poison,
+        Bleed,
+        Dilaceration,
+        Blunt,
+        Contagious,
+        Slow,
+        Confusion
+    }
+    public enum MobMovementPattern
+    {
+        None,
+        Cubed,
+        Round,
+        Free
+    }
+    public enum MobMovementEnv
+    {
+        Ground,
+        Sky,
+        Water
     }
 }
