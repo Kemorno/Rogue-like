@@ -129,7 +129,6 @@ namespace Resources
         }
         #endregion
     }
-
     public class RoomSettings
     {
         public string Seed { get; private set; }
@@ -503,39 +502,69 @@ namespace Resources
 
 
     }
-    /*
     public class Seed
     {
-        public string seed { get; private set; }
+        public string Value { get; private set; }
+        private int Identifier;
 
         public Seed()
         {
-            seed = Seed.GenerateSeed(new Random(DateTime.UtcNow.GetHashCode()));
+            Value = GenerateSeed(new System.Random(DateTime.UtcNow.GetHashCode()));
+            GenerateIdentifier();
         }
 
-        public Seed(Random Prng)
+        public Seed(string _Seed)
         {
-            seed = Seed.GenerateSeed(Prng);
+            Value = _Seed.ToUpper();
+            GenerateIdentifier();
         }
 
-        public Seed(Seed _seed)
+        public Seed(System.Random prng)
         {
-            seed = _seed.seed;
+            Value = GenerateSeed(prng);
+            GenerateIdentifier();
+        }
+
+        public static string GenerateSeed(System.Random Prng)
+        {
+            string seed = "";
+
+            for (int i = 0; i < 8; i++)
+            {
+                seed += SeedController.newChar(Prng);
+            }
+
+            return seed;
+        }
+
+        public void GenerateIdentifier()
+        {
+            Identifier = Value[0].GetHashCode() + Value[1].GetHashCode() * 10 +
+                Value[2].GetHashCode() * 100 + Value[3].GetHashCode() * 1000 +
+                Value[4].GetHashCode() * 10000 + Value[5].GetHashCode() * 100000 +
+                Value[6].GetHashCode() * 1000000 + Value[7].GetHashCode() * 10000000;
         }
 
         public override string ToString()
         {
-            if (seed.Length == 8)
-                seed = seed.Insert(4, " ");
-
-            return seed;
+            return SeedController.FormatedSeed(this);
         }
 
         public static implicit operator string(Seed other)
         {
             return other.ToString();
         }
-    }*/
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+    }
 }
 namespace Enums
 {

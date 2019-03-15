@@ -12,9 +12,10 @@ public class CreateLevel : MonoBehaviour
     public bool drawGizmos = false;
 
     public bool randomSeed = false;
-    public string globalSeed = "";
+    public Seed globalSeed;
 
     public int Size = 10;
+    public int noRooms = 20;
     public int comparisonFactor = 4;
     public roomSize RoomSize;
     public roomType RoomType;
@@ -37,7 +38,7 @@ public class CreateLevel : MonoBehaviour
     private void Awake()
     {
         Map = new Dictionary<CoordInt, Tile>();
-        if (globalSeed == "" || !Seed.isSeedValid(globalSeed))
+        if (globalSeed == "" || !SeedController.isSeedValid(globalSeed))
             ResetMap(true);
         else
             ResetMap();
@@ -47,44 +48,98 @@ public class CreateLevel : MonoBehaviour
     }
     private void Update()
     {
-        Settings = new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass);
         mousePos = new Vector2Int(Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).x), Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).y));
         if(guide != null)
             guide.transform.position = new Vector3(mousePos.x + .5f, mousePos.y + .5f);
 
         if (Input.GetMouseButtonDown(0))
         {
-            System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
-            roomCreation.Start();
-            Room room = CreateRoom(mousePos, Settings);
-            room.ExtraInformation.Add("Room Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create.");
-            roomCreation.Stop();
+            Room room = CreateRoom(mousePos, new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass));
 
-            if (!room.CheckIfHasError())
-            {
-                PasteRoom(room);
-                Rooms.Add(room);
-                Debug.Log("Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create the whole room");
-                Debug.Log(room.ToString());
-                GenerateMeshCube();
-                RoomMesh(Rooms[room.RoomId]);
-            }
-            else
-                Debug.Log("Could not create Room" +
-                    "\n Room error message: " + room.ErrorMessage);
+            FinishRoom(room);
 
         }
         if (Input.GetKeyDown(KeyCode.G))
             CreateMap(Size);
         if (Input.GetKeyDown(KeyCode.R))
             ResetMap();
+        if (Input.GetKeyDOwn(KeyCode.T))
+            GenerateLevel(noRooms);
+    }
+    private void FinishRoom(Room room)
+    {
+        if (!room.CheckIfHasError())
+        {
+            PasteRoom(room);
+            Rooms.Add(room);
+            GenerateMeshCube();
+            RoomMesh(Rooms[room.RoomId]);
+        }
+        else
+            Debug.Log("Could not create Room" +
+                "\n Room error message: " + room.ErrorMessage);
+
+    }
+    private void GenerateLevel(int numberOfRooms)
+    {
+        System.Random moreRooms = new System.Random(DateTime.Now.GetHashCode());
+        Room lastRoom = null;
+        for(int i = 0; i < numberOfRooms; i++)
+        {
+            Room room = null;
+            if (Rooms.Count == 0)
+            {
+                room = CreateRoom(new CoordInt(0, 0), new RoomSettings(moreRooms.Next(3, 5), moreRooms.Next(35, 65), moreRooms.Next(3, 5),
+                    (roomSize)moreRooms.Next(0, 4), roomType.None, roomClass.Neutral));
+
+            }
+            else
+            {
+                CoordInt roomCoord = null;
+                switch (moreRooms.Next(0, 3))
+                {
+                    case 0:
+                        roomCoord = new CoordInt(lastRoom.CenterTile.Coord.x + (int)((int)lastRoom.Settings.Size * 1.25f), lastRoom.CenterTile.Coord.y + (int)((int)lastRoom.Settings.Size * 1.25f));
+                        break;
+                    case 1:
+                        roomCoord = new CoordInt(lastRoom.CenterTile.Coord.x - (int)((int)lastRoom.Settings.Size * 1.25f), lastRoom.CenterTile.Coord.y + (int)((int)lastRoom.Settings.Size * 1.25f));
+                        break;
+                    case 2:
+                        roomCoord = new CoordInt(lastRoom.CenterTile.Coord.x + (int)((int)lastRoom.Settings.Size * 1.25f), lastRoom.CenterTile.Coord.y - (int)((int)lastRoom.Settings.Size * 1.25f));
+                        break;
+                    case 2:
+                        roomCoord = new CoordInt(lastRoom.CenterTile.Coord.x - (int)((int)lastRoom.Settings.Size * 1.25f), lastRoom.CenterTile.Coord.y - (int)((int)lastRoom.Settings.Size * 1.25f));
+                        break;
+
+                }
+
+                room = CreateRoom(roomCoord, new RoomSettings(moreRooms.Next(3, 5), moreRooms.Next(35, 65), moreRooms.Next(3, 5),
+                    (roomSize)moreRooms.Next(0, 4), roomType.None, roomClass.Neutral));
+            }
+            if (room.CheckIfHasError())
+            {
+                i--;
+                continue;
+            }
+            else
+            {
+                FinishRoom(room);
+                lastRoom = room;
+
+                if (moreRooms.Next(0, 100) < 20)
+                {
+                    i--;
+                }
+            }
+
+        }
     }
 
     private void ResetMap(bool newSeed = false)
     {
         if (newSeed)
         {
-            globalSeed = Seed.GenerateSeed(new System.Random(DateTime.Now.GetHashCode()));
+            globalSeed = new Seed(new System.Random(DateTime.Now.GetHashCode()));
             globalPrng = new System.Random(globalSeed.GetHashCode());
         }
         else
@@ -99,8 +154,15 @@ public class CreateLevel : MonoBehaviour
     public Room CreateRoom(CoordInt startCoord, RoomSettings Settings)
     {
         int Tries = 0;
-        while(Tries < 3) {
-        Room room = newRoom(startCoord, Settings);
+        while(Tries < 3)
+        {
+            System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
+            roomCreation.Start();
+
+            Room room = newRoom(startCoord, Settings);
+
+            roomCreation.Stop();
+            room.ExtraInformation.Add("Room Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create.");
 
             if (room.CheckIfHasError())
             {
@@ -110,7 +172,9 @@ public class CreateLevel : MonoBehaviour
                     continue;
                 }
                 else
+                {
                     return room;
+                }
             }
             return room;
         }
@@ -120,7 +184,7 @@ public class CreateLevel : MonoBehaviour
     Room newRoom(CoordInt startCoord, RoomSettings Settings)
     {
         Dictionary<CoordInt, Tile> roomMap = new Dictionary<CoordInt, Tile>();
-        Settings.SetSeed(Seed.GenerateSeed(globalPrng));
+        Settings.SetSeed(new Seed(globalPrng));
         Room room = new Room(Rooms.Count, Settings);
 
         {
@@ -494,11 +558,15 @@ public class CreateLevel : MonoBehaviour
                         if (mapCheck.Contains(new CoordInt(neighbourX, neighbourY)))
                         {
                             compatible = false;
-                            goto incompatible;
+                            if (!compatible)
+                                break;
                         }
+                        if (!compatible)
+                            break;
                     }
+                    if (!compatible)
+                        break;
                 }
-                incompatible:
                 if (compatible)
                 {
                     Room room = CreateRoom(curCoord, Settings);
@@ -510,7 +578,7 @@ public class CreateLevel : MonoBehaviour
                             if (!mapCheck.Contains(tile))
                                 mapCheck.Add(tile);
                             else
-                                Debug.Log("colliding tile found");
+                                Debug.Log("Colliding tile found");
                         }
                     }
                     else
