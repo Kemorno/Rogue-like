@@ -8,7 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{45EDEB9B-7F35-13AE-1AA0-7C8906065B5A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -60,11 +61,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\CardEditor.cs" />
-    <Compile Include="Assets\Cards.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\cameraGUI.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\CameraMovement.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\CreateLevel.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\Editor\MapGeneratorEditor.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\Game.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\LevelGenerator.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\MeshGenerator.cs" />
     <Compile Include="Assets\LevelCreator\Scripts\Resources.cs" />
-    <None Include="Assets\Resources\GameData\Root\localization.txt" />
+    <Compile Include="Assets\LevelCreator\Scripts\Seed.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\TestCreator.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\TextureGenerator.cs" />
+    <Compile Include="Assets\LevelCreator\Scripts\Tilemap.cs" />
+    <Compile Include="Assets\Scripts\Attack.cs" />
+    <Compile Include="Assets\Scripts\EnemySeekingAI.cs" />
+    <Compile Include="Assets\Scripts\Generator.cs" />
+    <Compile Include="Assets\Scripts\Movement.cs" />
+    <Compile Include="Assets\Scripts\QuadTree.cs" />
+    <Compile Include="Assets\Scripts\Stats.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>C:/Users/Pedro Costa/Documents/Rogue-like/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>
