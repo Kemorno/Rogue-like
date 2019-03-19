@@ -19,8 +19,6 @@ public class CreateLevel : MonoBehaviour
     public Seed globalSeed;
     System.Random globalPrng;
 
-    public float seconds;
-
     private IEnumerator waitfor;
 
     public int Size = 10;
@@ -50,13 +48,11 @@ public class CreateLevel : MonoBehaviour
     #endregion
 
     public bool SeeProgress = false;
-    Dictionary<int, List<GameObject>> RoomSprites;
-    Queue<Tuple<CoordInt, Room, bool>> RoomCreationQueue;
+    Queue<Tuple<CoordInt, Room>> RoomCreationQueue;
 
     private void Awake()
     {
-        RoomCreationQueue = new Queue<Tuple<CoordInt, Room, bool>>();
-        RoomSprites = new Dictionary<int, List<GameObject>>();
+        RoomCreationQueue = new Queue<Tuple<CoordInt, Room>>();
         Map = new Dictionary<CoordInt, Tile>();
 
         if (globalSeed != null)
@@ -76,11 +72,11 @@ public class CreateLevel : MonoBehaviour
     {
         floatMousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePos = new Vector2Int(Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + .5f), Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).y + .5f));
+
         if (guide != null)
             guide.transform.position = new Vector3(mousePos.x, mousePos.y);
 
         if (Input.GetMouseButtonDown(0))
-        {
             if (!EventSystem.current.IsPointerOverGameObject())
             {
                 RoomSettings Settings = new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass);
@@ -88,9 +84,6 @@ public class CreateLevel : MonoBehaviour
 
                 StartCoroutine(EnqueueRoom(mousePos, room));
             }
-        }
-        if (Input.GetKeyDown(KeyCode.T))
-            GenerateLevel();
     }
 
 
@@ -106,23 +99,15 @@ public class CreateLevel : MonoBehaviour
     public void ResetMap(bool _newSeed = false)
     {
         if (_newSeed)
-        {
             newSeed();
-        }
         else
-        {
             reloadPrng(globalSeed);
-        }
 
         foreach (Room room in Rooms)
-        {
             Destroy(room.roomGo);
-        }
 
         Rooms = new List<Room>();
         Map.Clear();
-        RoomSprites.Clear();
-        //GenerateMeshCube(Map);
     }
     
 
@@ -130,7 +115,7 @@ public class CreateLevel : MonoBehaviour
     {
         StartCoroutine(GenerateLevel());
     }
-    public IEnumerator GenerateLevel()
+    private IEnumerator GenerateLevel()
     {
         ResetMap(true);
         System.Random moreRooms = new System.Random(DateTime.Now.GetHashCode());
@@ -150,247 +135,88 @@ public class CreateLevel : MonoBehaviour
 
                     room = new Room(Rooms.Count, Settings);
 
-                    bool FinishedCoroutine = false;
-
-                    StartCoroutine(CreateRoom(new CoordInt(0, 0), room, FinishedCoroutine));
-                    while (!FinishedCoroutine)
-                        yield return new WaitForSeconds(0.1f);
+                    StartCoroutine(EnqueueRoom(new CoordInt(0, 0), room));
+                    while (!room.FinishedGeneration)
+                        yield return new WaitForSeconds(1f);
                 }
                 else
                 {
+                    RoomSettings Settings = new RoomSettings(4, moreRooms.Next(25, 45), 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
                     Debug.Log("Creating room Nº " + i);
+
                     switch (t)
                     {
                         case 0:
-                            for (int y = 0; y <= dist / 2; y++)
-                            {
-                                for (int x = -dist / 2; x <= dist / 2; x++)
-                                {
-                                    if (x < y * (6f / 9f) && x > -y * (6f / 9f))
-                                    {
-                                        CoordInt coord = new CoordInt(x, y);
-                                        if (Map.ContainsKey(coord))
-                                            continue;
-
-                                        if (mapFlags.ContainsKey(coord))
-                                            continue;
-
-                                        mapFlags.Add(coord, true);
-                                        roomSize Size = roomSize.Tiny;
-
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Size = roomSize.Tiny;
-                                                break;
-                                            case 1:
-                                                Size = roomSize.Small;
-                                                break;
-                                            case 2:
-                                                Size = roomSize.Medium;
-                                                break;
-                                            case 3:
-                                                Size = roomSize.Big;
-                                                break;
-                                            case 4:
-                                                Size = roomSize.Large;
-                                                break;
-                                        }
-
-
-                                        if (NearTiles(coord, (int)Size / 2))
-                                            continue;
-
-                                        room = new Room(Rooms.Count, new RoomSettings(4, moreRooms.Next(25, 45), 4, Size, roomType.None, roomClass.Scientific));
-
-                                        bool FinishedCoroutine = false;
-
-                                        StartCoroutine(CreateRoom(new CoordInt(x, y), room, FinishedCoroutine));
-                                        while (!FinishedCoroutine)
-                                            yield return new WaitForSeconds(0.1f);
-                                    }
-                                    if (room != null)
-                                        break;
-                                }
-                                if (room != null)
-                                    break;
-                            }
+                            Settings.SetClass(roomClass.Scientific);
                             break;
                         case 1:
-                            for (int y = 0; y >= -dist / 2; y--)
-                            {
-                                for (int x = -dist / 2; x <= dist / 2; x++)
-                                {
-                                    if (-x > y * (6f / 9f) && -x < -y * (6f / 9f))
-                                    {
-                                        CoordInt coord = new CoordInt(x, y);
-                                        if (Map.ContainsKey(coord))
-                                            continue;
-
-                                        if (mapFlags.ContainsKey(coord))
-                                            continue;
-
-                                        mapFlags.Add(coord, true);
-                                        roomSize Size = roomSize.Tiny;
-
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Size = roomSize.Tiny;
-                                                break;
-                                            case 1:
-                                                Size = roomSize.Small;
-                                                break;
-                                            case 2:
-                                                Size = roomSize.Medium;
-                                                break;
-                                            case 3:
-                                                Size = roomSize.Big;
-                                                break;
-                                            case 4:
-                                                Size = roomSize.Large;
-                                                break;
-                                        }
-
-
-                                        if (NearTiles(coord, (int)Size / 2))
-                                            continue;
-
-                                        room = new Room(Rooms.Count, new RoomSettings(4, moreRooms.Next(25, 45), 4, Size, roomType.None, roomClass.Physical));
-
-                                        bool FinishedCoroutine = false;
-
-                                        StartCoroutine(CreateRoom(new CoordInt(x, y), room, FinishedCoroutine));
-                                        while (!FinishedCoroutine)
-                                            yield return new WaitForSeconds(0.1f);
-                                    }
-                                    if (room != null)
-                                        break;
-                                }
-                                if (room != null)
-                                    break;
-                            }
+                            Settings.SetClass(roomClass.Physical);
                             break;
                         case 2:
-                            for (int x = 0; x <= dist / 2; x++)
-                            {
-                                for (int y = -dist / 2; y <= dist / 2; y++)
-                                {
-                                    if (y < x * (6f / 9f) && y > -x * (6f / 9f))
-                                    {
-                                        CoordInt coord = new CoordInt(x, y);
-                                        if (Map.ContainsKey(coord))
-                                            continue;
-
-                                        if (mapFlags.ContainsKey(coord))
-                                            continue;
-
-                                        mapFlags.Add(coord, true);
-                                        roomSize Size = roomSize.Tiny;
-
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Size = roomSize.Tiny;
-                                                break;
-                                            case 1:
-                                                Size = roomSize.Small;
-                                                break;
-                                            case 2:
-                                                Size = roomSize.Medium;
-                                                break;
-                                            case 3:
-                                                Size = roomSize.Big;
-                                                break;
-                                            case 4:
-                                                Size = roomSize.Large;
-                                                break;
-                                        }
-
-
-                                        if (NearTiles(coord, (int)Size / 2))
-                                            continue;
-
-                                        room = new Room(Rooms.Count, new RoomSettings(4, moreRooms.Next(25, 45), 4, Size, roomType.None, roomClass.Spiritual));
-
-                                        bool FinishedCoroutine = false;
-
-                                        StartCoroutine(CreateRoom(new CoordInt(x, y), room, FinishedCoroutine));
-                                        while (!FinishedCoroutine)
-                                            yield return new WaitForSeconds(0.1f);
-                                    }
-                                    if (room != null)
-                                        break;
-                                }
-                                if (room != null)
-                                    break;
-                            }
+                            Settings.SetClass(roomClass.Spiritual);
                             break;
                         case 3:
-                            for (int x = 0; x >= -dist / 2; x--)
-                            {
-                                for (int y = -dist / 2; y <= dist / 2; y++)
-                                {
-                                    if (-y > x * (6f / 9f) && -y < -x * (6f / 9f))
-                                    {
-                                        CoordInt coord = new CoordInt(x, y);
-                                        if (Map.ContainsKey(coord))
-                                            continue;
-
-                                        if (mapFlags.ContainsKey(coord))
-                                            continue;
-
-                                        mapFlags.Add(coord, true);
-                                        roomSize Size = roomSize.Tiny;
-
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Size = roomSize.Tiny;
-                                                break;
-                                            case 1:
-                                                Size = roomSize.Small;
-                                                break;
-                                            case 2:
-                                                Size = roomSize.Medium;
-                                                break;
-                                            case 3:
-                                                Size = roomSize.Big;
-                                                break;
-                                            case 4:
-                                                Size = roomSize.Large;
-                                                break;
-                                        }
-
-
-                                        if (NearTiles(coord, (int)Size / 2))
-                                            continue;
-
-                                        room = new Room(Rooms.Count, new RoomSettings(4, moreRooms.Next(25, 45), 4, Size, roomType.None, roomClass.Social));
-
-                                        bool FinishedCoroutine = false;
-
-                                        StartCoroutine(CreateRoom(new CoordInt(x, y), room, FinishedCoroutine));
-                                        while (!FinishedCoroutine)
-                                            yield return new WaitForSeconds(0.1f);
-                                    }
-                                    if (room != null)
-                                        break;
-                                }
-                                if (room != null)
-                                    break;
-                            }
+                            Settings.SetClass(roomClass.Social);
                             break;
                     }
 
+                    for (int y = 0; y <= dist / 2; y++)
+                    {
+                        for (int x = -dist / 2; x <= dist / 2; x++)
+                        {
+                            if (x < y * (6f / 9f) && x > -y * (6f / 9f))
+                            {
+                                CoordInt coord = new CoordInt(x, y);
+                                if (Map.ContainsKey(coord))
+                                    continue;
+
+                                if (mapFlags.ContainsKey(coord))
+                                    continue;
+
+                                mapFlags.Add(coord, true);
+
+                                switch (moreRooms.Next(0, 4))
+                                {
+                                    case 0:
+                                        Settings.SetSize(roomSize.Tiny);
+                                        break;
+                                    case 1:
+                                        Settings.SetSize(roomSize.Small);
+                                        break;
+                                    case 2:
+                                        Settings.SetSize(roomSize.Medium);
+                                        break;
+                                    case 3:
+                                        Settings.SetSize(roomSize.Large);
+                                        break;
+                                    case 4:
+                                        Settings.SetSize(roomSize.Big);
+                                        break;
+                                }
+                                
+                                if (NearTiles(coord, (int)Settings.Size / 2))
+                                    continue;
+
+                                room = new Room(Rooms.Count, Settings);
+
+                                StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                while (!room.FinishedGeneration)
+                                    yield return new WaitForSeconds(1f);
+                            }
+                            if (room != null)
+                                break;
+                        }
+                        if (room != null)
+                            break;
+                    }
                 }
-
-
+                
                 if (room != null)
                 {
                     if (room.HasError)
                     {
                         i--;
+                        Debug.Log(room.ErrorMessage);
                         continue;
                     }
                     else
@@ -406,27 +232,22 @@ public class CreateLevel : MonoBehaviour
                 {
                     i--;
                 }
-                Debug.Log("Time Before Wait = " + DateTime.Now);
-                yield return new WaitForSeconds(seconds);
-                Debug.Log("Time After Wait = " + DateTime.Now);
             }
         }
     }
 
     bool isRunning = false;
 
-    IEnumerator EnqueueRoom(CoordInt startCoord, Room room, bool isFinished = false)
+    private IEnumerator EnqueueRoom(CoordInt startCoord, Room room)
     {
         Rooms.Add(room);
-        RoomCreationQueue.Enqueue(new Tuple<CoordInt, Room, bool>(startCoord, room, isFinished));
+        RoomCreationQueue.Enqueue(new Tuple<CoordInt, Room>(startCoord, room));
 
         if (!isRunning)
             StartCoroutine(RunQueue());
         yield return null;
     }
-
-
-    IEnumerator RunQueue()
+    private IEnumerator RunQueue()
     {
         if (isRunning)
             yield return null;
@@ -434,7 +255,7 @@ public class CreateLevel : MonoBehaviour
         while (RoomCreationQueue.Count > 0)
         {
             isRunning = true;
-            Tuple<CoordInt, Room, bool> queue = RoomCreationQueue.Dequeue();
+            Tuple<CoordInt, Room> queue = RoomCreationQueue.Dequeue();
 
             Room room = queue.Item2;
 
@@ -453,8 +274,7 @@ public class CreateLevel : MonoBehaviour
         if(RoomCreationQueue.Count == 0)
             yield return null;
     }
-
-    IEnumerator CreateRoom(CoordInt startCoord, Room room, bool isFinished = false)
+    private IEnumerator CreateRoom(CoordInt startCoord, Room room)
     {
         Room legacy = room;
         int Tries = 0;
@@ -467,8 +287,7 @@ public class CreateLevel : MonoBehaviour
                 room = new Room(legacy);
 
             roomCreation.Start();
-
-            RoomSprites.Add(room.RoomId, new List<GameObject>());
+            
             StartCoroutine(CreateRoomCoroutine(startCoord, room));
 
             roomCreation.Stop();
@@ -485,40 +304,40 @@ public class CreateLevel : MonoBehaviour
                     if (Tries < 2)
                     {
                         Tries++;
-                        RoomSprites.Remove(room.RoomId);
+                        Destroy(room.SpritesGrouper);
                         continue;
                     }
                     else
                     {
-                        RoomSprites.Remove(room.RoomId);
-                        isFinished = true;
+                        Destroy(room.SpritesGrouper);
                         break;
                     }
                 }
                 Debug.Log("Room Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create.");
                 room.ExtraInformation.Add("Room Took " + (roomCreation.ElapsedTicks / 100000f).ToString("0.000") + "ms to create.");
                 FinishRoom(room);
-                isFinished = true;
                 break;
             }
 
             else if (room == null)
             {
-                Debug.Log("Cannot Create Room Here");
-                RoomSprites.Remove(room.RoomId);
+                Debug.Log("Cannot Create Room Here.");
+                Destroy(room.SpritesGrouper);
                 break;
             }
         }
         yield return null;
     }
-
-    IEnumerator CreateRoomCoroutine(CoordInt startCoord, Room room)
+    private IEnumerator CreateRoomCoroutine(CoordInt startCoord, Room room)
     {
         RoomSettings Settings = room.Settings;
         Settings.SetSeed(new Seed(globalPrng));
-        
-        GameObject roomGo = new GameObject();
-        roomGo.name = "Room Sprites";
+
+        GameObject roomGo = new GameObject()
+        {
+            name = "Room Sprites"
+        }
+        room.SetSpritesGrouper(roomGo);
         {
             room.resetMap();
             for (int x = startCoord.x - (int)room.Settings.Size; x <= startCoord.x + (int)room.Settings.Size; x++)
@@ -532,11 +351,12 @@ public class CreateLevel : MonoBehaviour
                     Tile tile = (Map.ContainsKey(coord)) ? new Tile(Map[coord]) : new Tile(coord, (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
                     room.Map.Add(coord, tile);
 
-                    if (x >= startCoord.x - 1 && y >= startCoord.y - 1 && x <= startCoord.x + 1 && y <= startCoord.y + 1)
+                    if (x >= startCoord.x - (int)room.Settings.Size-6 && y >= startCoord.y - (int)room.Settings.Size - 6 && x <= startCoord.x + (int)room.Settings.Size - 6 && y <= startCoord.y + (int)room.Settings.Size - 6)
                     {
                         if (tile.RoomId != room.RoomId && tile.RoomId != -1)
                         {
                             room.FinishedGeneration = true;
+                            Destroy(room.SpritesGrouper);
                             yield return null;
                         }
                         if (startCoord == coord)
@@ -548,7 +368,7 @@ public class CreateLevel : MonoBehaviour
                     if (Map.ContainsKey(coord))
                         room.Map[coord].SetType((random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
 
-                    CreateSpriteTile(roomGo, room.Map[coord], room.RoomId);
+                    CreateSpriteTile(room.Map[coord], room);
                 }
                 if (SeeProgress)
                 {
@@ -560,12 +380,17 @@ public class CreateLevel : MonoBehaviour
         if (Settings.SmoothingMultiplier > 0)
         {
             {
+
                 for (int smooth = 0; smooth < room.Settings.SmoothingMultiplier; smooth++)
                 {
-                    int i = 0;
+                    Queue<Tile> SmoothingQueue = new Queue<Tile>();
 
-                    foreach (Tile tile in room.Map.Values)
+                    SmoothingQueue.Enqueue(room.CenterTile);
+
+                    while (SmoothingQueue.Count > 0)
                     {
+                        Tile tile = SmoothingQueue.Dequeue();
+
                         int wallCount = CountNearWallTiles(tile.Coord, room.Map);
 
                         if (wallCount > room.Settings.ComparisonFactor)
@@ -573,11 +398,22 @@ public class CreateLevel : MonoBehaviour
                         else if (wallCount < room.Settings.ComparisonFactor)
                             tile.SetType(tileType.Floor);
 
+                        SpriteRenderer sr = room.SpritesGrouper.transform.Find("Room " + room.RoomId + " : " + tile.Coord.ToString()).GetComponent<SpriteRenderer>();
+                        sr.color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
 
-                        RoomSprites[room.RoomId][i].GetComponent<SpriteRenderer>().color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
+                        for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
+                        {
+                            for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
+                            {
+                                CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
 
-                        i++;
+                                if(tile.Coord != curCoord)
+                                    if (room.Map.ContainsKey(curCoord))
+                                        SmoothingQueue.Enqueue(room.Map[curCoord]);
+                            }
+                        }
                     }
+
                     if (SeeProgress)
                     {
                         yield return new WaitForSeconds(1f / room.Settings.SmoothingMultiplier);
@@ -597,8 +433,8 @@ public class CreateLevel : MonoBehaviour
                     {
                         room.SetCenterTile(centerTile);
 
-                        RoomSprites[room.RoomId].Find(item => new CoordInt((int)item.transform.position.x, (int)item.transform.position.y) == room.CenterTile.Coord).GetComponent<SpriteRenderer>().color = Color.green;
-
+                        SpriteRenderer sr = room.SpritesGrouper.transform.Find("Room " + room.RoomId + " : " + room.CenterTile.Coord.ToString()).GetComponent<SpriteRenderer>();
+                        sr.color = Color.green;
                     }
 
 
@@ -639,46 +475,36 @@ public class CreateLevel : MonoBehaviour
                             }
                         }
                         List<GameObject> goToRemove = new List<GameObject>();
-                        foreach (GameObject child in RoomSprites[room.RoomId])
+
+                        foreach (GameObject child in room.SpritesGrouper.transform)
                         {
                             CoordInt curCoord = new CoordInt((int)child.transform.position.x, (int)child.transform.position.y);
 
                             if (room.Map[curCoord].RoomId != room.RoomId)
-                            {
                                 goToRemove.Add(child);
-                            }
                         }
 
                         foreach (GameObject go in goToRemove)
-                        {
-                            RoomSprites[room.RoomId].Remove(go);
                             Destroy(go);
-                        }
 
                         if (SeeProgress)
                             yield return new WaitForSeconds(.5f);
                     }
                 }//Check Room Size
-
-                if (room.HasError)
-                {
-                    Destroy(roomGo);
-                }
             }//Check if Valid
         }
         room.FinishedGeneration = true;
     }
 
-    void CreateSpriteTile(GameObject Grouper, Tile tile, int roomId)
+    void CreateSpriteTile(Tile tile, Room room)
     {
         GameObject go = new GameObject();
-        go.name = tile.Coord.ToString();
-        go.transform.parent = Grouper.transform;
+        go.name = "Room " + room.RoomId + " : " + tile.Coord.ToString();
+        go.transform.parent = room.SpritesGrouper.transform;
         go.transform.position = new Vector3Int(tile.Coord.x, tile.Coord.y, 0);
         SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = Cell;
         sr.color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
-        RoomSprites[roomId].Add(go);
     }
 
     private void OnDrawGizmos()
@@ -725,27 +551,6 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
-    void GenerateMeshCube(Dictionary<CoordInt, Tile> _Map)
-    {
-        GameObject[] go = GameObject.FindGameObjectsWithTag("Map");
-        foreach (GameObject GO in go)
-        {
-            Destroy(GO);
-        }
-
-        foreach (Tile tile in _Map.Values)
-        {
-            GameObject mesh = new GameObject();
-            mesh.AddComponent<SpriteRenderer>();
-            mesh.GetComponent<SpriteRenderer>().sprite = Cell;
-            mesh.GetComponent<SpriteRenderer>().color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
-
-            mesh.tag = "Map";
-            mesh.name = tile.Coord.ToString();
-            mesh.transform.parent = grouper.transform;
-            mesh.transform.position = new Vector3(tile.Coord.x, tile.Coord.y);
-        }
-    }
     void RoomMesh(Room room)
     {
         GameObject roomGo = new GameObject()
@@ -788,11 +593,9 @@ public class CreateLevel : MonoBehaviour
 
             FloorGo.transform.parent = roomGo.transform;
         }
-        if (RoomSprites[room.RoomId].Count > 0)
-        {
-            RoomSprites[room.RoomId][0].transform.parent.parent = roomGo.transform;
-            RoomSprites[room.RoomId][0].transform.parent.gameObject.SetActive(false);
-        }
+
+        room.SpritesGrouper.transform.parent = roomGo.transform;
+        room.SpritesGrouper.SetActive(false);
 
         room.SetGameObject(roomGo);
     }
@@ -847,9 +650,8 @@ public class CreateLevel : MonoBehaviour
         }
         return array;
     }
-
-
-    public void PasteRoom(Room room)
+    
+    private void PasteRoom(Room room)
     {
         if (room.Finished)
         {
@@ -876,12 +678,10 @@ public class CreateLevel : MonoBehaviour
     {
         Rooms[room.RoomId] = room;
         PasteRoom(room);
-        //GenerateMeshCube(Map);
         RoomMesh(Rooms[room.RoomId]);
     }
 
-
-    Tile GetNearestTile(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
+    private Tile GetNearestTile(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType TypeToSearch = tileType.Floor)
     {
         List<CoordInt> mapFlags = new List<CoordInt>();
         Queue<Tile> queue = new Queue<Tile>();
@@ -930,7 +730,7 @@ public class CreateLevel : MonoBehaviour
         }
         return null;
     }
-    List<Tile> GetTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType typeToSearch = tileType.Floor)
+    private List<Tile> GetTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType typeToSearch = tileType.Floor)
     {
         Tile _tile = Start;
         List<Tile> tiles = new List<Tile>();
@@ -978,7 +778,7 @@ public class CreateLevel : MonoBehaviour
 
         return tiles;
     }
-    List<Tile> GetWallTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map)
+    private List<Tile> GetWallTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map)
     {
         Tile _tile = Start;
         List<Tile> tiles = new List<Tile>();
@@ -1028,7 +828,7 @@ public class CreateLevel : MonoBehaviour
 
         return tiles;
     }
-    int CountNearWallTiles(CoordInt Coord, Dictionary<CoordInt, Tile> Map)
+    private int CountNearWallTiles(CoordInt Coord, Dictionary<CoordInt, Tile> Map)
     {
         int Count = 0;
 
@@ -1053,7 +853,7 @@ public class CreateLevel : MonoBehaviour
         return Count;
     }
 
-    bool NearTiles(CoordInt coord, int SearchRange = 1)
+    private bool NearTiles(CoordInt coord, int SearchRange = 1)
     {
         for (int neighbourX = coord.x - SearchRange; neighbourX <= coord.x + SearchRange; neighbourX++)
         {

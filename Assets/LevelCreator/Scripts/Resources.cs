@@ -11,10 +11,11 @@ namespace Resources
         public RoomSettings Settings { get; private set; }
         public Rect Bound { get; private set; }
         public Tile CenterTile { get; private set; }
-        public List<Tile> FloorTiles { get; private set; }= new List<Tile>();
-        public List<Tile> WallTiles { get; private set; }= new List<Tile>();
-        public List<Tile> Tiles { get; private set; } = new List<Tile>();
         public Color Color { get; private set; }
+
+        public List<Tile> FloorTiles { get; private set; } = new List<Tile>();
+        public List<Tile> WallTiles { get; private set; } = new List<Tile>();
+        public List<Tile> Tiles { get; private set; } = new List<Tile>();
         public Dictionary<CoordInt, Tile> Map { get; private set; } = new Dictionary<CoordInt, Tile>();
         public bool HasError { get; private set; } = false;
         public string ErrorMessage { get; private set; } = null;
@@ -22,6 +23,7 @@ namespace Resources
         public bool Finished { get; private set; } = false;
         public GameObject roomGo { get; private set; } = null;
         public bool FinishedGeneration = false;
+        public GameObject SpritesGrouper { get; private set; } = null;
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -117,6 +119,10 @@ namespace Resources
             System.Random prng = new System.Random(Settings.Seed.GetHashCode());
             Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
         }
+        public void SetSpritesGrouper(GameObject GO)
+        {
+            roomSpritesGrouper = GO;
+        }
         public string ToLongString()
         {
             return "RoomID " + RoomId + "\nBounds: " + Bound.ToString() + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
@@ -185,6 +191,18 @@ namespace Resources
         {
             Seed = _Seed;
             Prng = new System.Random(Seed.GetHashCode());
+        }
+        public void SetSize(roomSize _Size)
+        {
+            Size = _Size;
+        }
+        public void SetType(roomType _Type)
+        {
+            Type = _Type;
+        }
+        public void SetClass(roomClass _Class)
+        {
+            Class = _Class;
         }
         public string ToLongString()
         {
