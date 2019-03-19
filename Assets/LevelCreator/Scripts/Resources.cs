@@ -18,7 +18,10 @@ namespace Resources
         public Dictionary<CoordInt, Tile> Map { get; private set; } = new Dictionary<CoordInt, Tile>();
         public bool HasError { get; private set; } = false;
         public string ErrorMessage { get; private set; } = null;
-        public List<String> ExtraInformation { get; private set; } = new List<string>();
+        public List<string> ExtraInformation { get; private set; } = new List<string>();
+        public bool Finished { get; private set; } = false;
+        public GameObject roomGo { get; private set; } = null;
+        public bool FinishedGeneration = false;
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -34,9 +37,15 @@ namespace Resources
             CenterTile = room.CenterTile;
             FloorTiles = room.FloorTiles;
             WallTiles = room.WallTiles;
-            Color = room.Color;
             Tiles = room.Tiles;
+            Color = room.Color;
             Map = room.Map;
+            HasError = room.HasError;
+            ErrorMessage = room.ErrorMessage;
+            ExtraInformation = room.ExtraInformation;
+            Finished = room.Finished;
+            roomGo = room.roomGo;
+            FinishedGeneration = room.FinishedGeneration;
         }
         #endregion
         #region Methods
@@ -74,6 +83,14 @@ namespace Resources
         {
             Map = _map;
         }
+        public void resetMap()
+        {
+            Map = new Dictionary<CoordInt, Tile>();
+        }
+        public void SetGameObject(GameObject go)
+        {
+            roomGo = go;
+        }
         public void SetError(string Message)
         {
             HasError = true;
@@ -81,14 +98,18 @@ namespace Resources
         }
         public void FinishRoom()
         {
-            if (!isFinished())
+            if (!Finished && !HasError)
             {
                 Tiles.AddRange(FloorTiles);
                 Tiles.AddRange(WallTiles);
                 SetBounds();
                 SetColor();
+
+                Finished = true;
                 return;
             }
+            if (HasError)
+                Debug.Log("Couldn't Finish Room\n" + ErrorMessage);
             return;
         }
         public void SetColor()
@@ -96,19 +117,15 @@ namespace Resources
             System.Random prng = new System.Random(Settings.Seed.GetHashCode());
             Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
         }
-        public bool isFinished()
+        public string ToLongString()
         {
-            return Tiles.Count > 0 && Color != new Color() && Bound != new Rect() && CheckIfHasError();
-        }
-        public bool CheckIfHasError()
-        {
-            return HasError == true && ErrorMessage != null;
+            return "RoomID " + RoomId + "\nBounds: " + Bound.ToString() + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
         }
         #endregion
         #region overrides
         public override string ToString()
         {
-                return "RoomID#"+ RoomId + " Bounds:" + Bound.ToString() + "Tile Count:" + Tiles.Count + "\n" + Settings.ToString();
+                return "RoomID "+ RoomId + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
         }
         public override int GetHashCode()
         {
@@ -131,7 +148,8 @@ namespace Resources
     }
     public class RoomSettings
     {
-        public string Seed { get; private set; }
+        public Seed Seed { get; private set; }
+        public System.Random Prng { get; private set; }
         public roomSize Size { get; private set; }
         public roomType Type { get; private set; }
         public roomClass Class { get; private set; }
@@ -158,20 +176,31 @@ namespace Resources
             SmoothingMultiplier = settings.SmoothingMultiplier;
             RandomFillPercent = settings.RandomFillPercent;
             ComparisonFactor = settings.ComparisonFactor;
+            Prng = settings.Prng;
         }
         #endregion
         
         #region Methods
-        public void SetSeed(string _Seed)
+        public void SetSeed(Seed _Seed)
         {
             Seed = _Seed;
+            Prng = new System.Random(Seed.GetHashCode());
+        }
+        public string ToLongString()
+        {
+            return "Seed " + Seed.ToString() + "\nSize:" + Size.ToString() +
+                "\nType:" + Type.ToString() + "\tClass:" + Class.ToString() +
+                "\nSmoothing Multiplier: " + SmoothingMultiplier +
+                "\nRandom Fill Percentage; " + RandomFillPercent + "%" +
+                "\nComparison Factor: " + ComparisonFactor;
         }
         #endregion
 
         #region overrides
         public override string ToString()
         {
-            return "Seed"+ '"' + Seed+ '"' + " Size:" + Size.ToString() + " Type:" + Type.ToString() + " Class:" + Class.ToString() + " Smoothing Multiplier#" + SmoothingMultiplier + " Random Fill Percentage#" + RandomFillPercent + " Comparison Factor#" + ComparisonFactor;
+            return "Seed "+ Seed.ToString() + "\nSize:" + Size.ToString() + 
+                "\nType:" + Type.ToString() + "\nClass:" + Class.ToString();
         }
         public override int GetHashCode()
         {
@@ -237,7 +266,7 @@ namespace Resources
         #region Overrides
         public override string ToString()
         {
-            return "RoomID#" + RoomId + " Coord" + Coord.GetVector2Int().ToString() + " Type:" + Type.ToString() + " Class:" + Class.ToString() + " isWalkable?" + walkable;
+            return "RoomID " + RoomId + "\nCoord " + Coord.GetVector2Int().ToString() + "\nType: " + Type.ToString() + "\nClass: " + Class.ToString() + " \nsWalkable? " + walkable;
         }
         public override int GetHashCode()
         {
@@ -424,30 +453,30 @@ namespace Resources
         }
         #endregion
     }
-    public class Map
+    public class IMap
     {
-        public Dictionary<CoordInt, Tile> Map { get; private set; }
+        public Dictionary<CoordInt, Tile> map { get; private set; }
         public List<Room> Rooms { get; private set; }
 
         #region Constructor
-        public Map()
+        public IMap()
         {
             Rooms = new List<Room>();
-            Map = new Dictionary<CoordInt, Tile>();
+            map = new Dictionary<CoordInt, Tile>();
         }
-        public Map(Dictionary<CoordInt, Tile> map)
+        public IMap(Dictionary<CoordInt, Tile> _map)
         {
-            Map = map;
+            map = _map;
             Rooms = new List<Room>();
         }
-        public Map(List<Room> rooms)
+        public IMap(List<Room> rooms)
         {
-            Map = new Dictionary<CoordInt, Tile>();
+            map = new Dictionary<CoordInt, Tile>();
             Rooms = rooms;
         }
-        public Map(Dictionary<CoordInt, Tile> map, List<Room> rooms)
+        public IMap(Dictionary<CoordInt, Tile> _map, List<Room> rooms)
         {
-            Map = map;
+            map = _map;
             Rooms = rooms;
         }
         #endregion
@@ -455,22 +484,22 @@ namespace Resources
         #region Methods
         public bool ContainsTile(Tile other)
         {
-            return Map.ContainsValue(other);
+            return map.ContainsValue(other);
         }
         public bool ContainsCoord(CoordInt other)
         {
-            return Map.ContainsKey(other);
+            return map.ContainsKey(other);
         }
         public bool ContainsCoord(Tile other)
         {
-            return Map.ContainsKey(other);
+            return map.ContainsKey(other);
         }
         public void SetTile(Tile tile)
         {
             if (ContainsCoord(tile))
-                Map[tile] = tile;
+                map[tile] = tile;
             else
-                Map.Add(tile, tile);
+                map.Add(tile, tile);
         }
         public void AddRoom(Room other)
         {
@@ -507,24 +536,33 @@ namespace Resources
         public string Value { get; private set; }
         private int Identifier;
 
+        #region Constructors
         public Seed()
         {
             Value = GenerateSeed(new System.Random(DateTime.UtcNow.GetHashCode()));
             GenerateIdentifier();
         }
-
         public Seed(string _Seed)
         {
-            Value = _Seed.ToUpper();
-            GenerateIdentifier();
+            if (_Seed == "" || _Seed == null)
+            {
+                Value = GenerateSeed(new System.Random(DateTime.UtcNow.GetHashCode()));
+                GenerateIdentifier();
+            }
+            else
+            {
+                Value = _Seed.ToUpper();
+                GenerateIdentifier();
+            }
         }
-
         public Seed(System.Random prng)
         {
             Value = GenerateSeed(prng);
             GenerateIdentifier();
         }
+        #endregion
 
+        #region Methods
         public static string GenerateSeed(System.Random Prng)
         {
             string seed = "";
@@ -536,7 +574,6 @@ namespace Resources
 
             return seed;
         }
-
         public void GenerateIdentifier()
         {
             Identifier = Value[0].GetHashCode() + Value[1].GetHashCode() * 10 +
@@ -544,37 +581,36 @@ namespace Resources
                 Value[4].GetHashCode() * 10000 + Value[5].GetHashCode() * 100000 +
                 Value[6].GetHashCode() * 1000000 + Value[7].GetHashCode() * 10000000;
         }
+        #endregion
 
+        #region Overrides
         public override string ToString()
         {
-            return SeedController.FormatedSeed(this);
+            return SeedController.FormatedSeed(Value);
         }
-
-        public static implicit operator string(Seed other)
-        {
-            return other.ToString();
-        }
-
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return Identifier;
         }
+        #endregion
 
-        public override bool Equals(object obj)
+        #region Operators
+        public static implicit operator string(Seed other)
         {
-            return base.Equals(obj);
+            return other.Value;
         }
+        #endregion
     }
 }
 namespace Enums
 {
     public enum roomSize
     {
-        Tiny = 5,
-        Small = 10,
-        Medium = 15,
-        Big = 20,
-        Large = 25
+        Tiny = 8,
+        Small = 13,
+        Medium = 16,
+        Big = 19,
+        Large = 22
     }
     public enum roomClass
     {

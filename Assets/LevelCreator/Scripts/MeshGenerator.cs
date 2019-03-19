@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using Resources;
+using Enums;
 
 public class MeshGenerator : MonoBehaviour
 {
@@ -9,9 +10,9 @@ public class MeshGenerator : MonoBehaviour
     List<Vector3> vertices;
     List<int> triangles;
 
-    public void GenerateMesh(Tile[,] map, float squareSize)
+    public void GenerateMesh(Tile[,] map, float squareSize, GameObject room, int roomId, bool onlyWalls = false)
     {
-        squareGrid = new SquareGrid(map, squareSize);
+        squareGrid = new SquareGrid(map, squareSize, roomId, onlyWalls);
 
         vertices = new List<Vector3>();
         triangles = new List<int>();
@@ -25,7 +26,7 @@ public class MeshGenerator : MonoBehaviour
         }
 
         Mesh mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        room.GetComponent<MeshFilter>().mesh = mesh;
 
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
@@ -159,7 +160,7 @@ public class MeshGenerator : MonoBehaviour
     {
         public Square[,] squares;
 
-        public SquareGrid(Tile[,] map, float squareSize)
+        public SquareGrid(Tile[,] map, float squareSize, int id, bool OnlyWalls)
         {
             int nodeCountX = map.GetLength(0);
             int nodeCountY = map.GetLength(1);
@@ -172,8 +173,31 @@ public class MeshGenerator : MonoBehaviour
             {
                 for (int y = 0; y < nodeCountY; y++)
                 {
-                    Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
-                    controlNodes[x, y] = new ControlNode(pos, (int)map[x, y].Type == 1, squareSize);
+                    if (OnlyWalls)
+                    {
+                        Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
+                        if (map[x, y].Type == tileType.Wall)
+                        {
+                            if (map[x, y].RoomId == id)
+                            {
+                                controlNodes[x, y] = new ControlNode(pos, true, squareSize);
+                            }
+                            else
+                                controlNodes[x, y] = new ControlNode(pos, false, squareSize);
+                        }
+                        else
+                            controlNodes[x, y] = new ControlNode(pos, false, squareSize);
+                    }
+                    else
+                    {
+                        Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
+                        if (map[x, y].RoomId == id)
+                        {
+                            controlNodes[x, y] = new ControlNode(pos, map[x,y].Type == tileType.Floor, squareSize);
+                        }
+                        else
+                            controlNodes[x, y] = new ControlNode(pos, false, squareSize);
+                    }
                 }
             }
 

@@ -2,76 +2,67 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using Resources;
 
-[CustomEditor(typeof(LevelGenerator))]
+[CustomEditor(typeof(CreateLevel))]
 public class MapGeneratorEditor : Editor
 {
     Vector2Int TileFinder;
     string RoomInfo;
     string TileInfo;
-    string SeedGen;
+    Seed seed;
     bool showInfo;
+    bool onMouse;
 
     public override void OnInspectorGUI()
     {
-        LevelGenerator lg = (LevelGenerator)target;
-        if (GUILayout.Button("New"))
+        CreateLevel main = (CreateLevel)target;
+        if (GUILayout.Button("Reset Map"))
+            main.ResetMap(main.randomSeed);
+
+        if (GUILayout.Button("Generate Level"))
+            main.StartGeneration();
+
+        if (GUILayout.Button("New Seed"))
+            main.newSeed();
+
+        main.randomSeed = EditorGUILayout.Toggle("Use Random Seed? ", main.randomSeed);
+        if (main.globalSeed != null)
         {
-            lg.LevelCreate(lg.createFirstRoom);
+            EditorGUILayout.DelayedTextField("Seed",main.globalSeed.ToString());
+        }
+        else
+        {
+            EditorGUILayout.DelayedTextField("Seed", "No Seed");
         }
 
         if (DrawDefaultInspector())
         {
 
         }
+
         showInfo = EditorGUILayout.Toggle("Show Info", showInfo);
+        onMouse = EditorGUILayout.Toggle("On Mouse", onMouse);
         if (showInfo)
         {
             {
-                if (lg.onMouse)
-                    TileFinder = new Vector2Int(Mathf.FloorToInt(lg.mousePos.x), Mathf.FloorToInt(lg.mousePos.y));
-
-                if (lg.IsInMapRange(TileFinder.x, TileFinder.y, lg.globalMap, true) && lg.globalMap != null)
-                {
-                    int roomId = lg.globalMap[TileFinder.x, TileFinder.y].RoomID;
-                    TileInfo = "Tile Info"
-                            + "\nRoom ID: " + lg.globalMap[TileFinder.x, TileFinder.y].RoomID
-                            + "\nTile Type: " + lg.globalMap[TileFinder.x, TileFinder.y].tileType.ToString()
-                            + "\nCoord: " + lg.globalMap[TileFinder.x, TileFinder.y].Coord.coords
-                            + "\nRaw Coord: " + lg.globalMap[TileFinder.x, TileFinder.y].RawCoord.coords;
-                    if (lg.globalMap[TileFinder.x, TileFinder.y].RoomID >= 0)
+                if (onMouse && main.mousePos != null)
+                    TileFinder = new Vector2Int(Mathf.FloorToInt(main.mousePos.x), Mathf.FloorToInt(main.mousePos.y));
+                if(main.Map != null) {
+                    if (main.Map.ContainsKey(TileFinder))
                     {
+                        TileInfo = main.Map[TileFinder].ToString();
+                        if (main.Map[TileFinder].RoomId >= 0)
+                        {
 
-                        RoomInfo = "Room Info"
-                            + "\nRoom ID: " + lg.Rooms[roomId].RoomID
-                            + "\nRoom Type: " + lg.Rooms[roomId].roomType.ToString()
-                            + "\nRoom Class: " + lg.Rooms[roomId].roomClass.ToString()
-                            + "\nRoom Size: " + lg.Rooms[roomId].roomSize.ToString()
-                            + "\nRoom Tiles = " + (lg.Rooms[roomId].roomTiles.Count + lg.Rooms[roomId].wallTiles.Count)
-                            + "\n   Floor Tiles = " + lg.Rooms[roomId].roomTiles.Count
-                            + "\n   Wall Tiles = " + lg.Rooms[roomId].wallTiles.Count
-                            + "\nRoom Seed: " + lg.Rooms[roomId].roomSeed;
+                            RoomInfo = main.Rooms[main.Map[TileFinder].RoomId].ToString();
+                        }
                     }
                     else
                     {
-                        RoomInfo = "Room Info"
-                            + "\nRoom ID: NaN"
-                            + "\nRoom Type: NaN"
-                            + "\nRoom Class: NaN"
-                            + "\nRoom Size: NaN"
-                            + "\nRoom Tiles = NaN"
-                            + "\n   Floor Tiles = NaN"
-                            + "\n   Wall Tiles = NaN"
-                            + "\nRoom Seed = NaN";
+                        TileInfo = "Not a Tile";
+                        RoomInfo = "Not a Room";
                     }
-                }
-                else if (!lg.IsInMapRange(TileFinder.x, TileFinder.y, lg.globalMap, true))
-                {
-                    TileInfo = "Tile Info"
-                            + "\nRoom ID: NaN"
-                            + "\nTile Type: NaN"
-                            + "\nCoord: Not in Map"
-                            + "\nRaw Coord: Not in Map";
                 }
             }// Info
             TileFinder = EditorGUILayout.Vector2IntField("Tile Finder", TileFinder);

@@ -20,22 +20,21 @@ public static class SeedController
         }
         else
             return "";
-
     }
     public static bool isSeedValid(string _Seed)
     {
-        bool isValid = true;
+        string Seed = _Seed.Replace(" ", string.Empty);
 
-        if (_Seed.Length != 8)
-            isValid = false;
+        if (Seed.Length != 8)
+            return false;
 
-        if (isValid == true)
-            for(int i = 0; i < 8; i++)
-            {
-                if (!Alphanumeric.Contains(_Seed[i].ToString()))
-                    isValid = false;
-            }
+        Seed = Seed.ToUpper();
+        for (int i = 0; i < 8; i++)
+        {
+            if (!Alphanumeric.Contains(Seed[i].ToString()))
+                return false;
+        }
 
-        return isValid;
+        return true;
     }
 }

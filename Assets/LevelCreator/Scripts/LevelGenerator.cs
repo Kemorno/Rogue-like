@@ -4,7 +4,6 @@ using UnityEngine;
 using Resources;
 
 public class LevelGenerator : MonoBehaviour {
-    
     public int size;
 
     public bool GenMesh = false;
@@ -185,7 +184,7 @@ public class LevelGenerator : MonoBehaviour {
 
         room.roomSeed = new Seed(globalPrng);
 
-        System.Random roomPrng = new System.Random(roomSeed.GetHashCode());
+        System.Random roomPrng = new System.Random(room.roomSeed.GetHashCode());
 
 
         {
@@ -469,7 +468,7 @@ public class LevelGenerator : MonoBehaviour {
         if (GenMesh == true)
         {
             MeshGenerator meshGen = GetComponent<MeshGenerator>();
-            meshGen.GenerateMesh(globalMap,1);
+            //meshGen.GenerateMesh(globalMap,1);
         }
     }
     void updateOverlay(Tile[,] Map)
