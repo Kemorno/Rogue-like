@@ -10,6 +10,8 @@
 [Pp]ackages/
 [Pp]rojectSettings/
 [Ll]ibrary/
+[Ll]og/
+UnityPackageManager/
 Assets/AssetStoreTools*
 
 # Visual Studio cache directory
