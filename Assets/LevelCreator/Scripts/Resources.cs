@@ -24,6 +24,7 @@ namespace Resources
         public GameObject roomGo { get; private set; } = null;
         public bool FinishedGeneration = false;
         public GameObject SpritesGrouper { get; private set; } = null;
+        public List<Room> Connections { get; private set; } = new List<Room>();
 
         #region Constructors
         public Room(int _RoomId, RoomSettings _RoomSettings)
@@ -69,34 +70,109 @@ namespace Resources
             }
             Bound = new Rect(Min, (Max - Min));
         }
-        public void SetCenterTile(Tile _CenterTile)
+        public bool isValid()
         {
-            CenterTile = _CenterTile;
+            if (Settings == null)
+            {
+                Debug.Log("Room Settings are Invalid. (null)");
+                return false;
+            }
+            if (Bound == null)
+            {
+                Debug.Log("Room bounds does not exist. (null)");
+                return false;
+            }
+            if (Bound == new Rect())
+            {
+                Debug.Log("Room bounds not set.");
+                return false;
+            }
+            if (CenterTile == null)
+            {
+                Debug.Log("Center Tile does not exist. (null)");
+                return false;
+            }
+            if (!Map.ContainsKey(CenterTile.Coord) || Map[CenterTile.Coord] != CenterTile)
+            {
+                Debug.Log("Center Tile is not present in room map.");
+                return false;
+            }
+            if (Color == null)
+            {
+                Debug.Log("Room has no color. (is null)");
+                return false;
+            }
+            if (Color == new Color())
+            {
+                Debug.Log("Room color not set.");
+                return false;
+            }
+            if (Color == new Color())
+            {
+                Debug.Log("Room color not set.");
+                return false;
+            }
+            if (FloorTiles.Count == 0 || FloorTiles == null)
+            {
+                Debug.Log("Room has no floor tiles.");
+                return false;
+            }
+            if (WallTiles.Count == 0 || WallTiles == null)
+            {
+                Debug.Log("Room has no wall tiles.");
+                return false;
+            }
+            if (Tiles.Count == 0 || Tiles == null)
+            {
+                Debug.Log("Room has no tiles.");
+                return false;
+            }
+            if (Map.Count == 0 || Map == null)
+            {
+                Debug.Log("Room map has no tiles or was not created.");
+                return false;
+            }
+            if (HasError == true && ErrorMessage != null)
+            {
+                Debug.Log("Room has an error.\n" + ErrorMessage);
+                return false;
+            }
+            if (Map.Count == 0 || Map == null)
+            {
+                Debug.Log("Room map has no tiles or was not created.");
+                return false;
+            }
+            if (Finished == false)
+            {
+                Debug.Log("Room was not finished.");
+                return false;
+            }
+            if (roomGo == null)
+            {
+                Debug.Log("Room has no GameObject thus having no mesh neither sprites.");
+                return false;
+            }
+            if (FinishedGeneration == false)
+            {
+                Debug.Log("Room Generation was not finalized.");
+                return false;
+            }
+            if (SpritesGrouper == null)
+            {
+                Debug.Log("Room has no Sprites GameObject thus having no sprites.");
+                return false;
+            }
+
+            return true;
         }
-        public void SetFloorTiles(List<Tile> _FloorTiles)
+        public void SetColor()
         {
-            FloorTiles = _FloorTiles;
-        }
-        public void SetWallTiles(List<Tile> _WallTiles)
-        {
-            WallTiles = _WallTiles;
-        }
-        public void SetMap(Dictionary<CoordInt, Tile> _map)
-        {
-            Map = _map;
+            System.Random prng = new System.Random(Settings.Seed.GetHashCode());
+            Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
         }
         public void resetMap()
         {
             Map = new Dictionary<CoordInt, Tile>();
-        }
-        public void SetGameObject(GameObject go)
-        {
-            roomGo = go;
-        }
-        public void SetError(string Message)
-        {
-            HasError = true;
-            ErrorMessage = Message;
         }
         public void FinishRoom()
         {
@@ -114,18 +190,54 @@ namespace Resources
                 Debug.Log("Couldn't Finish Room\n" + ErrorMessage);
             return;
         }
-        public void SetColor()
+        public string ToLongString()
         {
-            System.Random prng = new System.Random(Settings.Seed.GetHashCode());
-            Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
+            return "RoomID " + RoomId + "\nBounds: " + Bound.ToString() + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
+        }
+        public void ConnectRoom(Room other)
+        {
+            if (!Connections.Contains(other))
+                Connections.Add(other);
+            if (!other.Connections.Contains(this))
+                other.Connections.Add(this);
+        }
+        public List<GameObject> GetSprites()
+        {
+            List<GameObject> list = new List<GameObject>();
+
+            foreach (Transform transform in SpritesGrouper.transform)
+                list.Add(transform.gameObject);
+
+            return list;
+        }
+        public void SetError(string Message)
+        {
+            HasError = true;
+            ErrorMessage = Message;
+        }
+        public void SetGameObject(GameObject go)
+        {
+            roomGo = go;
+        }
+        public void SetCenterTile(Tile _CenterTile)
+        {
+            CenterTile = _CenterTile;
         }
         public void SetSpritesGrouper(GameObject GO)
         {
             roomSpritesGrouper = GO;
         }
-        public string ToLongString()
+        public void SetWallTiles(List<Tile> _WallTiles)
         {
-            return "RoomID " + RoomId + "\nBounds: " + Bound.ToString() + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
+            WallTiles = _WallTiles;
+        }
+        public void SetFloorTiles(List<Tile> _FloorTiles)
+        {
+            FloorTiles = _FloorTiles;
+        }
+        public void SetMap(Dictionary<CoordInt, Tile> _map)
+        {
+            Map = _map;
         }
         #endregion
         #region overrides
@@ -504,13 +616,23 @@ namespace Resources
         {
             return map.ContainsValue(other);
         }
+        public bool ContainsTiles(List<Tile> other)
+        {
+            foreach(Tile tile in other)
+                if (!map.ContainsValue(tile))
+                    return false;
+            return true;
+        }
         public bool ContainsCoord(CoordInt other)
         {
             return map.ContainsKey(other);
         }
-        public bool ContainsCoord(Tile other)
+        public bool ContainsCoords(List<CoordInt> other)
         {
-            return map.ContainsKey(other);
+            foreach (CoordInt coord in other)
+                if (!map.ContainsKey(coord))
+                    return false;
+            return true;
         }
         public void SetTile(Tile tile)
         {
@@ -523,7 +645,28 @@ namespace Resources
         {
             Rooms.Add(other);
         }
+        public void AddRooms(List<Room> other)
+        {
+            foreach (Room room in other)
+                Rooms.Add(room);
+        }
+        public bool ContainsRoom(Room other)
+        {
+            return Rooms.Contains(other);
+        }
+        public bool ContainsRooms(List<Room> other)
+        {
+            foreach (Room room in other)
+                if (!Rooms.Contains(room))
+                    return false;
+            return true;
+        }
         #endregion
+
+        public override int GetHashCode()
+        {
+            return map.GetHashCode() << 21 * Rooms.GetHashCode();
+        }
     }
     public class Mob
     {
@@ -539,6 +682,7 @@ namespace Resources
         public List<MobMovementEnv> MovementEnviroment { get; private set; } = new List<MobMovementEnv>();
         public MobMovementPattern MovementPattern { get; private set; } = MobMovementPattern.None;
         public double Height { get; private set; } = 0.0;
+        public Sprite Sprite { get; private set; } = null;
 
         #region Constructor
         public Mob(int _ID)
@@ -546,8 +690,6 @@ namespace Resources
             ID = _ID;
         }
         #endregion
-
-
     }
     public class Seed
     {
