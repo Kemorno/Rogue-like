@@ -675,21 +675,33 @@ namespace Resources
         public int Mana { get; private set; } = 0;
         public MobType Type { get; private set; } = MobType.Neutral;
         public AttackType AttackType { get; private set; } = AttackType.None;
-        public double AttackDamage { get; private set; } = 0.0;
-        public double AttackSpeed { get; private set; } = 0.0;
+        public float AttackDamage { get; private set; } = 0.5f;
+        public float AttackSpeed { get; private set; } = 3;
         public List<AttackEffects> AttackEffects { get; private set; } = new List<AttackEffects>();
-        public double MovementSpeed { get; private set; } = 0.0;
+        public float MovementSpeed { get; private set; } = 1;
         public List<MobMovementEnv> MovementEnviroment { get; private set; } = new List<MobMovementEnv>();
         public MobMovementPattern MovementPattern { get; private set; } = MobMovementPattern.None;
-        public double Height { get; private set; } = 0.0;
+        public float Height { get; private set; } = 2;
         public Sprite Sprite { get; private set; } = null;
+        public float Invencibility { get; private set; } = 0.5f;
 
         #region Constructor
         public Mob(int _ID)
         {
             ID = _ID;
         }
+        public Mob(int _ID, int _Health, MobType _Type)
+        {
+            ID = _ID;
+            Health = _Health;
+            Type = _Type;
+        }
         #endregion
+
+        public void RecieveDamage(int Damage)
+        {
+            Health -= Damage;
+        }
     }
     public class Seed
     {
@@ -760,6 +772,29 @@ namespace Resources
             return other.Value;
         }
         #endregion
+    }
+    public class Item
+    {
+        public ItemType Type { get; private set; } = ItemType.None;
+        public bool Consumable { get; private set; } = true;
+        public int Uses { get; private set; } = 10;
+        public bool inCooldown { get; private set; } = false;
+        public float CooldownTime { get; private set; } = 0.5f;
+        public Sprite Sprite { get; private set; } = null;
+
+        public void Use()
+        {
+            Uses--;
+            inCooldown = true;
+        }
+        public void Cooldown(bool _inCooldown)
+        {
+            inCooldown = _inCooldown;
+        }
+        public void SetType(ItemType _Type)
+        {
+            Type = _Type;
+        }
     }
 }
 namespace Enums
@@ -847,5 +882,16 @@ namespace Enums
         Ground,
         Sky,
         Water
+    }
+
+    public enum ItemType
+    {
+        None,
+        Attack,
+        Auxiliar,
+        Magic,
+        Especial,
+        Taunt,
+        Item
     }
 }
