@@ -50,3 +50,4 @@ sysinfo.txt
 *.apk
 *.meta
 *.csproj
+Logs/Packages-Update.log
