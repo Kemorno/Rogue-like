@@ -14,6 +14,11 @@
 UnityPackageManager/
 Assets/AssetStoreTools*
 
+Assembly-CSharp.csproj
+Assembly-CSharp.csproj.user
+Assembly-CSharp-Editor.csproj
+*.sln
+
 # Visual Studio cache directory
 .vs/
 
