@@ -137,76 +137,241 @@ public class CreateLevel : MonoBehaviour
 
                     StartCoroutine(EnqueueRoom(new CoordInt(0, 0), room));
                     while (!room.FinishedGeneration)
+                    {
                         yield return new WaitForSeconds(1f);
+                        room = Rooms[room.RoomId];
+                    }
                 }
                 else
                 {
-                    RoomSettings Settings = new RoomSettings(4, moreRooms.Next(25, 45), 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
+                    RoomSettings Settings = new RoomSettings(4, moreRooms.Next(35, 55), 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
                     Debug.Log("Creating room Nº " + i);
 
                     switch (t)
                     {
                         case 0:
                             Settings.SetClass(roomClass.Scientific);
+                            for (int y = 0; y <= dist / 2; y++)
+                            {
+                                for (int x = -dist / 2; x <= dist / 2; x++)
+                                {
+                                    if (x < y * (6f / 9f) && x > -y * (6f / 9f))
+                                    {
+                                        CoordInt coord = new CoordInt(x, y);
+                                        if (Map.ContainsKey(coord))
+                                            continue;
+
+                                        if (mapFlags.ContainsKey(coord))
+                                            continue;
+
+                                        mapFlags.Add(coord, true);
+
+                                        switch (moreRooms.Next(0, 4))
+                                        {
+                                            case 0:
+                                                Settings.SetSize(roomSize.Tiny);
+                                                break;
+                                            case 1:
+                                                Settings.SetSize(roomSize.Small);
+                                                break;
+                                            case 2:
+                                                Settings.SetSize(roomSize.Medium);
+                                                break;
+                                            case 3:
+                                                Settings.SetSize(roomSize.Large);
+                                                break;
+                                            case 4:
+                                                Settings.SetSize(roomSize.Big);
+                                                break;
+                                        }
+
+                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                            continue;
+
+                                        room = new Room(Rooms.Count, Settings);
+
+                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        while (!room.FinishedGeneration)
+                                        {
+                                            yield return new WaitForSeconds(2f);
+                                            room = Rooms[room.RoomId];
+                                            if (room == null)
+                                                break;
+                                            if (room.FinishedGeneration)
+                                                break;
+                                        }
+                                    }
+                                    if (room != null)
+                                        break;
+                                }
+                                if (room != null)
+                                    break;
+                            }
                             break;
                         case 1:
                             Settings.SetClass(roomClass.Physical);
+                            for (int y = 0; y >= -dist / 2; y--)
+                            {
+                                for (int x = -dist / 2; x <= dist / 2; x++)
+                                {
+                                    if (-x > y * (6f / 9f) && -x < -y * (6f / 9f))
+                                    {
+                                        CoordInt coord = new CoordInt(x, y);
+                                        if (Map.ContainsKey(coord))
+                                            continue;
+
+                                        if (mapFlags.ContainsKey(coord))
+                                            continue;
+
+                                        mapFlags.Add(coord, true);
+
+                                        switch (moreRooms.Next(0, 4))
+                                        {
+                                            case 0:
+                                                Settings.SetSize(roomSize.Tiny);
+                                                break;
+                                            case 1:
+                                                Settings.SetSize(roomSize.Small);
+                                                break;
+                                            case 2:
+                                                Settings.SetSize(roomSize.Medium);
+                                                break;
+                                            case 3:
+                                                Settings.SetSize(roomSize.Large);
+                                                break;
+                                            case 4:
+                                                Settings.SetSize(roomSize.Big);
+                                                break;
+                                        }
+
+                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                            continue;
+
+                                        room = new Room(Rooms.Count, Settings);
+
+                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        while (!room.FinishedGeneration)
+                                        {
+                                            yield return new WaitForSeconds(1f);
+                                            room = Rooms[room.RoomId];
+                                        }
+                                    }
+                                    if (room != null)
+                                        break;
+                                }
+                                if (room != null)
+                                    break;
+                            }
                             break;
                         case 2:
                             Settings.SetClass(roomClass.Spiritual);
+                            for (int x = 0; x <= dist / 2; x++)
+                            {
+                                for (int y = -dist / 2; y <= dist / 2; y++)
+                                {
+                                    if (y < x * (6f / 9f) && y > -x * (6f / 9f))
+                                    {
+                                        CoordInt coord = new CoordInt(x, y);
+                                        if (Map.ContainsKey(coord))
+                                            continue;
+
+                                        if (mapFlags.ContainsKey(coord))
+                                            continue;
+
+                                        mapFlags.Add(coord, true);
+
+                                        switch (moreRooms.Next(0, 4))
+                                        {
+                                            case 0:
+                                                Settings.SetSize(roomSize.Tiny);
+                                                break;
+                                            case 1:
+                                                Settings.SetSize(roomSize.Small);
+                                                break;
+                                            case 2:
+                                                Settings.SetSize(roomSize.Medium);
+                                                break;
+                                            case 3:
+                                                Settings.SetSize(roomSize.Large);
+                                                break;
+                                            case 4:
+                                                Settings.SetSize(roomSize.Big);
+                                                break;
+                                        }
+
+                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                            continue;
+
+                                        room = new Room(Rooms.Count, Settings);
+
+                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        while (!room.FinishedGeneration)
+                                        {
+                                            yield return new WaitForSeconds(1f);
+                                            room = Rooms[room.RoomId];
+                                        }
+                                    }
+                                    if (room != null)
+                                        break;
+                                }
+                                if (room != null)
+                                    break;
+                            }
                             break;
                         case 3:
                             Settings.SetClass(roomClass.Social);
-                            break;
-                    }
-
-                    for (int y = 0; y <= dist / 2; y++)
-                    {
-                        for (int x = -dist / 2; x <= dist / 2; x++)
-                        {
-                            if (x < y * (6f / 9f) && x > -y * (6f / 9f))
+                            for (int x = 0; x >= -dist / 2; x--)
                             {
-                                CoordInt coord = new CoordInt(x, y);
-                                if (Map.ContainsKey(coord))
-                                    continue;
-
-                                if (mapFlags.ContainsKey(coord))
-                                    continue;
-
-                                mapFlags.Add(coord, true);
-
-                                switch (moreRooms.Next(0, 4))
+                                for (int y = -dist / 2; y <= dist / 2; y++)
                                 {
-                                    case 0:
-                                        Settings.SetSize(roomSize.Tiny);
-                                        break;
-                                    case 1:
-                                        Settings.SetSize(roomSize.Small);
-                                        break;
-                                    case 2:
-                                        Settings.SetSize(roomSize.Medium);
-                                        break;
-                                    case 3:
-                                        Settings.SetSize(roomSize.Large);
-                                        break;
-                                    case 4:
-                                        Settings.SetSize(roomSize.Big);
+                                    if (-y > x * (6f / 9f) && -y < -x * (6f / 9f))
+                                    {
+                                        CoordInt coord = new CoordInt(x, y);
+                                        if (Map.ContainsKey(coord))
+                                            continue;
+
+                                        if (mapFlags.ContainsKey(coord))
+                                            continue;
+
+                                        mapFlags.Add(coord, true);
+
+                                        switch (moreRooms.Next(0, 4))
+                                        {
+                                            case 0:
+                                                Settings.SetSize(roomSize.Tiny);
+                                                break;
+                                            case 1:
+                                                Settings.SetSize(roomSize.Small);
+                                                break;
+                                            case 2:
+                                                Settings.SetSize(roomSize.Medium);
+                                                break;
+                                            case 3:
+                                                Settings.SetSize(roomSize.Large);
+                                                break;
+                                            case 4:
+                                                Settings.SetSize(roomSize.Big);
+                                                break;
+                                        }
+
+                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                            continue;
+
+                                        room = new Room(Rooms.Count, Settings);
+
+                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        while (!room.FinishedGeneration)
+                                        {
+                                            yield return new WaitForSeconds(1f);
+                                            room = Rooms[room.RoomId];
+                                        }
+                                    }
+                                    if (room != null)
                                         break;
                                 }
-                                
-                                if (NearTiles(coord, (int)Settings.Size / 2))
-                                    continue;
-
-                                room = new Room(Rooms.Count, Settings);
-
-                                StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
-                                while (!room.FinishedGeneration)
-                                    yield return new WaitForSeconds(1f);
+                                if (room != null)
+                                    break;
                             }
-                            if (room != null)
-                                break;
-                        }
-                        if (room != null)
                             break;
                     }
                 }
@@ -293,9 +458,7 @@ public class CreateLevel : MonoBehaviour
             roomCreation.Stop();
 
             while (!room.FinishedGeneration)
-            {
                 yield return new WaitForSeconds(2f);
-            }
             if (room != null)
             {
                 if (!room.Finished)
@@ -322,11 +485,9 @@ public class CreateLevel : MonoBehaviour
             else if (room == null)
             {
                 Debug.Log("Cannot Create Room Here.");
-                Destroy(room.SpritesGrouper);
                 break;
             }
         }
-        yield return null;
     }
     private IEnumerator CreateRoomCoroutine(CoordInt startCoord, Room room)
     {
@@ -336,7 +497,7 @@ public class CreateLevel : MonoBehaviour
         GameObject roomGo = new GameObject()
         {
             name = "Room Sprites"
-        }
+        };
         room.SetSpritesGrouper(roomGo);
         {
             room.resetMap();
@@ -351,13 +512,13 @@ public class CreateLevel : MonoBehaviour
                     Tile tile = (Map.ContainsKey(coord)) ? new Tile(Map[coord]) : new Tile(coord, (random < room.Settings.RandomFillPercent) ? tileType.Wall : tileType.Floor);
                     room.Map.Add(coord, tile);
 
-                    if (x >= startCoord.x - (int)room.Settings.Size-6 && y >= startCoord.y - (int)room.Settings.Size - 6 && x <= startCoord.x + (int)room.Settings.Size - 6 && y <= startCoord.y + (int)room.Settings.Size - 6)
+                    if (x >= startCoord.x - 2 && y >= startCoord.y - 2 && x <= startCoord.x + 2 && y <= startCoord.y + 2)
                     {
                         if (tile.RoomId != room.RoomId && tile.RoomId != -1)
                         {
                             room.FinishedGeneration = true;
                             Destroy(room.SpritesGrouper);
-                            yield return null;
+                            yield break;
                         }
                         if (startCoord == coord)
                             room.SetCenterTile(room.Map[coord]);
@@ -376,40 +537,52 @@ public class CreateLevel : MonoBehaviour
                 }
             }
         }//Raw Room
-
         if (Settings.SmoothingMultiplier > 0)
         {
             {
-
                 for (int smooth = 0; smooth < room.Settings.SmoothingMultiplier; smooth++)
                 {
-                    Queue<Tile> SmoothingQueue = new Queue<Tile>();
+                    Queue<Tile> queue = new Queue<Tile>();
+                    queue.Enqueue(room.CenterTile);
 
-                    SmoothingQueue.Enqueue(room.CenterTile);
+                    List<CoordInt> MapFlags = new List<CoordInt>();
+                    MapFlags.Add(room.CenterTile.Coord);
 
-                    while (SmoothingQueue.Count > 0)
+                    while (queue.Count > 0)
                     {
-                        Tile tile = SmoothingQueue.Dequeue();
+                        Tile cur = queue.Dequeue();
 
-                        int wallCount = CountNearWallTiles(tile.Coord, room.Map);
+                        int wallCount = CountNearWallTiles(cur.Coord, room.Map);
 
                         if (wallCount > room.Settings.ComparisonFactor)
-                            tile.SetType(tileType.Wall);
+                            cur.SetType(tileType.Wall);
                         else if (wallCount < room.Settings.ComparisonFactor)
-                            tile.SetType(tileType.Floor);
+                            cur.SetType(tileType.Floor);
 
-                        SpriteRenderer sr = room.SpritesGrouper.transform.Find("Room " + room.RoomId + " : " + tile.Coord.ToString()).GetComponent<SpriteRenderer>();
-                        sr.color = (tile.Type == tileType.Wall) ? Color.black : Color.white;
+                        SpriteRenderer sr = room.SpritesGrouper.transform.Find("Room " + room.RoomId + " : " + cur.Coord.ToString()).GetComponent<SpriteRenderer>();
+                        sr.color = (cur.Type == tileType.Wall) ? Color.black : Color.white;
 
-                        for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
+
+                        for (int NeighbourX = cur.Coord.x - 1; NeighbourX <= cur.Coord.x + 1; NeighbourX++)
                         {
-                            for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
+                            for (int NeighbourY = cur.Coord.y - 1; NeighbourY <= cur.Coord.y + 1; NeighbourY++)
                             {
                                 CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
 
-                                if(tile.Coord != curCoord)
-                                    if (room.Map.ContainsKey(curCoord))
-                                        SmoothingQueue.Enqueue(room.Map[curCoord]);
+                                if (cur.Coord.isAdjacent(curCoord))
+                                {
+                                    if (!MapFlags.Contains(curCoord))
+                                    {
+                                        MapFlags.Add(curCoord);
+
+                                        Tile nextTile = room.Map.ContainsKey(curCoord) ? room.Map[curCoord] : null;
+
+                                        if (nextTile != null)
+                                        {
+                                            queue.Enqueue(nextTile);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -476,12 +649,12 @@ public class CreateLevel : MonoBehaviour
                         }
                         List<GameObject> goToRemove = new List<GameObject>();
 
-                        foreach (GameObject child in room.SpritesGrouper.transform)
+                        foreach (Transform child in room.SpritesGrouper.transform)
                         {
-                            CoordInt curCoord = new CoordInt((int)child.transform.position.x, (int)child.transform.position.y);
+                            CoordInt curCoord = new CoordInt((int)child.position.x, (int)child.position.y);
 
                             if (room.Map[curCoord].RoomId != room.RoomId)
-                                goToRemove.Add(child);
+                                goToRemove.Add(child.gameObject);
                         }
 
                         foreach (GameObject go in goToRemove)

@@ -121,7 +121,7 @@ namespace Resources
         }
         public void SetSpritesGrouper(GameObject GO)
         {
-            roomSpritesGrouper = GO;
+            SpritesGrouper = GO;
         }
         public string ToLongString()
         {
