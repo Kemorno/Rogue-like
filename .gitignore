@@ -51,3 +51,9 @@ sysinfo.txt
 *.meta
 *.csproj
 Logs/Packages-Update.log
+Assets/Teste/Sprites/Thumbs.db
+Assets/Teste/Sprites/Isaac.png
+Assets/LevelCreator/Shader/OverlayMaterial.mat
+Assets/LevelCreator/Shader/MapMaterial.mat
+Assets/LevelCreator/Scripts/Grid Cell.psd
+Assets/LevelCreator/Cave.mat
