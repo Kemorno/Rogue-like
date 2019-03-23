@@ -19,7 +19,7 @@ public static class SeedController
             return seed;
         }
         else
-            return "";
+            return "Seed Not Valid";
     }
     public static bool isSeedValid(string _Seed)
     {

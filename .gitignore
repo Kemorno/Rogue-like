@@ -11,8 +11,14 @@
 [Pp]rojectSettings/
 [Ll]ibrary/
 [Ll]og/
+[Ll]ogs/
 UnityPackageManager/
 Assets/AssetStoreTools*
+
+Assembly-CSharp.csproj
+Assembly-CSharp.csproj.user
+Assembly-CSharp-Editor.csproj
+*.sln
 
 # Visual Studio cache directory
 .vs/
@@ -45,3 +51,11 @@ sysinfo.txt
 *.apk
 *.meta
 *.csproj
+
+*.db
+*.png
+*.mat
+*.psd
+*.jpg
+*.gif
+
