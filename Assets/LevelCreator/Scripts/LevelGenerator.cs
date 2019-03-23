@@ -249,30 +249,16 @@ public class LevelGenerator : MonoBehaviour {
             }
         } // Room Smoothing
         {
-            Tile[,] checkMap = Tilemap.TransferMap(roomMap, globalMap, RoomBoundMin);
-            
-            floorTiles = GetFloorTiles(origin, checkMap);
-            wallTiles = GetWallTiles(origin, checkMap);
-
-            tileCount = floorTiles.Count;
-
-            if (floorTiles.Count == 0 || wallTiles.Count == 0)
-            {
-                Debug.Log("Room is coliding, try again");
-                room.isValid = false;
-                return room;
-            }
         } // Room Check
 
         if (tileCount > roomArea / 3f && room.isValid)
         {
-            roomMap = Tilemap.ChangeRoomID(roomMap, floorTiles, wallTiles, room.RoomID, RoomBoundMin);
+
 
             room.roomTiles = floorTiles;
             room.wallTiles = wallTiles;
 
             room.roomMap = roomMap;
-            globalMap = Tilemap.TransferMap(roomMap, globalMap, RoomBoundMin);
 
             CreateMesh();
 
@@ -320,7 +306,6 @@ public class LevelGenerator : MonoBehaviour {
     public void LevelCreate(bool firstRoomIsSpawn = true)
     {
         Camera.main.orthographicSize = size / 2f + size / 20f;
-        globalMap = Tilemap.newMap(size);
 
         Rooms = new List<Room>();
         if (randomSeed)
