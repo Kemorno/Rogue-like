@@ -108,6 +108,8 @@ public class CreateLevel : MonoBehaviour
 
         Rooms = new List<Room>();
         Map.Clear();
+        RoomCreationQueue.Clear();
+        StopCoroutine(RunQueue());
     }
     
 
@@ -130,7 +132,7 @@ public class CreateLevel : MonoBehaviour
                     Debug.Log("Creating Initial Room");
                     i--;
 
-                    RoomSettings Settings = new RoomSettings(4, 20, 4,
+                    RoomSettings Settings = new RoomSettings(4, 30, 4,
                         roomSize.Tiny, roomType.Spawn, roomClass.Neutral);
 
                     room = new Room(Rooms.Count, Settings);
@@ -138,14 +140,28 @@ public class CreateLevel : MonoBehaviour
                     StartCoroutine(EnqueueRoom(new CoordInt(0, 0), room));
                     while (!room.FinishedGeneration)
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(.1f);
                         room = Rooms[room.RoomId];
                     }
                 }
                 else
                 {
-                    RoomSettings Settings = new RoomSettings(4, moreRooms.Next(35, 55), 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
+                    RoomSettings Settings = new RoomSettings(4, moreRooms.Next(45, 65), 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
                     Debug.Log("Creating room Nº " + i);
+                    {
+                        int roomSizeChance = moreRooms.Next(0, 100);
+
+                        if (roomSizeChance > 60 || i == 0)
+                            Settings.SetSize(roomSize.Tiny);
+                        else if (roomSizeChance > 55)
+                            Settings.SetSize(roomSize.Small);
+                        else if (roomSizeChance > 35)
+                            Settings.SetSize(roomSize.Medium);
+                        else if (roomSizeChance > 10)
+                            Settings.SetSize(roomSize.Large);
+                        else
+                        Settings.SetSize(roomSize.Big);
+                    }
 
                     switch (t)
                     {
@@ -166,45 +182,27 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Settings.SetSize(roomSize.Tiny);
-                                                break;
-                                            case 1:
-                                                Settings.SetSize(roomSize.Small);
-                                                break;
-                                            case 2:
-                                                Settings.SetSize(roomSize.Medium);
-                                                break;
-                                            case 3:
-                                                Settings.SetSize(roomSize.Large);
-                                                break;
-                                            case 4:
-                                                Settings.SetSize(roomSize.Big);
-                                                break;
-                                        }
-
-                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
 
-                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
                                         {
-                                            yield return new WaitForSeconds(2f);
+                                            yield return new WaitForSeconds(.1f);
                                             room = Rooms[room.RoomId];
-                                            if (room == null)
-                                                break;
-                                            if (room.FinishedGeneration)
-                                                break;
                                         }
                                     }
-                                    if (room != null)
+                                    if (room == null)
+                                        continue;
+                                    if (room.isValid())
                                         break;
+                                    x++;
                                 }
-                                if (room != null)
+                                if (room == null)
+                                    continue;
+                                if (room.isValid())
                                     break;
                             }
                             break;
@@ -225,41 +223,27 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Settings.SetSize(roomSize.Tiny);
-                                                break;
-                                            case 1:
-                                                Settings.SetSize(roomSize.Small);
-                                                break;
-                                            case 2:
-                                                Settings.SetSize(roomSize.Medium);
-                                                break;
-                                            case 3:
-                                                Settings.SetSize(roomSize.Large);
-                                                break;
-                                            case 4:
-                                                Settings.SetSize(roomSize.Big);
-                                                break;
-                                        }
-
-                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
 
-                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
                                         {
-                                            yield return new WaitForSeconds(1f);
+                                            yield return new WaitForSeconds(.1f);
                                             room = Rooms[room.RoomId];
                                         }
                                     }
-                                    if (room != null)
+                                    if (room == null)
+                                        continue;
+                                    if (room.isValid())
                                         break;
+                                    x++;
                                 }
-                                if (room != null)
+                                if (room == null)
+                                    continue;
+                                if (room.isValid())
                                     break;
                             }
                             break;
@@ -280,41 +264,27 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Settings.SetSize(roomSize.Tiny);
-                                                break;
-                                            case 1:
-                                                Settings.SetSize(roomSize.Small);
-                                                break;
-                                            case 2:
-                                                Settings.SetSize(roomSize.Medium);
-                                                break;
-                                            case 3:
-                                                Settings.SetSize(roomSize.Large);
-                                                break;
-                                            case 4:
-                                                Settings.SetSize(roomSize.Big);
-                                                break;
-                                        }
-
-                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
 
-                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
                                         {
-                                            yield return new WaitForSeconds(1f);
+                                            yield return new WaitForSeconds(.1f);
                                             room = Rooms[room.RoomId];
                                         }
                                     }
-                                    if (room != null)
+                                    if (room == null)
+                                        continue;
+                                    if (room.isValid())
                                         break;
+                                    x++;
                                 }
-                                if (room != null)
+                                if (room == null)
+                                    continue;
+                                if (room.isValid())
                                     break;
                             }
                             break;
@@ -335,41 +305,26 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        switch (moreRooms.Next(0, 4))
-                                        {
-                                            case 0:
-                                                Settings.SetSize(roomSize.Tiny);
-                                                break;
-                                            case 1:
-                                                Settings.SetSize(roomSize.Small);
-                                                break;
-                                            case 2:
-                                                Settings.SetSize(roomSize.Medium);
-                                                break;
-                                            case 3:
-                                                Settings.SetSize(roomSize.Large);
-                                                break;
-                                            case 4:
-                                                Settings.SetSize(roomSize.Big);
-                                                break;
-                                        }
-
-                                        if (NearTiles(coord, (int)Settings.Size / 2))
+                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
 
-                                        StartCoroutine(EnqueueRoom(new CoordInt(x, y), room));
+                                        StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
                                         {
-                                            yield return new WaitForSeconds(1f);
+                                            yield return new WaitForSeconds(2f);
                                             room = Rooms[room.RoomId];
                                         }
                                     }
-                                    if (room != null)
+                                    if (room == null)
+                                        continue;
+                                    if (room.isValid())
                                         break;
                                 }
-                                if (room != null)
+                                if (room == null)
+                                    continue;
+                                if (room.isValid())
                                     break;
                             }
                             break;
@@ -428,7 +383,7 @@ public class CreateLevel : MonoBehaviour
 
             while (!room.FinishedGeneration)
             {
-                yield return new WaitForSeconds(2f);
+                yield return new WaitForSeconds(.1f);
                 room = Rooms[room.RoomId];
             }
 
@@ -458,7 +413,7 @@ public class CreateLevel : MonoBehaviour
             roomCreation.Stop();
 
             while (!room.FinishedGeneration)
-                yield return new WaitForSeconds(2f);
+                yield return new WaitForSeconds(.1f);
             if (room != null)
             {
                 if (!room.Finished)
@@ -473,6 +428,8 @@ public class CreateLevel : MonoBehaviour
                     else
                     {
                         Destroy(room.SpritesGrouper);
+                        room.FinishedGeneration = true;
+                        Rooms[room.RoomId] = room;
                         break;
                     }
                 }
@@ -485,6 +442,11 @@ public class CreateLevel : MonoBehaviour
             else if (room == null)
             {
                 Debug.Log("Cannot Create Room Here.");
+                room = new Room(legacy)
+                {
+                    FinishedGeneration = true
+                };
+                room.SetError("Room is null");
                 break;
             }
         }
