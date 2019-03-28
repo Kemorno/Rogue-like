@@ -182,7 +182,7 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
+                                        if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
@@ -204,6 +204,7 @@ public class CreateLevel : MonoBehaviour
                                     continue;
                                 if (room.isValid())
                                     break;
+                                y++;
                             }
                             break;
                         case 1:
@@ -223,7 +224,7 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
+                                        if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
@@ -245,6 +246,7 @@ public class CreateLevel : MonoBehaviour
                                     continue;
                                 if (room.isValid())
                                     break;
+                                y--;
                             }
                             break;
                         case 2:
@@ -264,7 +266,7 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
+                                        if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
@@ -280,12 +282,13 @@ public class CreateLevel : MonoBehaviour
                                         continue;
                                     if (room.isValid())
                                         break;
-                                    x++;
+                                    y++;
                                 }
                                 if (room == null)
                                     continue;
                                 if (room.isValid())
                                     break;
+                                x++;
                             }
                             break;
                         case 3:
@@ -305,7 +308,7 @@ public class CreateLevel : MonoBehaviour
 
                                         mapFlags.Add(coord, true);
 
-                                        if (NearTiles(coord, (int)((int)Settings.Size / 1.5f)))
+                                        if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
                                         room = new Room(Rooms.Count, Settings);
@@ -321,11 +324,13 @@ public class CreateLevel : MonoBehaviour
                                         continue;
                                     if (room.isValid())
                                         break;
+                                    y++;
                                 }
                                 if (room == null)
                                     continue;
                                 if (room.isValid())
                                     break;
+                                x--;
                             }
                             break;
                     }
