@@ -795,6 +795,14 @@ namespace Resources
         {
             Type = _Type;
         }
+        public void SetSprite(Sprite _Sprite)
+        {
+            Sprite = _Sprite;
+        }
+        public void isConsumable(bool _isConsumable)
+        {
+            Consumable = _isConsumable;
+        }
     }
 }
 namespace Enums
