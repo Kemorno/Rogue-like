@@ -194,7 +194,7 @@ public class PlayerController : MonoBehaviour
         }
         if (other.tag == "Item")
         {
-            ItemController i = other.GetComponent<ItemController>();
+            ItemController item = other.GetComponent<ItemController>();
             switch (i.item.Type)
             {
                 case ItemType.None:
@@ -229,16 +229,14 @@ public class PlayerController : MonoBehaviour
                     break;
                 case ItemType.Item:
                     {
-                        int index = 0;
-                        foreach (Item item in Items)
+                        for(int i = 0; i < Items.Length; i++)
                         {
-                            if (item == null)
+                            if (Items[i] == null)
                             {
-                                Items[index] = i.item;
+                                Items[i] = item.item;
                                 Destroy(other);
                                 break;
                             }
-                            index++;
                         }
                     }
                     break;
