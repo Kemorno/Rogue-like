@@ -804,6 +804,52 @@ namespace Resources
             Consumable = _isConsumable;
         }
     }
+
+    public class Effect
+    {
+        public int ID { get; private set; };
+        public bool Active { get; private set; } = false;
+        public ActivationType ActivationType { get; private set; } = ActivationType.None;
+        public float Damage { get; private set; } = 0;
+        public float duration { get; private set; } = 0;
+        public float interval { get; private set; } = 0;
+        public List<Modifier> ModifierBlacklist { get; private set; } = new List<Modifier>();
+        public List<Effect> EffectBlacklist { get; private set; } = new List<Effect>();
+        public Dictionary<Modifier, float> ModifiedBy { get; private set; } = new Dictionary<Modifier, float>();
+        public List<Effect> InflictIf { get; private set; } = new List<Effect>();
+        public List<Effect> TriggerIf { get; private set; } = new List<Effect>();
+        public List<Effect> StopIf { get; private set; } = new List<Effect>();
+        public List<Effect> RemoveIf { get; private set; } = new List<Effect>();
+        /*
+         * projetil vai ser atirado e vai conter classes de efeitos
+         * quando acertar o objetivo vai verificar se o objetivo tem algum modifier na black list
+         * vai verificar se tem algum efeito na black list
+         * vai verificar se tem os efeitos no InflictIf
+         * se tiver vai começar um IEnumerator
+         * 
+         * sempre que o player receber ou perder um efeito ou um modifier sera verificado o
+         * StopIf e o RemoveIf para saber se o player ganhou ou perdeu algum efeito necessario
+         * 
+         * caso as condições do RemoveIf sejam verdadeiras, a classe será apagada
+         * 
+         * se a duração for 0 o efeito é infinito
+         * 
+         * ao ser inflingido começará um ienumerator contando a duração e no fim dela a classe será apagada
+         * enquanto o efeito estiver ativo começará um ienumerator que com um waitforseconds(interval)
+         * 
+         * onEnter,  onExit por implantar
+         * onEnter - quando a classe for criada ira fazer o que está no metodo, caso queira colocar buff ou debuffs a stats usar modifier
+         * onExit - quando a classe for para ser destruida chamar este metodo, para retirar ou colocar debuffs usar modifier
+         * 
+         * classe modifier terá que ter suporte para modificar os stats do player
+         * 
+         * pensar em colocar as Lists como Arrays para melhor performance
+        */
+    }
+    public class Modifier
+    {
+
+    }
 }
 namespace Enums
 {
@@ -902,4 +948,16 @@ namespace Enums
         Taunt,
         Item
     }
+
+    #region Effects
+
+    public enum ActivationType
+    {
+        None,
+        Once,
+        Periodical,
+        Triggered
+    }
+
+    #endregion
 }
