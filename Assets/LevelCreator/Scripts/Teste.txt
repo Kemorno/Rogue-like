@@ -1,0 +1,89 @@
+ATTACK
+{
+	TYPE =
+	DAMAGE =
+	EFFECTS
+	{
+		POISON = damage:duration;
+		ELECTRIC = damage:duration;
+		
+		TYPE:DAMAGE DEALT:DURATION
+		Case DAMAGE DEALT 0 = damage is default
+		Case Duration 0 duration is infinite(or until stop when)
+	}
+	Movement = 
+	
+}
+DEFINITION
+{
+//EFFECTS are suposed to run out, modifiers are suposed to be permanent
+
+	EFFECTS
+	{
+		ELECTRIC
+		{
+		PERIODICAL //Activation type, choose one
+		//ONCE - ACTIVATED ONLY ONCE WHEN PLAYER IS HIT BY IE.:Gets buff of +1 strenght
+		//PERIODICAL - ACTIVATED EVERY X AMOUNT OF TIMED IE.:Gets damaged by fire every 2 seconds
+		//TRIGGERED - ACTIVATED WHEN SOMETHING ELSE HAPPENS IE.:IF PLAYER IS WET AND HIT BY ELETRIC BULLETS BEGIN EFFECT ELECTRIFIED
+		
+		DAMAGE = 2//Damage done when activated
+		
+		MODIFIERBLACKLIST
+			{
+			//if the subject has any of this modifier the effect can't be inflicted
+			RUBERRY
+			}
+		
+		EFFECTBLACKLIST
+			{
+			//if the subject has any of this effects the effect can't be inflicted
+			DRY
+			}
+			
+		MODIFIEDBY
+			{
+			WOODEN:2
+			METAL:0.5
+			RUUBER:0
+			
+			}
+		
+		INFLICTWHEN
+			{
+			//conditions needed to be inflicted
+			SOAKED
+			}
+		TRIGGERWHEN
+			{
+			//conditions needed to be triggered
+			}
+		STOPWHEN
+			{
+			//conditions needed to stop the effect PS:stops the effect activation but is still in player
+			WET
+			}
+		REMOVEWHEN
+			{
+			//conditions needed to remove the effect from the player
+			NOT SOAKED
+			NOT WET
+			}
+			
+		ONENTER
+			{
+			//effects activated when player obtains the effect
+			MOB:INT + 0.1
+			}
+		ONSTAY
+			{
+			//effects activated when this is on
+			}
+		ONLEAVE
+			{
+			//effects activated when it wears out
+			MOB:INT - 0.1
+			}
+		}
+	}
+}
