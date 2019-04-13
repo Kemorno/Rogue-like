@@ -1,0 +1,85 @@
+README for the File reader program
+
+Use \\ // or ## to comment a line, it remove everything after those chars
+
+The program is not CaseSensitive, all text is covnerted to uppercase
+
+integer is a full number
+float is a number with a collon
+string is any type of word
+
+DEFINITION
+{
+	EFFECT
+	{
+		NAME=string
+		The name of the effect, it must be unique and it will be the ID of your effect, Spaces will be Ignored and it will appear all Upper Case in game
+
+		FREQUENCY=Once/Periodical/Triggered
+		Frequency is how frequent the effect will do damage to the mob that it has inflicted
+		Once, activates once and then its deactivated
+		Periodical, is activated every x amount of seconds (x being Interval)
+		Triggered, is activated when a set of conditions is met (condition in TriggerWhen)
+		
+		DAMAGE = (float)
+		Damage is the base damage done by the effect everytime it is activated
+
+		DURATION = (float)
+		Duration is the time in seconds before the effect wears out, 0 = infinite.
+
+		INTERVAL = (float)
+		Interval is the amount of seconds each activation (only applied to Periodical Frequency)
+			
+		MODIFIEDBY
+			{
+			TypeOfModifier:Modifier:ModifyBy
+
+			This is used to modify a value of the Effect if the Modifier is present in the Mob that was inflicted
+
+			TypeOfModifier can be Damage, Duration or Interval, each one Modifing the respective number by the number in ModifyBy
+			Modifier is the Modifier Name
+			ModifyBy must be Greater than 0
+
+			IE.:
+			Damage:Wood:2
+			If the mob has a Modifier called "Wood" the Damage will be modified by 2
+			Lets say that the base damage of this effect is 10, if the mob has a Modifier called Wood, the Damage will be 2*10 = 20.
+
+			All the values in this are stacked.
+			}
+
+		INFLICTWHEN
+			{
+			TypeNeeded:ComparisonFactor:(float) or (string)
+
+			TypeNeeded is the what is going to be checked if, you can use Health or Effect
+			ComparisonFactor is the how you are going to compare it to
+			SUPPORTS >, >=, =, <=, <, HAVE(only for Strings), NOTHAVE(only for Strings)
+
+			IE.:
+			Health:>:100
+			EFFECT:HAVE:WOOD
+			EFFECT:NOTHAVE:SOAKED
+
+			in this case for the effect to be inflicted in a mob it has to:
+			have health greater than 100 points
+			have the effect of name Wood
+			not have the effect named Soaked
+
+			if any of this conditions is not met, the effect will not be inflicted.
+			}
+		TRIGGERWHEN
+			{
+			TypeNeeded:ComparisonFactor:(float) or (string)
+			
+			}
+		STOPWHEN
+			{
+			TypeNeeded:ComparisonFactor:(float) or (string)
+			}
+		REMOVEWHEN
+			{
+			TypeNeeded:ComparisonFactor:(float) or (string)
+			}
+	}
+}
