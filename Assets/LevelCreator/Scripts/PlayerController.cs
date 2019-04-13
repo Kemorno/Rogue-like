@@ -195,7 +195,7 @@ public class PlayerController : MonoBehaviour
         if (other.tag == "Item")
         {
             ItemController item = other.GetComponent<ItemController>();
-            switch (i.item.Type)
+            switch (item.item.Type)
             {
                 case ItemType.None:
                     {

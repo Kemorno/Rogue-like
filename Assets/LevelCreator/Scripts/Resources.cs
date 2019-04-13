@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using System;
 using UnityEngine;
 using Enums;
@@ -685,6 +686,9 @@ namespace Resources
         public Sprite Sprite { get; private set; } = null;
         public float Invencibility { get; private set; } = 0.5f;
 
+        public Dictionary<string, Effect> Effects { get; private set; } = new Dictionary<string, Effect>();
+        public Dictionary<string, Modifier> Modifiers { get; private set; } = new Dictionary<string, Modifier>();
+
         #region Constructor
         public Mob(int _ID)
         {
@@ -807,19 +811,190 @@ namespace Resources
 
     public class Effect
     {
-        public int ID { get; private set; };
+        public string Name { get; private set; } = "";
         public bool Active { get; private set; } = false;
         public ActivationType ActivationType { get; private set; } = ActivationType.None;
         public float Damage { get; private set; } = 0;
         public float duration { get; private set; } = 0;
-        public float interval { get; private set; } = 0;
-        public List<Modifier> ModifierBlacklist { get; private set; } = new List<Modifier>();
-        public List<Effect> EffectBlacklist { get; private set; } = new List<Effect>();
-        public Dictionary<Modifier, float> ModifiedBy { get; private set; } = new Dictionary<Modifier, float>();
-        public List<Effect> InflictIf { get; private set; } = new List<Effect>();
-        public List<Effect> TriggerIf { get; private set; } = new List<Effect>();
-        public List<Effect> StopIf { get; private set; } = new List<Effect>();
-        public List<Effect> RemoveIf { get; private set; } = new List<Effect>();
+        public float interval { get; private set; } = 1;
+        public Dictionary<string, Tuple<Modifiable, float>> ModifiedBy { get; private set; } = new Dictionary<string, Tuple<Modifiable, float>>();
+        public Dictionary<string, Tuple<string, OperatorType, string>> InflictIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
+        public Dictionary<string, Tuple<string, OperatorType, string>> TriggerIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
+        public Dictionary<string, Tuple<string, OperatorType, string>> StopIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
+        public Dictionary<string, Tuple<string, OperatorType, string>> RemoveIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
+
+        public Mob Infected { get; private set; } = null;
+
+        public Effect()
+        {
+        }
+        
+        public void SetName(string newName)
+        {
+            Name = newName;
+        }
+        public void SetActivation(ActivationType newActivation)
+        {
+            ActivationType = newActivation;
+        }
+        public void SetDamage(float newDamage)
+        {
+            Damage = newDamage;
+        }
+        public void SetDuration(float newDuration)
+        {
+            duration = newDuration;
+        }
+        public void SetInterval(float newinterval)
+        {
+            interval = newinterval;
+        }
+
+        private bool CanInflict()
+        {
+            if (!IfMethod(InflictIf))
+                return false;
+            return true;
+        }
+        private bool CanTrigger()
+        {
+            return IfMethod(TriggerIf);
+        }
+        private bool CanStop()
+        {
+            return IfMethod(StopIf);
+        }
+        private bool CanRemove()
+        {
+            return IfMethod(RemoveIf);
+        }
+
+        private void Enter()
+        {
+
+        }
+        private void Exit()
+        {
+
+        }
+
+        private bool IfMethod(Dictionary<string, Tuple<string, OperatorType, string>> rules)
+        {
+            foreach (Tuple<string, OperatorType, string> t in rules.Values)
+            {
+                switch (t.Item1.ToUpper())
+                {
+                    case "HEALTH":
+                        switch (t.Item2)
+                        {
+                            case OperatorType.BiggerThan:
+                                if (Infected.Health < float.Parse(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.BiggerOrEqualsThan:
+                                if (Infected.Health <= float.Parse(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.EqualsTo:
+                                if (Infected.Health != float.Parse(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.LowerOrEqualsThan:
+                                if (Infected.Health >= float.Parse(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.LowerThan:
+                                if (Infected.Health > float.Parse(t.Item3))
+                                    return false;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    case "EFFECT":
+                        switch (t.Item2)
+                        {
+                            case OperatorType.Have:
+                                if (!Infected.Effects.ContainsKey(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.NotHave:
+                                if (Infected.Effects.ContainsKey(t.Item3))
+                                    return false;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    case "MODIFIER":
+                        switch (t.Item2)
+                        {
+                            case OperatorType.Have:
+                                if (!Infected.Modifiers.ContainsKey(t.Item3))
+                                    return false;
+                                break;
+                            case OperatorType.NotHave:
+                                if (Infected.Modifiers.ContainsKey(t.Item3))
+                                    return false;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return true;
+        }
+        
+        private void CalculateDamage()
+        {
+            foreach(string mod in ModifiedBy.Keys)
+            {
+                if(Infected.Modifiers.ContainsKey(mod))
+                    switch (ModifiedBy[mod].Item1)
+                    {
+                        case Modifiable.Damage:
+                            Damage *= ModifiedBy[mod].Item2;
+                            break;
+                        case Modifiable.Duration:
+                            duration *= ModifiedBy[mod].Item2;
+                            break;
+                        case Modifiable.Interval:
+                            interval *= ModifiedBy[mod].Item2;
+                            break;
+                        default:
+                            break;
+                    }
+            }
+        }
+
+        public IEnumerator LifeSpan()
+        {
+            Active = true;
+
+            if (duration == 0)
+                yield return null;
+            else
+            {
+                yield return new WaitForSeconds(duration);
+                Active = false;
+            }
+        }
+        public IEnumerator DamageInterval()
+        {
+            while (Active)
+            {
+                if (Infected.Health <= 0)
+                    break;
+
+                Infected.RecieveDamage((int)Damage);
+                yield return new WaitForSeconds(interval);
+            }
+        }
+
+
         /*
          * projetil vai ser atirado e vai conter classes de efeitos
          * quando acertar o objetivo vai verificar se o objetivo tem algum modifier na black list
@@ -845,10 +1020,56 @@ namespace Resources
          * 
          * pensar em colocar as Lists como Arrays para melhor performance
         */
+
+        public string ToLongString()
+        {
+            string s = "Effect: " + Name +
+                "\nis Active? " + Active +
+                "\nActivation Type: " + ActivationType.ToString() +
+                "\nDamage: " + Damage +
+                ((duration > 0) ? "\nDuaration: " + duration : "\nDuration: Infinite") +
+                ((ActivationType == ActivationType.Periodical) ? "\nInterval: " + interval : "\nInterval: Not Applied");
+
+            s += "\nModified By";
+
+            foreach(string st in ModifiedBy.Keys)
+            {
+                s += "\n\t" + st + ": " + ModifiedBy[st].Item2;
+            }
+
+            s += "\nInflicted When";
+
+            foreach (Tuple<string, OperatorType, string> t in InflictIf.Values)
+            {
+                s += "\n\t" + t.Item1 + " " + t.Item2.ToString() + " " + t.Item3;
+            }
+
+            s += "\nTrigger When";
+
+            foreach (Tuple<string, OperatorType, string> t in TriggerIf.Values)
+            {
+                s += "\n\t" + t.Item1 + " " + t.Item2.ToString() + " " + t.Item3;
+            }
+
+            s += "\nStop When";
+
+            foreach (Tuple<string, OperatorType, string> t in StopIf.Values)
+            {
+                s += "\n\t" + t.Item1 + " " + t.Item2.ToString() + " " + t.Item3;
+            }
+
+            s += "\nRemove When";
+
+            foreach (Tuple<string, OperatorType, string> t in RemoveIf.Values)
+            {
+                s += "\n\t" + t.Item1 + " " + t.Item2.ToString() + " " + t.Item3;
+            }
+            return s;
+        }
     }
     public class Modifier
     {
-
+        public string Name { get; private set; }
     }
 }
 namespace Enums
@@ -957,6 +1178,40 @@ namespace Enums
         Once,
         Periodical,
         Triggered
+    }
+
+    public enum Modifiable
+    {
+        Damage,
+        Duration,
+        Interval
+    }
+
+    public enum OperatorType
+    {
+        LowerThan,
+        LowerOrEqualsThan,
+        EqualsTo,
+        BiggerThan,
+        BiggerOrEqualsThan,
+        Have,
+        NotHave
+    }
+
+    #endregion
+
+    #region FileReader
+
+    public enum state
+    {
+        None,
+        Definition,
+        NewEffect,
+        SetModifiedBy,
+        SetInflictIfConditions,
+        SetTriggerIfConditions,
+        SetStopIfConditions,
+        SetRemoveIfConditions
     }
 
     #endregion
