@@ -817,6 +817,7 @@ namespace Resources
         public float Damage { get; private set; } = 0;
         public float duration { get; private set; } = 0;
         public float interval { get; private set; } = 1;
+        public Sprite Sprite { get; private set; } = new Sprite();
         public Dictionary<string, Tuple<Modifiable, float>> ModifiedBy { get; private set; } = new Dictionary<string, Tuple<Modifiable, float>>();
         public Dictionary<string, Tuple<string, OperatorType, string>> InflictIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
         public Dictionary<string, Tuple<string, OperatorType, string>> TriggerIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
@@ -828,7 +829,7 @@ namespace Resources
         public Effect()
         {
         }
-        
+        #region Methods
         public void SetName(string newName)
         {
             Name = newName;
@@ -993,7 +994,7 @@ namespace Resources
                 yield return new WaitForSeconds(interval);
             }
         }
-
+        #endregion
 
         /*
          * projetil vai ser atirado e vai conter classes de efeitos
@@ -1070,6 +1071,55 @@ namespace Resources
     public class Modifier
     {
         public string Name { get; private set; }
+    }
+
+    public class Sprite
+    {
+        public string Path { get; private set; } = string.Empty;
+        public bool Animated { get; private set; } = false;
+        public Dictionary<Tuple<int, int>, Texture2D> Textures = new Dictionary<Tuple<int, int>, Texture2D>();
+
+        #region Constructors
+        public Sprite()
+        {
+        }
+        public Sprite(string path)
+        {
+            Path = path;
+        }
+        public Sprite(string path, bool animated)
+        {
+            Path = path;
+            Animated = animated;
+        }
+        public Sprite(string path, Dictionary<Tuple<int, int>, Texture2D> textures)
+        {
+            Path = path;
+            Textures = textures;
+        }
+        public Sprite(string path, bool animated, Dictionary<Tuple<int, int>, Texture2D> textures)
+        {
+            Path = path;
+            Animated = animated;
+            Textures = textures;
+        }
+        #endregion
+
+        public void SetPath(string path)
+        {
+            Path = path;
+        }
+        public void SetAnimated(bool isAnimated)
+        {
+            Animated = isAnimated;
+        }
+        public void GetSprites()
+        {
+            if(Path != string.Empty)
+            {
+                Textures = FileHandler.GetStaticSprites(Textures, Path);
+            }
+        }
     }
 }
 namespace Enums
@@ -1211,7 +1261,9 @@ namespace Enums
         SetInflictIfConditions,
         SetTriggerIfConditions,
         SetStopIfConditions,
-        SetRemoveIfConditions
+        SetRemoveIfConditions,
+        SetSprite,
+        GetSpriteSizes
     }
 
     #endregion
