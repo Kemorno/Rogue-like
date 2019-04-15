@@ -23,7 +23,7 @@ public class PlayerController : MonoBehaviour
             Debug.Log("You died");
 
         if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
-            StartCoroutine(Move(new Vector2(Input.GetAxis("Vertical"), Input.GetAxis("Horizontal"))));
+            StartCoroutine(Move(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"))));
 
         if (Input.GetMouseButton(0))
             StartCoroutine(Attack(Camera.main.ScreenToWorldPoint(Input.mousePosition)));
@@ -177,6 +177,9 @@ public class PlayerController : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         GameObject other = collision.gameObject;
+
+        Debug.Log("collided with " + other.name);
+
 
         if (other.tag == "Mob")
         {

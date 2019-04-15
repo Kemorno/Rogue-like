@@ -12,10 +12,12 @@ public class ItemController : MonoBehaviour
     private void Awake()
     {
         item = new Item();
+        item.SetType(ItemType.Item);
         item.isConsumable(false);
         item.SetSprite(Sprite);
         gameObject.AddComponent<SpriteRenderer>();
         gameObject.GetComponent<SpriteRenderer>().sprite = Sprite;
         gameObject.GetComponent<SpriteRenderer>().sortingLayerName = "Items";
+        gameObject.tag = "Item";
     }
 }

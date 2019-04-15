@@ -46,12 +46,7 @@ public class FileReader : MonoBehaviour
                     StateHist.RemoveAt(StateHist.Count - 1);
                 }
 
-
-            Debug.Log(line);
-
             line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "").Replace(" ", string.Empty);
-
-            Debug.Log(line);
 
             if (line.Contains("\\"))
                 line = line.Remove(line.IndexOf("\\"));
@@ -59,8 +54,6 @@ public class FileReader : MonoBehaviour
                 line = line.Remove(line.IndexOf("##"));
             if (line.Contains("//"))
                 line = line.Remove(line.IndexOf("//"));
-
-            Debug.Log(line);
 
             switch (state)
             {
