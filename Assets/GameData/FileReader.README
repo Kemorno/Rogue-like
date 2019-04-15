@@ -2,7 +2,7 @@ README for the File reader program
 
 Use \\ // or ## to comment a line, it remove everything after those chars
 
-The program is not CaseSensitive, all text is covnerted to uppercase
+The program is not CaseSensitive, all text is converted to uppercase
 
 integer is a full number
 float is a number with a collon
@@ -13,7 +13,7 @@ DEFINITION
 	EFFECT
 	{
 		NAME=string
-		The name of the effect, it must be unique and it will be the ID of your effect, Spaces will be Ignored and it will appear all Upper Case in game
+		The name of the effect, it must be unique and it will be the ID of your effect
 
 		FREQUENCY=Once/Periodical/Triggered
 		Frequency is how frequent the effect will do damage to the mob that it has inflicted
@@ -30,6 +30,29 @@ DEFINITION
 		INTERVAL = (float)
 		Interval is the amount of seconds each activation (only applied to Periodical Frequency)
 			
+		SPRITE
+		{
+		file=(string)
+		file is the path, starting from the current folder with the extension that the image of your effect will have
+		IE.: image.jpg
+
+		Sizes
+			{
+			(int)x(int)
+
+			Here you put the size of the textures you want to have in game, the max size is 512 pixels, it will search for the textures in order
+
+
+			IE.:
+			512x512
+			128x128
+			256x256
+			in this case it will search for the 512x512 in the furthest left part of your file
+			then it will search for the 128x128 in the furthest left after the previous size
+			and then search for the 256x256 in the furthest left after the 128x128
+			}
+		}
+
 		MODIFIEDBY
 			{
 			TypeOfModifier:Modifier:ModifyBy
@@ -51,10 +74,16 @@ DEFINITION
 		INFLICTWHEN
 			{
 			TypeNeeded:ComparisonFactor:(float) or (string)
+			Combinations:
+				EFFECT:ComparisonFactor:(string)
+					You can use in ComparisonFactor:
+						HAVE, NOTHAVE
+				HEALTH:ComparisonFactor:(float)
+					You can use in ComparisonFactor:
+						>, >=, =, <=, <
 
 			TypeNeeded is the what is going to be checked if, you can use Health or Effect
 			ComparisonFactor is the how you are going to compare it to
-			SUPPORTS >, >=, =, <=, <, HAVE(only for Strings), NOTHAVE(only for Strings)
 
 			IE.:
 			Health:>:100
