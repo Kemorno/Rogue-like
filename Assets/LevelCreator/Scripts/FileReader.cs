@@ -1,28 +1,27 @@
 ﻿using System.Collections;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using Resources;
+using System;
 using Enums;
 
-public class FileReader : MonoBehaviour
+public static class FileHandler
 {
-    private void Awake()
-    {
-        ImportFiles();
-    }
 
-    public void ImportFiles()
+    public static string Numeric = "0123456789";
+    public static string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    public static void ImportFiles()
     {
         string path = Application.dataPath + @"\GameData";
         DirectoryInfo dir = new DirectoryInfo(path);
-        FileInfo[] info = dir.GetFiles("*.txt");
-        foreach (FileInfo p in info)
-            Read(p.FullName);
+        FileInfo[] text = dir.GetFiles("*.txt");
+        foreach (FileInfo p in text)
+            ReadText(p.FullName);
     }
 
-    void Read(string path)
+    private static void ReadText(string path)
     {
         string[] lines = File.ReadAllLines(path);
 
@@ -46,7 +45,7 @@ public class FileReader : MonoBehaviour
                     StateHist.RemoveAt(StateHist.Count - 1);
                 }
 
-            line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "").Replace(" ", string.Empty);
+            line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "").Remove(line.LastIndexOf(' '));
 
             if (line.Contains("\\"))
                 line = line.Remove(line.IndexOf("\\"));
@@ -58,7 +57,7 @@ public class FileReader : MonoBehaviour
             switch (state)
             {
                 case state.None:
-                    switch (line.ToUpper())
+                    switch (line.ToUpper().Replace(" ", string.Empty))
                     {
                         case "DEFINITION":
                             StateHist.Add(state);
@@ -69,7 +68,7 @@ public class FileReader : MonoBehaviour
                     }
                     break;
                 case state.Definition:
-                    switch (line.ToUpper())
+                    switch (line.ToUpper().Replace(" ", string.Empty))
                     {
                         case "EFFECT":
                             StateHist.Add(state);
@@ -87,13 +86,13 @@ public class FileReader : MonoBehaviour
                     {
                         Effect effect = ListOfEffects[curEffect];
                         string[] separatedLine = line.Split('=');
-                        switch (separatedLine[0].ToUpper())
+                        switch (separatedLine[0].ToUpper().Replace(" ", string.Empty))
                         {
                             case "NAME":
                                 effect.SetName(separatedLine[1]);
                                 break;
                             case "FREQUENCY":
-                                switch (separatedLine[1].ToUpper())
+                                switch (separatedLine[1].ToUpper().Replace(" ", string.Empty))
                                 {
                                     case "PERIODICAL":
                                         effect.SetActivation(ActivationType.Periodical);
@@ -109,13 +108,17 @@ public class FileReader : MonoBehaviour
                                 }
                                 break;
                             case "DAMAGE":
-                                effect.SetDamage(float.Parse(separatedLine[1]));
+                                effect.SetDamage(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
                                 break;
                             case "DURATION":
-                                effect.SetDuration(float.Parse(separatedLine[1]));
+                                effect.SetDuration(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
                                 break;
                             case "INTERVAL":
-                                effect.SetInterval(float.Parse(separatedLine[1]));
+                                effect.SetInterval(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
+                                break;
+                            case "SPRITE":
+                                StateHist.Add(state);
+                                state = state.SetSprite;
                                 break;
                             case "MODIFIEDBY":
                                 StateHist.Add(state);
@@ -290,10 +293,115 @@ public class FileReader : MonoBehaviour
                         }
                     }
                     break;
+                case state.SetSprite:
+                    {
+                        Effect effect = ListOfEffects[curEffect];
+                        string[] separatedLine = line.Split(':');
+                        switch (separatedLine[0].ToUpper().Replace(" ", string.Empty))
+                        {
+                            case "ANIMATED":
+                                effect.Sprite.SetAnimated(bool.Parse(separatedLine[1]));
+                                break;
+                            case "FILE":
+                                string TexturePath = path.Remove(path.LastIndexOf('/')+1);
+                                TexturePath += separatedLine[1];
+
+                                effect.Sprite.SetPath(TexturePath);
+                                break;
+                            case "SIZE":
+                                StateHist.Add(state);
+                                state = state.GetSpriteSizes;
+                                break;
+                        }
+                    }
+                    break;
+                case state.GetSpriteSizes:
+                    {
+                        Effect effect = ListOfEffects[curEffect];
+                        string[] separatedLine = line.Split('x');
+
+                        separatedLine[0] = FilterString(separatedLine[0], Numeric);
+                        separatedLine[1] = FilterString(separatedLine[1], Numeric);
+
+                        Tuple<int, int> Size = new Tuple<int, int>(int.Parse(separatedLine[0]), int.Parse(separatedLine[1]));
+                        Texture2D Texture = new Texture2D(int.Parse(separatedLine[0]), int.Parse(separatedLine[1])
+                            {
+                            alphaIsTransparency = true,
+                            filterMode = FilterMode.Point,
+                            wrapMode = TextureWrapMode.Clamp
+                            };
+
+                        effect.Sprite.Textures.Add(Size, Texture);
+                    }
+                    break;
             }
         }
 
         foreach (Effect e in ListOfEffects.Values)
             Debug.Log(e.ToLongString());
+    }
+
+    private static Texture2D ReadImage(string path)
+    {
+        /* 
+         * 512*512, 256*256, 128*128, 64*64, 32*32, 16*16
+         * 512*512, 768*256, 896*128, 960*64, 992*32, 1008*16
+        */
+
+        Texture2D Texture = new Texture2D(1008, 512)
+        {
+            alphaIsTransparency = true,
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        Texture.LoadImage(File.ReadAllBytes(path));
+        Texture.Apply();
+
+        return Texture;
+    }
+
+    public static Dictionary<Tuple<int, int>, Texture2D> GetStaticSprites(Dictionary<Tuple<int, int>, Texture2D> Textures, string path)
+    {
+        Texture2D text = ReadImage(path);
+
+        foreach (Tuple<int, int> t in Textures.Keys)
+        {
+            Textures[t].SetPixels(text.GetPixels(t.Item1, text.height - t.Item2, t.Item1, t.Item2));
+            Textures[t].Apply();
+        }
+
+        return Textures;
+    }
+
+    private static string RemoveString(string String, string Remove)
+    {
+        string s = String;
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (Remove.Contains(s[i].ToString()))
+            {
+                s = s.Remove(s.IndexOf(s[i]), 1);
+                i--;
+            }
+        }
+
+        return s;
+    }
+    private static string FilterString(string String, string Filter)
+    {
+        string s = String;
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (!Filter.Contains(s[i].ToString()))
+            {
+                s = s.Remove(s.IndexOf(s[i]), 1);
+                i--;
+            }
+        }
+
+        return s;
     }
 }
