@@ -8,6 +8,20 @@ DEFINITION
 		DAMAGE = 2//Damage done when activated
 		DURATION = 2//when will it wear out
 		INTERVAL = 0,1//Interval between periodic activation
+
+		SPRITE
+		{
+		file=string
+		Animated=bool
+		Sizes
+			{
+			512x512
+			256x256
+			128x128
+			64x64
+			32x32
+			}
+		}
 			
 		MODIFIEDBY
 			{
