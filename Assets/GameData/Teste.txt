@@ -11,8 +11,8 @@ DEFINITION
 
 		SPRITE
 		{
-		file=string
-		Animated=bool
+		file=Test.jpg
+		Animated=false
 		Sizes
 			{
 			512x512

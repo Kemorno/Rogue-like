@@ -584,91 +584,6 @@ namespace Resources
         }
         #endregion
     }
-    public class IMap
-    {
-        public Dictionary<CoordInt, Tile> map { get; private set; }
-        public List<Room> Rooms { get; private set; }
-
-        #region Constructor
-        public IMap()
-        {
-            Rooms = new List<Room>();
-            map = new Dictionary<CoordInt, Tile>();
-        }
-        public IMap(Dictionary<CoordInt, Tile> _map)
-        {
-            map = _map;
-            Rooms = new List<Room>();
-        }
-        public IMap(List<Room> rooms)
-        {
-            map = new Dictionary<CoordInt, Tile>();
-            Rooms = rooms;
-        }
-        public IMap(Dictionary<CoordInt, Tile> _map, List<Room> rooms)
-        {
-            map = _map;
-            Rooms = rooms;
-        }
-        #endregion
-
-        #region Methods
-        public bool ContainsTile(Tile other)
-        {
-            return map.ContainsValue(other);
-        }
-        public bool ContainsTiles(List<Tile> other)
-        {
-            foreach(Tile tile in other)
-                if (!map.ContainsValue(tile))
-                    return false;
-            return true;
-        }
-        public bool ContainsCoord(CoordInt other)
-        {
-            return map.ContainsKey(other);
-        }
-        public bool ContainsCoords(List<CoordInt> other)
-        {
-            foreach (CoordInt coord in other)
-                if (!map.ContainsKey(coord))
-                    return false;
-            return true;
-        }
-        public void SetTile(Tile tile)
-        {
-            if (ContainsCoord(tile))
-                map[tile] = tile;
-            else
-                map.Add(tile, tile);
-        }
-        public void AddRoom(Room other)
-        {
-            Rooms.Add(other);
-        }
-        public void AddRooms(List<Room> other)
-        {
-            foreach (Room room in other)
-                Rooms.Add(room);
-        }
-        public bool ContainsRoom(Room other)
-        {
-            return Rooms.Contains(other);
-        }
-        public bool ContainsRooms(List<Room> other)
-        {
-            foreach (Room room in other)
-                if (!Rooms.Contains(room))
-                    return false;
-            return true;
-        }
-        #endregion
-
-        public override int GetHashCode()
-        {
-            return map.GetHashCode() << 21 * Rooms.GetHashCode();
-        }
-    }
     public class Mob
     {
         public int ID;
@@ -817,7 +732,7 @@ namespace Resources
         public float Damage { get; private set; } = 0;
         public float duration { get; private set; } = 0;
         public float interval { get; private set; } = 1;
-        public Sprite Sprite { get; private set; } = new Sprite();
+        public ISprite Sprite { get; private set; } = new ISprite();
         public Dictionary<string, Tuple<Modifiable, float>> ModifiedBy { get; private set; } = new Dictionary<string, Tuple<Modifiable, float>>();
         public Dictionary<string, Tuple<string, OperatorType, string>> InflictIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
         public Dictionary<string, Tuple<string, OperatorType, string>> TriggerIf { get; private set; } = new Dictionary<string, Tuple<string, OperatorType, string>>();
@@ -1073,35 +988,35 @@ namespace Resources
         public string Name { get; private set; }
     }
 
-    public class Sprite
+    public class ISprite
     {
         public string Path { get; private set; } = string.Empty;
         public bool Animated { get; private set; } = false;
-        public Dictionary<Tuple<int, int>, Texture2D> Textures = new Dictionary<Tuple<int, int>, Texture2D>();
+        public Dictionary<int, Sprite> Sprites = new Dictionary<int, Sprite>();
 
         #region Constructors
-        public Sprite()
+        public ISprite()
         {
         }
-        public Sprite(string path)
-        {
-            Path = path;
-        }
-        public Sprite(string path, bool animated)
+        public ISprite(string path)
         {
             Path = path;
-            Animated = animated;
         }
-        public Sprite(string path, Dictionary<Tuple<int, int>, Texture2D> textures)
-        {
-            Path = path;
-            Textures = textures;
-        }
-        public Sprite(string path, bool animated, Dictionary<Tuple<int, int>, Texture2D> textures)
+        public ISprite(string path, bool animated)
         {
             Path = path;
             Animated = animated;
-            Textures = textures;
+        }
+        public ISprite(string path, Dictionary<int, Sprite> sprites)
+        {
+            Path = path;
+            Sprites = sprites;
+        }
+        public ISprite(string path, bool animated, Dictionary<int, Sprite> sprites)
+        {
+            Path = path;
+            Animated = animated;
+            Sprites = sprites;
         }
         #endregion
 
@@ -1117,9 +1032,15 @@ namespace Resources
         {
             if(Path != string.Empty)
             {
-                Textures = FileHandler.GetStaticSprites(Textures, Path);
+                Sprites = FileHandler.GetStaticSprites(Sprites, Path);
             }
         }
+    }
+    public class IGame
+    {
+        public List<Effect> Effects = new List<Effect>();
+        public List<Modifier> Modifiers = new List<Modifier>();
+        public List<Mob> Mobs = new List<Mob>();
     }
 }
 namespace Enums

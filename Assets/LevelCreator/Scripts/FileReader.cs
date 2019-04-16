@@ -12,16 +12,19 @@ public static class FileHandler
     public static string Numeric = "0123456789";
     public static string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    public static void ImportFiles()
+    public static IGame ImportFiles(IGame game)
     {
         string path = Application.dataPath + @"\GameData";
         DirectoryInfo dir = new DirectoryInfo(path);
         FileInfo[] text = dir.GetFiles("*.txt");
+
         foreach (FileInfo p in text)
-            ReadText(p.FullName);
+            game = ReadText(p.FullName, game);
+
+        return game;
     }
 
-    private static void ReadText(string path)
+    private static IGame ReadText(string path, IGame game)
     {
         string[] lines = File.ReadAllLines(path);
 
@@ -45,7 +48,10 @@ public static class FileHandler
                     StateHist.RemoveAt(StateHist.Count - 1);
                 }
 
-            line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "").Remove(line.LastIndexOf(' '));
+            line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "");
+
+            if(line.LastIndexOf(' ') > -1)
+                line = line.Remove(line.LastIndexOf(' '));
 
             if (line.Contains("\\"))
                 line = line.Remove(line.IndexOf("\\"));
@@ -53,6 +59,8 @@ public static class FileHandler
                 line = line.Remove(line.IndexOf("##"));
             if (line.Contains("//"))
                 line = line.Remove(line.IndexOf("//"));
+
+            Debug.Log(line);
 
             switch (state)
             {
@@ -318,20 +326,12 @@ public static class FileHandler
                 case state.GetSpriteSizes:
                     {
                         Effect effect = ListOfEffects[curEffect];
-                        string[] separatedLine = line.Split('x');
 
-                        separatedLine[0] = FilterString(separatedLine[0], Numeric);
-                        separatedLine[1] = FilterString(separatedLine[1], Numeric);
+                        line = FilterString(line, Numeric);
 
-                        Tuple<int, int> Size = new Tuple<int, int>(int.Parse(separatedLine[0]), int.Parse(separatedLine[1]));
-                        Texture2D Texture = new Texture2D(int.Parse(separatedLine[0]), int.Parse(separatedLine[1])
-                            {
-                            alphaIsTransparency = true,
-                            filterMode = FilterMode.Point,
-                            wrapMode = TextureWrapMode.Clamp
-                            };
+                        int Size = int.Parse(line);
 
-                        effect.Sprite.Textures.Add(Size, Texture);
+                        effect.Sprite.Sprites.Add(Size, null);
                     }
                     break;
             }
@@ -339,6 +339,10 @@ public static class FileHandler
 
         foreach (Effect e in ListOfEffects.Values)
             Debug.Log(e.ToLongString());
+
+        game.Effects.AddRange(ListOfEffects.Values);
+
+        return game;
     }
 
     private static Texture2D ReadImage(string path)
@@ -348,7 +352,7 @@ public static class FileHandler
          * 512*512, 768*256, 896*128, 960*64, 992*32, 1008*16
         */
 
-        Texture2D Texture = new Texture2D(1008, 512)
+        Texture2D Texture = new Texture2D(1024, 512)
         {
             alphaIsTransparency = true,
             filterMode = FilterMode.Point,
@@ -361,17 +365,27 @@ public static class FileHandler
         return Texture;
     }
 
-    public static Dictionary<Tuple<int, int>, Texture2D> GetStaticSprites(Dictionary<Tuple<int, int>, Texture2D> Textures, string path)
+    public static Dictionary<int, Sprite> GetStaticSprites(Dictionary<int, Sprite> Sprites, string path)
     {
         Texture2D text = ReadImage(path);
 
-        foreach (Tuple<int, int> t in Textures.Keys)
+        foreach (int t in Sprites.Keys)
         {
-            Textures[t].SetPixels(text.GetPixels(t.Item1, text.height - t.Item2, t.Item1, t.Item2));
-            Textures[t].Apply();
+            Texture2D SpriteTexture = new Texture2D(t, t)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                alphaIsTransparency = true
+            };
+
+            SpriteTexture.SetPixels(text.GetPixels(t, text.height - t, t, t));
+            SpriteTexture.Apply();
         }
 
-        return Textures;
+
+
+
+        return Sprites;
     }
 
     private static string RemoveString(string String, string Remove)
