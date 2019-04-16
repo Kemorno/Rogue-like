@@ -1030,7 +1030,7 @@ namespace Resources
         }
         public void GetSprites()
         {
-            if(Path != string.Empty)
+            if(Path != string.Empty && Sprites != null)
             {
                 Sprites = FileHandler.GetStaticSprites(Sprites, Path);
             }
@@ -1038,7 +1038,7 @@ namespace Resources
     }
     public class IGame
     {
-        public List<Effect> Effects = new List<Effect>();
+        public Dictionary<string, Effect> Effects { get; private set; } = new Dictionary<string, Effect>();
         public List<Modifier> Modifiers = new List<Modifier>();
         public List<Mob> Mobs = new List<Mob>();
     }

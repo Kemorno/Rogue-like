@@ -11,15 +11,24 @@ public static class FileHandler
 
     public static string Numeric = "0123456789";
     public static string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public static List<string> ImageFormat = new List<string>() { "*.jpg", "*.bmp", "*.png", "*.jpeg"};
+    public static List<string> SpriteSize = new List<string>() { "512", "256", "128", "64", "32", "16" };
+    public static List<string> TextFormat = new List<string>() { "*.txt" };
 
     public static IGame ImportFiles(IGame game)
     {
         string path = Application.dataPath + @"\GameData";
         DirectoryInfo dir = new DirectoryInfo(path);
-        FileInfo[] text = dir.GetFiles("*.txt");
+        foreach (string s in TextFormat)
+        {
+            FileInfo[] text = dir.GetFiles(s);
 
-        foreach (FileInfo p in text)
-            game = ReadText(p.FullName, game);
+            foreach (FileInfo p in text)
+            {
+                LogHandler.NewEntry("Importing text file " + p.FullName);
+                game = ReadText(p.FullName, game);
+            }
+        }
 
         return game;
     }
@@ -27,40 +36,85 @@ public static class FileHandler
     private static IGame ReadText(string path, IGame game)
     {
         string[] lines = File.ReadAllLines(path);
+        LogHandler.NewEntry("Line count " + lines.Length);
 
         state state = state.None;
 
         List<state> StateHist = new List<state>();
 
-        Dictionary<int, Effect> ListOfEffects = new Dictionary<int, Effect>();
-
-        int curEffect = -1;
+        object CurrentDefinition = null;
 
         for (int i = 0; i < lines.Length; i++)
         {
             string line = lines[i];
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+
+            LogHandler.NewEntry("Reading Line "+ '"' + line + '"');
+            {
+                line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "");
+
+                if (line.LastIndexOf(' ') > -1)
+                    line = line.Remove(line.LastIndexOf(' '));
+
+                if (line.Contains("\\"))
+                    line = line.Remove(line.IndexOf("\\"));
+                if (line.Contains("##"))
+                    line = line.Remove(line.IndexOf("##"));
+                if (line.Contains("//"))
+                    line = line.Remove(line.IndexOf("//"));
+
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    LogHandler.NewEntry("Formated Line is Null, Continuing to next line");
+                    continue;
+                }
+            }
+
+            LogHandler.NewEntry("Formated Line " + '"' + line + '"');
+
             if (line.Contains("}"))
+            {
+                switch (state)
+                {
+                    case state.NewEffect:
+                        {
+                            Effect effect = CurrentDefinition as Effect;
+                            game.Effects.Add(effect.Name, effect);
+                            LogHandler.NewEntry("New Effect added to the game \n" + effect.ToLongString());
+                            CurrentDefinition = null;
+                        }
+                        break;
+                    case state.SetSprite:
+                        {
+                            Effect effect = CurrentDefinition as Effect;
+                            effect.Sprite.GetSprites();
+                            LogHandler.NewEntry("Sprites set to the effect " + effect.Name + " Sprites Count: " + effect.Sprite.Sprites.Count);
+                        }
+                        break;
+                }
                 if (StateHist.Count > 1)
                 {
+                    LogHandler.NewEntry("Exiting the state " + state.ToString());
                     state = StateHist[StateHist.Count - 1];
                     StateHist.RemoveAt(StateHist.Count - 1);
+                    LogHandler.NewEntry("New State: " + state.ToString());
                 }
-
-            line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "");
-
-            if(line.LastIndexOf(' ') > -1)
-                line = line.Remove(line.LastIndexOf(' '));
-
-            if (line.Contains("\\"))
-                line = line.Remove(line.IndexOf("\\"));
-            if (line.Contains("##"))
-                line = line.Remove(line.IndexOf("##"));
-            if (line.Contains("//"))
-                line = line.Remove(line.IndexOf("//"));
-
-            Debug.Log(line);
+                if (line == "}")
+                    continue;
+            }
+            if (line.Contains("{"))
+            {
+                switch (state)
+                {
+                    case state.NewEffect:
+                        {
+                            CurrentDefinition = new Effect();
+                            LogHandler.NewEntry("Creating new Effect");
+                        }
+                        break;
+                }
+                if(line == "{")
+                    continue;
+            }
 
             switch (state)
             {
@@ -81,8 +135,6 @@ public static class FileHandler
                         case "EFFECT":
                             StateHist.Add(state);
                             state = state.NewEffect;
-                            curEffect++;
-                            ListOfEffects.Add(curEffect, new Effect());
                             break;
                         case "MODIFIER":
                             break;
@@ -92,7 +144,7 @@ public static class FileHandler
                     break;
                 case state.NewEffect:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split('=');
                         switch (separatedLine[0].ToUpper().Replace(" ", string.Empty))
                         {
@@ -155,7 +207,7 @@ public static class FileHandler
                     break;
                 case state.SetModifiedBy:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper())
                         {
@@ -175,7 +227,7 @@ public static class FileHandler
                     break;
                 case state.SetInflictIfConditions:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper())
                         {
@@ -207,7 +259,7 @@ public static class FileHandler
                     break;
                 case state.SetTriggerIfConditions:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper())
                         {
@@ -239,7 +291,7 @@ public static class FileHandler
                     break;
                 case state.SetStopIfConditions:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper())
                         {
@@ -271,7 +323,7 @@ public static class FileHandler
                     break;
                 case state.SetRemoveIfConditions:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper())
                         {
@@ -303,7 +355,7 @@ public static class FileHandler
                     break;
                 case state.SetSprite:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
                         string[] separatedLine = line.Split(':');
                         switch (separatedLine[0].ToUpper().Replace(" ", string.Empty))
                         {
@@ -325,22 +377,19 @@ public static class FileHandler
                     break;
                 case state.GetSpriteSizes:
                     {
-                        Effect effect = ListOfEffects[curEffect];
+                        Effect effect = CurrentDefinition as Effect;
 
                         line = FilterString(line, Numeric);
 
-                        int Size = int.Parse(line);
-
-                        effect.Sprite.Sprites.Add(Size, null);
+                        if (SpriteSize.Contains(line))
+                            effect.Sprite.Sprites.Add(int.Parse(line), null);
                     }
                     break;
             }
         }
 
-        foreach (Effect e in ListOfEffects.Values)
+        foreach (Effect e in game.Effects.Values)
             Debug.Log(e.ToLongString());
-
-        game.Effects.AddRange(ListOfEffects.Values);
 
         return game;
     }
@@ -348,8 +397,7 @@ public static class FileHandler
     private static Texture2D ReadImage(string path)
     {
         /* 
-         * 512*512, 256*256, 128*128, 64*64, 32*32, 16*16
-         * 512*512, 768*256, 896*128, 960*64, 992*32, 1008*16
+         * 512,256,128,64,32,16
         */
 
         Texture2D Texture = new Texture2D(1024, 512)
@@ -369,6 +417,8 @@ public static class FileHandler
     {
         Texture2D text = ReadImage(path);
 
+        Vector2Int curPos = Vector2Int.zero;
+
         foreach (int t in Sprites.Keys)
         {
             Texture2D SpriteTexture = new Texture2D(t, t)
@@ -378,12 +428,40 @@ public static class FileHandler
                 alphaIsTransparency = true
             };
 
-            SpriteTexture.SetPixels(text.GetPixels(t, text.height - t, t, t));
+            SpriteTexture.SetPixels(text.GetPixels(curPos.x, curPos.y, t, t));
             SpriteTexture.Apply();
+
+            Sprites[t] = Sprite.Create(SpriteTexture, new Rect(0, 0, t, t), Vector2.zero);
+
+            curPos.x += t;
+            curPos.y += t / 2;
         }
 
+        return Sprites;
+    }
+    public static Dictionary<int, Sprite> GetAnimatedSprites(Dictionary<int, Sprite> Sprites, string path)
+    {
+        Texture2D text = ReadImage(path);
 
+        Vector2Int curPos = Vector2Int.zero;
 
+        foreach (int t in Sprites.Keys)
+        {
+            Texture2D SpriteTexture = new Texture2D(t, t)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                alphaIsTransparency = true
+            };
+
+            SpriteTexture.SetPixels(text.GetPixels(curPos.x, curPos.y, t, t));
+            SpriteTexture.Apply();
+
+            Sprites[t] = Sprite.Create(SpriteTexture, new Rect(0, 0, t, t), Vector2.zero);
+
+            curPos.x += t;
+            curPos.y += t / 2;
+        }
 
         return Sprites;
     }
