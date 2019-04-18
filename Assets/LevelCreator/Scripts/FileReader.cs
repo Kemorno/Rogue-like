@@ -17,7 +17,7 @@ public static class FileHandler
 
     public static IGame ImportFiles(IGame game)
     {
-        string path = Application.dataPath + @"\GameData";
+        string path = Application.dataPath + @"/GameData";
         DirectoryInfo dir = new DirectoryInfo(path);
         foreach (string s in TextFormat)
         {
@@ -48,12 +48,12 @@ public static class FileHandler
         {
             string line = lines[i];
 
-            LogHandler.NewEntry("Reading Line "+ '"' + line + '"');
+            //LogHandler.NewEntry("Reading Line "+ '"' + line + '"');
             {
                 line = line.Replace("\t", "").Replace("\r", "").Replace("\n", "");
 
-                if (line.LastIndexOf(' ') > -1)
-                    line = line.Remove(line.LastIndexOf(' '));
+                if (line.LastIndexOf("  ") > -1)
+                    line = line.Remove(line.LastIndexOf("  "));
 
                 if (line.Contains("\\"))
                     line = line.Remove(line.IndexOf("\\"));
@@ -69,7 +69,7 @@ public static class FileHandler
                 }
             }
 
-            LogHandler.NewEntry("Formated Line " + '"' + line + '"');
+            LogHandler.NewEntry("Formated Line #" + i + " " + '"' + line + '"');
 
             if (line.Contains("}"))
             {
@@ -123,9 +123,8 @@ public static class FileHandler
                     {
                         case "DEFINITION":
                             StateHist.Add(state);
+                            LogHandler.NewEntry("Entering the Definition of new Classes");
                             state = state.Definition;
-                            break;
-                        default:
                             break;
                     }
                     break;
@@ -134,11 +133,8 @@ public static class FileHandler
                     {
                         case "EFFECT":
                             StateHist.Add(state);
+                            LogHandler.NewEntry("Creating new Effect");
                             state = state.NewEffect;
-                            break;
-                        case "MODIFIER":
-                            break;
-                        default:
                             break;
                     }
                     break;
@@ -150,54 +146,68 @@ public static class FileHandler
                         {
                             case "NAME":
                                 effect.SetName(separatedLine[1]);
+                                LogHandler.NewEntry("Effect name is " + separatedLine[1]);
                                 break;
                             case "FREQUENCY":
                                 switch (separatedLine[1].ToUpper().Replace(" ", string.Empty))
                                 {
                                     case "PERIODICAL":
+                                        LogHandler.NewEntry("Effect Activation found: " + '"' + separatedLine[1] + '"');
                                         effect.SetActivation(ActivationType.Periodical);
                                         break;
                                     case "ONCE":
+                                        LogHandler.NewEntry("Effect Activation found: " + '"' + separatedLine[1] + '"');
                                         effect.SetActivation(ActivationType.Once);
                                         break;
                                     case "TRIGERRED":
+                                        LogHandler.NewEntry("Effect Activation found: " + '"' + separatedLine[1] + '"');
                                         effect.SetActivation(ActivationType.Triggered);
                                         break;
                                     default:
+                                        LogHandler.NewEntry("Effect Activation not found, line is " + '"' + separatedLine[1] + '"', true);
                                         break;
                                 }
                                 break;
                             case "DAMAGE":
+                                LogHandler.NewEntry("Effect Damage found: "+ '"' + separatedLine[1].Replace(" ", string.Empty) + '"');
                                 effect.SetDamage(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
                                 break;
                             case "DURATION":
+                                LogHandler.NewEntry("Effect Duration found: " + '"' + separatedLine[1].Replace(" ", string.Empty) + '"');
                                 effect.SetDuration(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
                                 break;
                             case "INTERVAL":
+                                LogHandler.NewEntry("Effect Interval found: " + '"' + separatedLine[1].Replace(" ", string.Empty) + '"');
                                 effect.SetInterval(float.Parse(separatedLine[1].Replace(" ", string.Empty)));
                                 break;
                             case "SPRITE":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting Sprite proprieties");
                                 state = state.SetSprite;
                                 break;
                             case "MODIFIEDBY":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting effect Modifiers");
                                 state = state.SetModifiedBy;
                                 break;
                             case "INFLICTWHEN":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting effect Inflicted When Conditions");
                                 state = state.SetInflictIfConditions;
                                 break;
                             case "TRIGGERWHEN":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting effect Trigger When Conditions");
                                 state = state.SetTriggerIfConditions;
                                 break;
                             case "STOPWHEN":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting effect Stop When Conditions");
                                 state = state.SetStopIfConditions;
                                 break;
                             case "REMOVEWHEN":
                                 StateHist.Add(state);
+                                LogHandler.NewEntry("Setting effect Remove When Conditions");
                                 state = state.SetRemoveIfConditions;
                                 break;
                             default:
@@ -212,15 +222,19 @@ public static class FileHandler
                         switch (separatedLine[0].ToUpper())
                         {
                             case "DAMAGE":
-                                effect.ModifiedBy.Add(separatedLine[1] + " DAMAGE", new System.Tuple<Modifiable, float>(Modifiable.Damage, float.Parse(separatedLine[2])));
+                                LogHandler.NewEntry("Effect " + effect.Name + "'s Damage will be modified by " + separatedLine[2] + " when " + separatedLine[1] + " is present.");
+                                effect.ModifiedBy.Add(separatedLine[1] + " DAMAGE", new Tuple<Modifiable, float>(Modifiable.Damage, float.Parse(separatedLine[2])));
                                 break;
                             case "DURATION":
-                                effect.ModifiedBy.Add(separatedLine[1] + " DURATION", new System.Tuple<Modifiable, float>(Modifiable.Duration, float.Parse(separatedLine[2])));
+                                LogHandler.NewEntry("Effect " + effect.Name + "'s Duration will be modified by " + separatedLine[2] + " when " + separatedLine[1] + " is present.");
+                                effect.ModifiedBy.Add(separatedLine[1] + " DURATION", new Tuple<Modifiable, float>(Modifiable.Duration, float.Parse(separatedLine[2])));
                                 break;
                             case "INTERVAL":
-                                effect.ModifiedBy.Add(separatedLine[1] + " INTERVAL", new System.Tuple<Modifiable, float>(Modifiable.Interval, float.Parse(separatedLine[2])));
+                                LogHandler.NewEntry("Effect " + effect.Name + "'s Interval will be modified by " + separatedLine[2] + " when " + separatedLine[1] + " is present.");
+                                effect.ModifiedBy.Add(separatedLine[1] + " INTERVAL", new Tuple<Modifiable, float>(Modifiable.Interval, float.Parse(separatedLine[2])));
                                 break;
                             default:
+                                LogHandler.NewEntry("Could not set modifier.");
                                 break;
                         }
                     }
@@ -356,15 +370,17 @@ public static class FileHandler
                 case state.SetSprite:
                     {
                         Effect effect = CurrentDefinition as Effect;
-                        string[] separatedLine = line.Split(':');
+                        string[] separatedLine = line.Split('=');
                         switch (separatedLine[0].ToUpper().Replace(" ", string.Empty))
                         {
                             case "ANIMATED":
+                                LogHandler.NewEntry("Sprite Animation type found: " + '"' + separatedLine[1] + '"');
                                 effect.Sprite.SetAnimated(bool.Parse(separatedLine[1]));
                                 break;
                             case "FILE":
-                                string TexturePath = path.Remove(path.LastIndexOf('/')+1);
+                                string TexturePath = path.Remove(path.LastIndexOf(@"\")+1);
                                 TexturePath += separatedLine[1];
+                                LogHandler.NewEntry("Sprite file path found: " + '"' + TexturePath + '"');
 
                                 effect.Sprite.SetPath(TexturePath);
                                 break;
@@ -417,7 +433,11 @@ public static class FileHandler
     {
         Texture2D text = ReadImage(path);
 
+        LogHandler.NewEntry("Getting sprites from file " + path);
+
         Vector2Int curPos = Vector2Int.zero;
+
+        Dictionary<int, Sprite> newSprites = new Dictionary<int, Sprite>(Sprites);
 
         foreach (int t in Sprites.Keys)
         {
@@ -431,13 +451,14 @@ public static class FileHandler
             SpriteTexture.SetPixels(text.GetPixels(curPos.x, curPos.y, t, t));
             SpriteTexture.Apply();
 
-            Sprites[t] = Sprite.Create(SpriteTexture, new Rect(0, 0, t, t), Vector2.zero);
+            newSprites[t] = Sprite.Create(SpriteTexture, new Rect(0, 0, t, t), Vector2.zero, t);
+            LogHandler.NewEntry("Got sprite of size " + t + "pixels in file " + path + " at pixels " + curPos.ToString() + " to " + (curPos + new Vector2Int(t,t)).ToString());
 
             curPos.x += t;
             curPos.y += t / 2;
         }
 
-        return Sprites;
+        return newSprites;
     }
     public static Dictionary<int, Sprite> GetAnimatedSprites(Dictionary<int, Sprite> Sprites, string path)
     {

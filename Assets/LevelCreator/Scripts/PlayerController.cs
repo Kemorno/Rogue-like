@@ -19,7 +19,7 @@ public class PlayerController : MonoBehaviour
     }
     private void Update()
     {
-        if (Player.Health == 0)
+        if (Player.Health <= 0)
             Debug.Log("You died");
 
         if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)

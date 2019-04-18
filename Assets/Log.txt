@@ -1,0 +1,144 @@
+[16/04/2019 16:59] Importing text file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Teste.txt
+[16/04/2019 16:59] Line count 75
+[16/04/2019 16:59] Formated Line #0 "DEFINITION"
+[16/04/2019 16:59] Entering the Definition of new Classes
+[16/04/2019 16:59] Formated Line #1 "{"
+[16/04/2019 16:59] Formated Line #2 "EFFECT"
+[16/04/2019 16:59] Creating new Effect
+[16/04/2019 16:59] Formated Line #3 "{"
+[16/04/2019 16:59] Creating new Effect
+[16/04/2019 16:59] Formated Line #4 "NAME=Electric Effect"
+[16/04/2019 16:59] Effect name is Electric Effect
+[16/04/2019 16:59] Formated Line #5 "FREQUENCY=PERIODICAL"
+[16/04/2019 16:59] Effect Activation found: "PERIODICAL"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #7 "DAMAGE = 2"
+[16/04/2019 16:59] Effect Damage found: "2"
+[16/04/2019 16:59] Formated Line #8 "DURATION = 2"
+[16/04/2019 16:59] Effect Duration found: "2"
+[16/04/2019 16:59] Formated Line #9 "INTERVAL = 0,1"
+[16/04/2019 16:59] Effect Interval found: "0,1"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #11 "SPRITE"
+[16/04/2019 16:59] Setting Sprite proprieties
+[16/04/2019 16:59] Formated Line #12 "{"
+[16/04/2019 16:59] Formated Line #13 "file=Test.jpg"
+[16/04/2019 16:59] Sprite file path found: "C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg"
+[16/04/2019 16:59] Formated Line #14 "Animated=false"
+[16/04/2019 16:59] Sprite Animation type found: "false"
+[16/04/2019 16:59] Formated Line #15 "Size"
+[16/04/2019 16:59] Formated Line #16 "{"
+[16/04/2019 16:59] Formated Line #17 "512"
+[16/04/2019 16:59] Formated Line #18 "256"
+[16/04/2019 16:59] Formated Line #19 "128"
+[16/04/2019 16:59] Formated Line #20 "64"
+[16/04/2019 16:59] Formated Line #21 "32"
+[16/04/2019 16:59] Formated Line #22 "16"
+[16/04/2019 16:59] Formated Line #23 "}"
+[16/04/2019 16:59] Exiting the state GetSpriteSizes
+[16/04/2019 16:59] New State: SetSprite
+[16/04/2019 16:59] Formated Line #24 "}"
+[16/04/2019 16:59] Getting sprites from file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg
+[16/04/2019 16:59] Got sprite of size 512pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (0, 0) to (512, 512)
+[16/04/2019 16:59] Got sprite of size 256pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (512, 256) to (768, 512)
+[16/04/2019 16:59] Got sprite of size 128pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (768, 384) to (896, 512)
+[16/04/2019 16:59] Got sprite of size 64pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (896, 448) to (960, 512)
+[16/04/2019 16:59] Got sprite of size 32pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (960, 480) to (992, 512)
+[16/04/2019 16:59] Got sprite of size 16pixels in file C:\Users\Pedro Costa\Documents\Rogue-like\Assets\GameData\Test.jpg at pixels (992, 496) to (1008, 512)
+[16/04/2019 16:59] Sprites set to the effect Electric Effect Sprites Count: 6
+[16/04/2019 16:59] Exiting the state SetSprite
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #26 "MODIFIEDBY"
+[16/04/2019 16:59] Setting effect Modifiers
+[16/04/2019 16:59] Formated Line #27 "{"
+[16/04/2019 16:59] Formated Line #28 "DAMAGE:WOOD:2"
+[16/04/2019 16:59] Effect Electric Effect's Damage will be modified by 2 when WOOD is present.
+[16/04/2019 16:59] Formated Line #29 "DURATION:WOOD:2"
+[16/04/2019 16:59] Effect Electric Effect's Duration will be modified by 2 when WOOD is present.
+[16/04/2019 16:59] Formated Line #30 "DAMAGE:RUUBER:0"
+[16/04/2019 16:59] Effect Electric Effect's Damage will be modified by 0 when RUUBER is present.
+[16/04/2019 16:59] Formated Line #31 "DURATION:METAL:0,5"
+[16/04/2019 16:59] Effect Electric Effect's Duration will be modified by 0,5 when METAL is present.
+[16/04/2019 16:59] Formated Line #32 "DAMAGE:METAL:0,5"
+[16/04/2019 16:59] Effect Electric Effect's Damage will be modified by 0,5 when METAL is present.
+[16/04/2019 16:59] Formated Line #33 "}"
+[16/04/2019 16:59] Exiting the state SetModifiedBy
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #35 "INFLICTWHEN"
+[16/04/2019 16:59] Setting effect Inflicted When Conditions
+[16/04/2019 16:59] Formated Line #36 "{"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #38 "EFFECT:HAVE:SOAKED"
+[16/04/2019 16:59] Formated Line #39 "Health:>:0.5"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #46 "}"
+[16/04/2019 16:59] Exiting the state SetInflictIfConditions
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line #47 "TRIGGERWHEN"
+[16/04/2019 16:59] Setting effect Trigger When Conditions
+[16/04/2019 16:59] Formated Line #48 "{"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #50 "}"
+[16/04/2019 16:59] Exiting the state SetTriggerIfConditions
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line #51 "STOPWHEN"
+[16/04/2019 16:59] Setting effect Stop When Conditions
+[16/04/2019 16:59] Formated Line #52 "{"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #54 "EFFECT:HAVE:WET"
+[16/04/2019 16:59] Formated Line #55 "}"
+[16/04/2019 16:59] Exiting the state SetStopIfConditions
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line #56 "REMOVEWHEN"
+[16/04/2019 16:59] Setting effect Remove When Conditions
+[16/04/2019 16:59] Formated Line #57 "{"
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #59 "EFFECT:NOTHAVE:SOAKED"
+[16/04/2019 16:59] Formated Line #60 "EFFECT:NOTHAVE:WET"
+[16/04/2019 16:59] Formated Line #61 "}"
+[16/04/2019 16:59] Exiting the state SetRemoveIfConditions
+[16/04/2019 16:59] New State: NewEffect
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line is Null, Continuing to next line
+[16/04/2019 16:59] Formated Line #73 "}"
+[16/04/2019 16:59] New Effect added to the game 
+Effect: Electric Effect
+is Active? False
+Activation Type: Periodical
+Damage: 2
+Duaration: 2
+Interval: 0,1
+Modified By
+	WOOD DAMAGE: 2
+	WOOD DURATION: 2
+	RUUBER DAMAGE: 0
+	METAL DURATION: 0,5
+	METAL DAMAGE: 0,5
+Inflicted When
+	EFFECT NotHave SOAKED
+	Health BiggerThan 0.5
+Trigger When
+Stop When
+	EFFECT NotHave WET
+Remove When
+	EFFECT NotHave SOAKED
+	EFFECT NotHave WET
+[16/04/2019 16:59] Exiting the state NewEffect
+[16/04/2019 16:59] New State: Definition
+[16/04/2019 16:59] Formated Line #74 "}"

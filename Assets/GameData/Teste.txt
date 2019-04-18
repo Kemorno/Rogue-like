@@ -2,7 +2,7 @@ DEFINITION
 {
 	EFFECT
 	{
-		NAME=ELECTRIC
+		NAME=Electric Effect
 		FREQUENCY=PERIODICAL
 		
 		DAMAGE = 2//Damage done when activated
@@ -13,13 +13,14 @@ DEFINITION
 		{
 		file=Test.jpg
 		Animated=false
-		Sizes
+		Size
 			{
-			512x512
-			256x256
-			128x128
-			64x64
-			32x32
+			512
+			256
+			128
+			64
+			32
+			16
 			}
 		}
 			
@@ -60,15 +61,15 @@ DEFINITION
 			EFFECT:NOTHAVE:WET
 			}
 			
-		ONENTER
-			{
+		//ONENTER
+			//{
 			//effects activated when player obtains the effect
-			MOB:INT + 0.1
-			}
-		ONEXIT
-			{
+			//MOB:INT + 0.1
+			//}
+		//ONEXIT
+			//{
 			//effects activated when it wears out
-			MOB:INT - 0.1
-			}
+			//MOB:INT - 0.1
+			//}
 	}
 }
