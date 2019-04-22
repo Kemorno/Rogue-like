@@ -126,6 +126,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator Item(Item item, int Pos)
     {
+        /*
         if (!item.inCooldown)
         {
             item.Use();
@@ -141,6 +142,8 @@ public class PlayerController : MonoBehaviour
             yield return new WaitForSeconds(1 / item.CooldownTime);
             item.Cooldown(false);
         }
+        */
+        yield return null;
     }
     
     private void InstantiateAttack(Vector2 Direction, Vector2 Speed, Object Projectile)
@@ -198,6 +201,7 @@ public class PlayerController : MonoBehaviour
         if (other.tag == "Item")
         {
             ItemController item = other.GetComponent<ItemController>();
+            /*
             switch (item.item.Type)
             {
                 case ItemType.None:
@@ -244,6 +248,7 @@ public class PlayerController : MonoBehaviour
                     }
                     break;
             }
+            */
         }
     }
     private void OnCollisionStay2D(Collision2D collision)

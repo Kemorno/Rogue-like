@@ -31,7 +31,6 @@ public class MeshGenerator : MonoBehaviour
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
-
     }
     void TriangulateSquare(Square square)
     {
@@ -173,9 +172,13 @@ public class MeshGenerator : MonoBehaviour
             {
                 for (int y = 0; y < nodeCountY; y++)
                 {
-                    if (OnlyWalls)
+                    Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
+                    if (map[x,y] == null)
                     {
-                        Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
+                        controlNodes[x, y] = new ControlNode(pos, false, squareSize);
+                    } 
+                    else if (OnlyWalls)
+                    {
                         if (map[x, y].Type == tileType.Wall)
                         {
                             if (map[x, y].RoomId == id)
@@ -190,7 +193,6 @@ public class MeshGenerator : MonoBehaviour
                     }
                     else
                     {
-                        Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, -mapHeight / 2 + y * squareSize + squareSize / 2, 0);
                         if (map[x, y].RoomId == id)
                         {
                             controlNodes[x, y] = new ControlNode(pos, map[x,y].Type == tileType.Floor, squareSize);

@@ -43,16 +43,16 @@ public class CreateLevel : MonoBehaviour
     public Vector2Int mousePos;
     public GameObject guide;
 
-    public List<Room> Rooms = new List<Room>();
+    public List<IRoom> Rooms = new List<IRoom>();
     public RoomSettings Settings;
     #endregion
 
     public bool SeeProgress = false;
-    Queue<Tuple<CoordInt, Room>> RoomCreationQueue;
+    Queue<Tuple<CoordInt, IRoom>> RoomCreationQueue;
 
     private void Awake()
     {
-        RoomCreationQueue = new Queue<Tuple<CoordInt, Room>>();
+        RoomCreationQueue = new Queue<Tuple<CoordInt, IRoom>>();
         Map = new Dictionary<CoordInt, Tile>();
 
         if (globalSeed != null)
@@ -66,7 +66,7 @@ public class CreateLevel : MonoBehaviour
             ResetMap(true);
 
         grouper = new GameObject();
-        Rooms = new List<Room>();
+        Rooms = new List<IRoom>();
     }
     private void Update()
     {
@@ -80,7 +80,7 @@ public class CreateLevel : MonoBehaviour
             if (!EventSystem.current.IsPointerOverGameObject())
             {
                 RoomSettings Settings = new RoomSettings(smoothMultiplier, randomFillPercent, comparisonFactor, RoomSize, RoomType, RoomClass);
-                Room room = new Room(Rooms.Count, Settings);
+                IRoom room = new IRoom(Rooms.Count, Settings);
 
                 StartCoroutine(EnqueueRoom(mousePos, room));
             }
@@ -103,10 +103,10 @@ public class CreateLevel : MonoBehaviour
         else
             reloadPrng(globalSeed);
 
-        foreach (Room room in Rooms)
+        foreach (IRoom room in Rooms)
             Destroy(room.roomGo);
 
-        Rooms = new List<Room>();
+        Rooms = new List<IRoom>();
         Map.Clear();
         RoomCreationQueue.Clear();
         StopCoroutine(RunQueue());
@@ -126,7 +126,7 @@ public class CreateLevel : MonoBehaviour
         {
             for (int i = 0; i < noRooms; i++)
             {
-                Room room = null;
+                IRoom room = null;
                 if (Rooms.Count == 0 && t == 0)
                 {
                     Debug.Log("Creating Initial Room");
@@ -135,7 +135,7 @@ public class CreateLevel : MonoBehaviour
                     RoomSettings Settings = new RoomSettings(4, 30, 4,
                         roomSize.Tiny, roomType.Spawn, roomClass.Neutral);
 
-                    room = new Room(Rooms.Count, Settings);
+                    room = new IRoom(Rooms.Count, Settings);
 
                     StartCoroutine(EnqueueRoom(new CoordInt(0, 0), room));
                     while (!room.FinishedGeneration)
@@ -185,7 +185,7 @@ public class CreateLevel : MonoBehaviour
                                         if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
-                                        room = new Room(Rooms.Count, Settings);
+                                        room = new IRoom(Rooms.Count, Settings);
 
                                         StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
@@ -227,7 +227,7 @@ public class CreateLevel : MonoBehaviour
                                         if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
-                                        room = new Room(Rooms.Count, Settings);
+                                        room = new IRoom(Rooms.Count, Settings);
 
                                         StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
@@ -269,7 +269,7 @@ public class CreateLevel : MonoBehaviour
                                         if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
-                                        room = new Room(Rooms.Count, Settings);
+                                        room = new IRoom(Rooms.Count, Settings);
 
                                         StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
@@ -311,7 +311,7 @@ public class CreateLevel : MonoBehaviour
                                         if (NearTiles(coord, (int)((int)Settings.Size)))
                                             continue;
 
-                                        room = new Room(Rooms.Count, Settings);
+                                        room = new IRoom(Rooms.Count, Settings);
 
                                         StartCoroutine(EnqueueRoom(coord, room));
                                         while (!room.FinishedGeneration)
@@ -363,10 +363,10 @@ public class CreateLevel : MonoBehaviour
 
     bool isRunning = false;
 
-    private IEnumerator EnqueueRoom(CoordInt startCoord, Room room)
+    private IEnumerator EnqueueRoom(CoordInt startCoord, IRoom room)
     {
         Rooms.Add(room);
-        RoomCreationQueue.Enqueue(new Tuple<CoordInt, Room>(startCoord, room));
+        RoomCreationQueue.Enqueue(new Tuple<CoordInt, IRoom>(startCoord, room));
 
         if (!isRunning)
             StartCoroutine(RunQueue());
@@ -380,9 +380,9 @@ public class CreateLevel : MonoBehaviour
         while (RoomCreationQueue.Count > 0)
         {
             isRunning = true;
-            Tuple<CoordInt, Room> queue = RoomCreationQueue.Dequeue();
+            Tuple<CoordInt, IRoom> queue = RoomCreationQueue.Dequeue();
 
-            Room room = queue.Item2;
+            IRoom room = queue.Item2;
 
             StartCoroutine(CreateRoom(queue.Item1, room));
 
@@ -399,17 +399,17 @@ public class CreateLevel : MonoBehaviour
         if(RoomCreationQueue.Count == 0)
             yield return null;
     }
-    private IEnumerator CreateRoom(CoordInt startCoord, Room room)
+    private IEnumerator CreateRoom(CoordInt startCoord, IRoom room)
     {
-        Room legacy = room;
+        IRoom legacy = room;
         int Tries = 0;
         while (Tries < 3)
         {
             System.Diagnostics.Stopwatch roomCreation = new System.Diagnostics.Stopwatch();
             if (legacy == null)
-                room = new Room(Rooms.Count, legacy.Settings);
+                room = new IRoom(Rooms.Count, legacy.Settings);
             else
-                room = new Room(legacy);
+                room = new IRoom(legacy);
 
             roomCreation.Start();
             
@@ -447,7 +447,7 @@ public class CreateLevel : MonoBehaviour
             else if (room == null)
             {
                 Debug.Log("Cannot Create Room Here.");
-                room = new Room(legacy)
+                room = new IRoom(legacy)
                 {
                     FinishedGeneration = true
                 };
@@ -456,7 +456,7 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
-    private IEnumerator CreateRoomCoroutine(CoordInt startCoord, Room room)
+    private IEnumerator CreateRoomCoroutine(CoordInt startCoord, IRoom room)
     {
         RoomSettings Settings = room.Settings;
         Settings.SetSeed(new Seed(globalPrng));
@@ -636,7 +636,7 @@ public class CreateLevel : MonoBehaviour
         room.FinishedGeneration = true;
     }
 
-    void CreateSpriteTile(Tile tile, Room room)
+    void CreateSpriteTile(Tile tile, IRoom room)
     {
         GameObject go = new GameObject();
         go.name = "Room " + room.RoomId + " : " + tile.Coord.ToString();
@@ -691,7 +691,7 @@ public class CreateLevel : MonoBehaviour
             }
         }
     }
-    void RoomMesh(Room room)
+    void RoomMesh(IRoom room)
     {
         GameObject roomGo = new GameObject()
         {
@@ -739,59 +739,8 @@ public class CreateLevel : MonoBehaviour
 
         room.SetGameObject(roomGo);
     }
-
-    public Dictionary<CoordInt, Tile> ListToDictionary(List<Tile> list)
-    {
-        Dictionary<CoordInt, Tile> map = new Dictionary<CoordInt, Tile>();
-        foreach (Tile tile in list)
-        {
-            map.Add(tile, tile);
-        }
-        return map;
-    }
-    public Tile[,] DictionaryToArray(Dictionary<CoordInt, Tile> map)
-    {
-        int minX = 0;
-        int minY = 0;
-        int maxX = 0;
-        int maxY = 0;
-
-        bool firstLoop = true;
-
-        List<int> X = new List<int>();
-        List<int> Y = new List<int>();
-
-        foreach (CoordInt coord in map.Keys)
-        {
-            if (firstLoop)
-            {
-                minX = coord.x;
-                minY = coord.y;
-                maxX = coord.x;
-                maxY = coord.y;
-                firstLoop = false;
-            }
-            else
-            {
-                if (coord.x < minX)
-                    minX = coord.x;
-                if (coord.y < minY)
-                    minY = coord.y;
-                if (coord.x > maxX)
-                    maxX = coord.x;
-                if (coord.y > maxY)
-                    maxY = coord.y;
-            }
-        }
-        Tile[,] array = new Tile[maxX - minX + 1, maxY - minY + 1];
-        foreach (CoordInt coord in map.Keys)
-        {
-            array[coord.x - minX, coord.y - minY] = map[coord];
-        }
-        return array;
-    }
     
-    private void PasteRoom(Room room)
+    private void PasteRoom(IRoom room)
     {
         if (room.Finished)
         {
@@ -814,7 +763,7 @@ public class CreateLevel : MonoBehaviour
             return;
         }
     }
-    private void FinishRoom(Room room)
+    private void FinishRoom(IRoom room)
     {
         Rooms[room.RoomId] = room;
         PasteRoom(room);
@@ -991,6 +940,56 @@ public class CreateLevel : MonoBehaviour
             }
         }
         return Count;
+    }
+    public Dictionary<CoordInt, Tile> ListToDictionary(List<Tile> list)
+    {
+        Dictionary<CoordInt, Tile> map = new Dictionary<CoordInt, Tile>();
+        foreach (Tile tile in list)
+        {
+            map.Add(tile, tile);
+        }
+        return map;
+    }
+    public Tile[,] DictionaryToArray(Dictionary<CoordInt, Tile> map)
+    {
+        int minX = 0;
+        int minY = 0;
+        int maxX = 0;
+        int maxY = 0;
+
+        bool firstLoop = true;
+
+        List<int> X = new List<int>();
+        List<int> Y = new List<int>();
+
+        foreach (CoordInt coord in map.Keys)
+        {
+            if (firstLoop)
+            {
+                minX = coord.x;
+                minY = coord.y;
+                maxX = coord.x;
+                maxY = coord.y;
+                firstLoop = false;
+            }
+            else
+            {
+                if (coord.x < minX)
+                    minX = coord.x;
+                if (coord.y < minY)
+                    minY = coord.y;
+                if (coord.x > maxX)
+                    maxX = coord.x;
+                if (coord.y > maxY)
+                    maxY = coord.y;
+            }
+        }
+        Tile[,] array = new Tile[maxX - minX + 1, maxY - minY + 1];
+        foreach (CoordInt coord in map.Keys)
+        {
+            array[coord.x - minX, coord.y - minY] = map[coord];
+        }
+        return array;
     }
 
     private bool NearTiles(CoordInt coord, int SearchRange = 1)
