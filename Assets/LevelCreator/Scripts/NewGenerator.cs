@@ -11,6 +11,8 @@ public class NewGenerator : MonoBehaviour
     public Seed GlobalSeed;
     public System.Random GlobalPrng;
     Dictionary<int, string> BlacklistedSeeds = new Dictionary<int, string>();
+    GameObject GridGrouper;
+    Dictionary<CoordInt, GameObject> ChunkGrids = new Dictionary<CoordInt, GameObject>();
 
     public int ChunkSize;
     public int amount = 10;
@@ -34,10 +36,36 @@ public class NewGenerator : MonoBehaviour
 
         map = new Map(ChunkSize);
         BlacklistedSeeds = LogHandler.GetBlacklistedSeeds();
+
+        GridGrouper = new GameObject()
+        {
+            name = "Grid"
+        };
     }
 
     private void Update()
     {
+        {
+            Vector3 pos = Camera.main.transform.position;
+            for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - 0.5f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + 0.5f); x++)
+            {
+                for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - 0.5f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + 0.5f); y++)
+                {
+                    CoordInt coord = new CoordInt(Mathf.RoundToInt(x / (float)ChunkSize), Mathf.RoundToInt(y / (float)ChunkSize));
+
+                    GameObject go = new GameObject();
+                    go.AddComponent<SpriteRenderer>();
+                    Texture2D text = Grid.ChunkGrid(ChunkSize);
+                    go.GetComponent<SpriteRenderer>().sprite = Sprite.Create(text, new Rect(0, 0, text.width, text.height), new Vector2(text.width / 2f, text.height / 2f), 64);
+                    go.transform.position = new Vector3(coord.x * ChunkSize, coord.y * ChunkSize);
+                    go.name = "Grid " + x + "," + y;
+                    go.transform.parent = GridGrouper.transform;
+
+                    ChunkGrids.Add(coord, go);
+                }
+            }
+        }//Grid
+
         mousePos = new Vector2Int(Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).x + .5f), Mathf.FloorToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition).y + .5f));
         CoordInt Coord = new CoordInt(mousePos);
 
@@ -134,7 +162,7 @@ public class NewGenerator : MonoBehaviour
     IEnumerator CreateRoom(List<Chunk> RoomChunks)
     {
         List<Chunk> Chunks = new List<Chunk>(RoomChunks);
-        RoomSettings Settings = new RoomSettings(5, 50, 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
+        RoomSettings Settings = new RoomSettings(3, 50, 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
         while (true)
         {
             Room room = new Room(map.nextRoomID, Chunks, Settings);
@@ -179,117 +207,22 @@ public class NewGenerator : MonoBehaviour
                 {
                     map.Chunks[c.Coordinates].RegenerateTiles();
                 }
-                if (Settings.RandomFillPercent < 100)
+                if (Settings.RandomFillPercent < 90)
                     Settings.RandomFillPercent += 5;
                 else if (Settings.SmoothingMultiplier > 1)
                 {
+                    Settings.RandomFillPercent = 40;
                     Settings.SmoothingMultiplier--;
                 }
-                int FloorAmount = room.GetTilesByType(tileType.Floor).Count;
-                LogHandler.BlacklistSeed("\n" + room.Seed.ToString() + " Generated " + FloorAmount  + " Tiles for " + room.Chunks.Count + " Chunks of size " + room.GetChunkSize()
-                    + ". Expected at least " + (TilePercentageFilled * 100) + "% filled, got " + (room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) / (float)FloorAmount) + "%.");
+                else
+                {
+                    int FloorAmount = room.GetTilesByType(tileType.Floor).Count;
+                    LogHandler.BlacklistSeed("\n" + room.Seed.ToString() + " Generated " + FloorAmount + " Tiles for " + room.Chunks.Count + " Chunks of size " + room.GetChunkSize()
+                        + ". Expected at least " + (TilePercentageFilled * 100) + "% filled, got " + (room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) / (float)FloorAmount) + "%.");
+                }
                 continue;
             }
         }
-    }
-
-    private List<Tile> GetTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map, tileType typeToSearch = tileType.Floor)
-    {
-        Tile _tile = Start;
-        List<Tile> tiles = new List<Tile>();
-        List<CoordInt> mapFlags = new List<CoordInt>();
-
-        Queue<Tile> queue = new Queue<Tile>();
-        if (Start.RoomId == -1 || Start.RoomId == RoomID)
-        {
-            queue.Enqueue(_tile);
-            mapFlags.Add(Start.Coord);
-        }
-        else
-            return null;
-
-        while (queue.Count > 0)
-        {
-            Tile tile = queue.Dequeue();
-            if (tile.Type == typeToSearch)
-                tiles.Add(tile);
-
-            for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
-            {
-                for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
-                {
-                    CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
-                    if (tile.Coord.isAdjacent(curCoord))
-                        if (!mapFlags.Contains(curCoord))
-                        {
-                            mapFlags.Add(curCoord);
-                            Tile nextTile = Map.ContainsKey(curCoord) ? Map[curCoord] : null;
-                            if (nextTile != null)
-                            {
-                                if (nextTile.Type == typeToSearch)
-                                {
-                                    if (Start.RoomId == -1 || Start.RoomId == RoomID)
-                                        queue.Enqueue(nextTile);
-                                    else
-                                        return null;
-                                }
-                            }
-                        }
-                }
-            }
-        }
-
-        return tiles;
-    }
-    private List<Tile> GetWallTiles(Tile Start, int RoomID, Dictionary<CoordInt, Tile> Map)
-    {
-        Tile _tile = Start;
-        List<Tile> tiles = new List<Tile>();
-        List<CoordInt> mapFlags = new List<CoordInt>();
-        tileType typeToSearch = tileType.Wall;
-
-        Queue<Tile> queue = new Queue<Tile>();
-        if (_tile.RoomId == -1 || _tile.RoomId == RoomID)
-        {
-            queue.Enqueue(_tile);
-            mapFlags.Add(_tile.Coord);
-        }
-        else
-            return null;
-
-        while (queue.Count > 0)
-        {
-            Tile tile = queue.Dequeue();
-
-            for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
-            {
-                for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
-                {
-                    CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
-                    if (!mapFlags.Contains(curCoord))
-                    {
-                        mapFlags.Add(curCoord);
-                        Tile nextTile = Map.ContainsKey(curCoord) ? Map[curCoord] : null;
-                        if (nextTile != null)
-                        {
-                            if (nextTile.RoomId == -1 || nextTile.RoomId == RoomID)
-                            {
-                                if (nextTile.Type == typeToSearch)
-                                    tiles.Add(nextTile);
-                                else
-                                    queue.Enqueue(nextTile);
-                            }
-                            else
-                            {
-                                return null;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return tiles;
     }
 
     private void OnDrawGizmos()

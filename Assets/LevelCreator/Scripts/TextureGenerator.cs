@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using Resources;
+using Enums;
 
 public static class TextureGenerator
 {
@@ -15,254 +17,87 @@ public static class TextureGenerator
         return texture;
     }
 }
-public static class Grid {
-    public static Texture2D gridTexture(LevelGenerator.Tile[,] _Map, Texture2D _gridCell)
+public static class Grid
+{
+    public static Texture2D ChunkGrid(int ChunkSize)
     {
-        int mapWidht = _Map.GetLength(0);
-        int mapHeight = _Map.GetLength(1);
+        int cellSize = 64;
 
-        int cellWidht = _gridCell.width;
-        int cellHeight = _gridCell.height;
-
-        Texture2D texture = new Texture2D(mapWidht * cellWidht, mapHeight * cellHeight, TextureFormat.ARGB32, false);
-        texture.wrapMode = TextureWrapMode.Clamp;
-        texture.filterMode = FilterMode.Point;
-
-        for(int x = 0; x < texture.width; x+=cellWidht)
+        Texture2D ChunkGrid = new Texture2D(cellSize * ChunkSize, cellSize * ChunkSize)
         {
-            for (int y = 0; y < texture.height; y+=cellHeight)
+            alphaIsTransparency = true,
+            filterMode = FilterMode.Point
+        };
+
+        Texture2D cell = new Texture2D(cellSize, cellSize);
+
+        for (int x = 0; x < cell.width; x++)
+        {
+            for (int y = 0; y < cell.height; y++)
             {
-                texture.SetPixels(x, y, cellWidht, cellHeight, _gridCell.GetPixels());
+                if (x == 0 || x == cell.width - 1 || y == 0 || y == cell.height - 1)
+                    cell.SetPixel(x, y, Color.grey);
+                else
+                    cell.SetPixel(x, y, Color.clear);
             }
         }
-        texture.Apply();
-        return texture;
+        cell.Apply();
+        for (int x = 0; x < ChunkGrid.width; x *= cellSize)
+        {
+            for (int y = 0; y < ChunkGrid.height; y *= cellSize)
+            {
+                cell.SetPixels(cell.GetPixels());
+            }
+        }
+        for (int x = 0; x < ChunkGrid.width; x++)
+        {
+            for (int y = 0; y < ChunkGrid.height; y++)
+            {
+                if (x == 0 || x == cell.width - 1 || y == 0 || y == cell.height - 1)
+                    ChunkGrid.SetPixel(x, y, Color.white);
+
+            }
+        }
+        ChunkGrid.Apply();
+        return ChunkGrid;
     }
 }
 public static class Overlay
 {
-    public static Texture2D Tiles(LevelGenerator.Tile[,] _Map)
+    public static Texture2D TileType(Chunk chunk, int cellSize = 64)
     {
-        Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.wrapMode = TextureWrapMode.Clamp;
-        texture.filterMode = FilterMode.Point;
-
-        for (int x = 0; x < _Map.GetLength(0); x++)
+        Texture2D texture = new Texture2D(chunk.Size * cellSize, chunk.Size * cellSize)
         {
-            for (int y = 0; y < _Map.GetLength(1); y++)
+            filterMode = FilterMode.Point,
+            alphaIsTransparency = true
+        }
+
+        for (int x = 0; x < chunk.Size; x++)
+        {
+            for (int y = 0; y < chunk.Size; y++)
             {
-                if (_Map[x, y].tileType == Enums.tileType.Wall)
-                    texture.SetPixel(x, y, new Color32(0, 0, 0, 255 / 2));
-                if (_Map[x, y].tileType == Enums.tileType.Floor)
-                    texture.SetPixel(x, y, new Color32(255, 255, 255, 255 / 2));
+                if (chunk.Tiles[new CoordInt(x, y)].Type == TileType.Wall)
+                    texture.SetPixels(x * cellSize, y * cellSize, cellSize, cellSize, Opaque(cellSize, Color.black).GetPixels());
+                if (chunk.Tiles[new CoordInt(x, y)].Type == TileType.Floor)
+                    texture.SetPixels(x * cellSize, y * cellSize, cellSize, cellSize, Opaque(cellSize, Color.white).GetPixels());
             }
         }
+
+        texture.SetPixels(Grid.ChunkGrid(chunk.Size).GetPixels());
         texture.Apply();
+
         return texture;
     }
-    public static Texture2D RoomTiles(LevelGenerator.Tile[,] _Map, List<LevelGenerator.Room> Rooms)
+
+    private static Texture2D Opaque(int Size, Color color)
     {
-        Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-
+        Texture2D texture = new Texture2D(Size, Size);
+        
+        for(int x = 0; x < texture.width; x++)
         {
-            Color fillColor = Color.clear;
-            Color[] fillPixels = new Color[texture.width * texture.height];
-
-            for (int i = 0; i < fillPixels.Length; i++)
+            for (int y = 0; y < texture.height; y++)
             {
-                fillPixels[i] = fillColor;
-            }
-
-            texture.SetPixels(fillPixels);
-        }//Set all transparent
-
-        for (int i = 0; i < Rooms.Count; i++)
-        {
-            System.Random prng = new System.Random(Rooms[i].RoomID);
-            Color32 roomTileColor = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
-            Color32 roomWallColor = roomTileColor + (Color.white * 0.2f);
-            roomWallColor.a = roomTileColor.a;
-
-            for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
-            {
-                texture.SetPixel(Rooms[i].roomTiles[f].RawCoord.coords.x, Rooms[i].roomTiles[f].RawCoord.coords.y, roomTileColor);
-            }
-            for (int w = 0; w < Rooms[i].wallTiles.Count; w++)
-            {
-                texture.SetPixel(Rooms[i].wallTiles[w].RawCoord.coords.x, Rooms[i].wallTiles[w].RawCoord.coords.y, roomWallColor);
-            }
-        }
-        texture.Apply();
-        return texture;
-    }
-    public static Texture2D RoomClass(LevelGenerator.Tile[,] _Map, List<LevelGenerator.Room> Rooms)
-    {
-        Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-
-        {
-            Color fillColor = Color.clear;
-            Color[] fillPixels = new Color[texture.width * texture.height];
-
-            for (int i = 0; i < fillPixels.Length; i++)
-            {
-                fillPixels[i] = fillColor;
-            }
-
-            texture.SetPixels(fillPixels);
-        }//Set all transparent
-
-        for (int i = 0; i < Rooms.Count; i++)
-        {
-            Color color = Color.clear;
-
-            switch (Rooms[i].roomClass)
-            {
-                case Enums.roomClass.Neutral:
-                    color = Color.white;
-                    break;
-                case Enums.roomClass.Physical:
-                    color = Color.red;
-                    break;
-                case Enums.roomClass.Scientific:
-                    color = Color.blue;
-                    break;
-                case Enums.roomClass.Social:
-                    color = Color.green;
-                    break;
-                case Enums.roomClass.Spiritual:
-                    color = Color.yellow;
-
-                    break;
-            }
-            color.a = 0.5f;
-
-            for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
-            {
-                texture.SetPixel(Rooms[i].roomTiles[f].RawCoord.coords.x, Rooms[i].roomTiles[f].RawCoord.coords.y, color);
-            }
-            for (int w = 0; w < Rooms[i].wallTiles.Count; w++)
-            {
-                texture.SetPixel(Rooms[i].wallTiles[w].RawCoord.coords.x, Rooms[i].wallTiles[w].RawCoord.coords.y, color);
-            }
-        }
-        texture.Apply();
-        return texture;
-    }
-    public static Texture2D RoomSize(LevelGenerator.Tile[,] _Map, List<LevelGenerator.Room> Rooms)
-    {
-        Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-
-        {
-            Color fillColor = Color.clear;
-            Color[] fillPixels = new Color[texture.width * texture.height];
-
-            for (int i = 0; i < fillPixels.Length; i++)
-            {
-                fillPixels[i] = fillColor;
-            }
-
-            texture.SetPixels(fillPixels);
-        }//Set all transparent
-
-        for (int i = 0; i < Rooms.Count; i++)
-        {
-            Color color = Color.clear;
-
-            float biggestRoom = (float)Enums.roomSize.Big;
-
-            switch (Rooms[i].roomSize)
-            {
-                case Enums.roomSize.Tiny:
-                    color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Tiny / biggestRoom);
-                    break;
-                case Enums.roomSize.Small:
-                    color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Small / biggestRoom);
-                    break;
-                case Enums.roomSize.Medium:
-                    color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Medium / biggestRoom);
-                    break;
-                case Enums.roomSize.Large:
-                    color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Large / biggestRoom);
-                    break;
-                case Enums.roomSize.Big:
-                    color = Color.Lerp(Color.white, Color.blue, (float)Enums.roomSize.Big / biggestRoom);
-                    break;
-            }
-            color.a = 0.5f;
-
-            for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
-            {
-                texture.SetPixel(Rooms[i].roomTiles[f].RawCoord.coords.x, Rooms[i].roomTiles[f].RawCoord.coords.y, color);
-            }
-            for (int w = 0; w < Rooms[i].wallTiles.Count; w++)
-            {
-                texture.SetPixel(Rooms[i].wallTiles[w].RawCoord.coords.x, Rooms[i].wallTiles[w].RawCoord.coords.y, color);
-            }
-        }
-        texture.Apply();
-        return texture;
-    }
-    public static Texture2D RoomType(LevelGenerator.Tile[,] _Map, List<LevelGenerator.Room> Rooms)
-    {
-        Texture2D texture = new Texture2D(_Map.GetLength(0), _Map.GetLength(1), TextureFormat.ARGB32, false);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-
-        {
-            Color fillColor = Color.clear;
-            Color[] fillPixels = new Color[texture.width * texture.height];
-
-            for (int i = 0; i < fillPixels.Length; i++)
-            {
-                fillPixels[i] = fillColor;
-            }
-
-            texture.SetPixels(fillPixels);
-        }//Set all transparent
-
-        for (int i = 0; i < Rooms.Count; i++)
-        {
-            Color color = Color.clear;
-
-            switch (Rooms[i].roomType)
-            {
-                case Enums.roomType.None:
-                    color = Color.grey;
-                    break;
-                case Enums.roomType.Spawn:
-                    color = Color.white;
-                    break;
-                case Enums.roomType.Shop:
-                    color = Color.yellow;
-                    break;
-                case Enums.roomType.Secret:
-                    color = Color.blue;
-                    break;
-                case Enums.roomType.Enemy:
-                    color = Color.magenta;
-                    break;
-                case Enums.roomType.MiniBoss:
-                    color = Color.red;
-                    break;
-                case Enums.roomType.Boss:
-                    color = Color.black;
-                    break;
-            }
-            color.a = 0.5f;
-
-            for (int f = 0; f < Rooms[i].roomTiles.Count; f++)
-            {
-                texture.SetPixel(Rooms[i].roomTiles[f].RawCoord.coords.x, Rooms[i].roomTiles[f].RawCoord.coords.y, color);
-            }
-            for (int w = 0; w < Rooms[i].wallTiles.Count; w++)
-            {
-                texture.SetPixel(Rooms[i].wallTiles[w].RawCoord.coords.x, Rooms[i].wallTiles[w].RawCoord.coords.y, color);
+                texture.SetPixel(x, y, color);
             }
         }
         texture.Apply();
