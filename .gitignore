@@ -58,3 +58,7 @@ sysinfo.txt
 *.jpg
 *.gif
 
+*.otf
+*.bmp
+*.ini
+*.cfg
