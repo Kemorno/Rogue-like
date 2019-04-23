@@ -21,6 +21,8 @@ public class NewGenerator : MonoBehaviour
 
     Map map;
 
+    public bool drawGizmos;
+
     public Vector2Int mousePos;
     public GameObject guide;
     public Material plainMaterial;
@@ -46,23 +48,38 @@ public class NewGenerator : MonoBehaviour
     private void Update()
     {
         {
+            List<CoordInt> inScreen = new List<CoordInt>();
             Vector3 pos = Camera.main.transform.position;
-            for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - 0.5f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + 0.5f); x++)
+            for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - ChunkSize/2f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + ChunkSize / 2f); x += ChunkSize)
             {
-                for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - 0.5f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + 0.5f); y++)
+                for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - ChunkSize / 2f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + ChunkSize / 2f); y += ChunkSize)
                 {
                     CoordInt coord = new CoordInt(Mathf.RoundToInt(x / (float)ChunkSize), Mathf.RoundToInt(y / (float)ChunkSize));
-
-                    GameObject go = new GameObject();
-                    go.AddComponent<SpriteRenderer>();
-                    Texture2D text = Grid.ChunkGrid(ChunkSize);
-                    go.GetComponent<SpriteRenderer>().sprite = Sprite.Create(text, new Rect(0, 0, text.width, text.height), new Vector2(text.width / 2f, text.height / 2f), 64);
-                    go.transform.position = new Vector3(coord.x * ChunkSize, coord.y * ChunkSize);
-                    go.name = "Grid " + x + "," + y;
-                    go.transform.parent = GridGrouper.transform;
-
-                    ChunkGrids.Add(coord, go);
+                    if (!ChunkGrids.ContainsKey(coord))
+                    {
+                        GameObject go = new GameObject();
+                        go.AddComponent<SpriteRenderer>();
+                        Texture2D text = Grid.ChunkGrid(ChunkSize, 32);
+                        go.GetComponent<SpriteRenderer>().sprite = Sprite.Create(text, new Rect(0, 0, text.width, text.height), new Vector2(.5f, .5f), 32);
+                        go.transform.position = new Vector3(coord.x * ChunkSize, coord.y * ChunkSize);
+                        go.name = "Grid " + coord.x + "," + coord.y;
+                        go.transform.parent = GridGrouper.transform;
+                        inScreen.Add(coord);
+                        ChunkGrids.Add(coord, go);
+                    }
+                    else
+                    {
+                        inScreen.Add(coord);
+                    }
                 }
+            }
+
+            for (int i = 0; i < inScreen.Count; i++)
+            {
+                if (ChunkGrids.ContainsKey(inScreen[i]))
+                    ChunkGrids[inScreen[i]].SetActive(true);
+                else
+                    ChunkGrids[inScreen[i]].SetActive(false);
             }
         }//Grid
 
@@ -227,50 +244,53 @@ public class NewGenerator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if(map != null && map.Chunks.Count != 0)
+        if (drawGizmos)
         {
-            foreach (Chunk c in map.Chunks.Values)
-                foreach (Tile t in c.Tiles.Values)
-                {
-                    Gizmos.color = (t.Type == tileType.Floor) ? Color.white : Color.black; 
-                    Gizmos.DrawCube(new Vector3(t.Coord.x, t.Coord.y), Vector3.one);
-                }
-            foreach(Room r in map.Rooms.Values)
-                foreach(Region rg in r.Regions.Values)
-                    foreach(System.Tuple<Tile, Tile> t in rg.ConnectionTile.Values)
+            if (map != null && map.Chunks.Count != 0)
+            {
+                foreach (Chunk c in map.Chunks.Values)
+                    foreach (Tile t in c.Tiles.Values)
                     {
-                        Gizmos.color = Color.green;
-                        Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
+                        Gizmos.color = (t.Type == tileType.Floor) ? Color.white : Color.black;
+                        Gizmos.DrawCube(new Vector3(t.Coord.x, t.Coord.y), Vector3.one);
                     }
-        }
-        {
-            Vector3 pos = Camera.main.transform.position;
-            if (Camera.main.orthographicSize < 50)
+                foreach (Room r in map.Rooms.Values)
+                    foreach (Region rg in r.Regions.Values)
+                        foreach (System.Tuple<Tile, Tile> t in rg.ConnectionTile.Values)
+                        {
+                            Gizmos.color = Color.green;
+                            Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
+                        }
+            }
+            {
+                Vector3 pos = Camera.main.transform.position;
+                if (Camera.main.orthographicSize < 50)
+                    for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - 0.5f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + 0.5f); x++)
+                    {
+                        for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - 0.5f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + 0.5f); y++)
+                        {
+                            Gizmos.color = Color.grey;
+                            Gizmos.DrawWireCube(new Vector3(x, y), Vector3.one);
+                        }
+                    }
+
                 for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - 0.5f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + 0.5f); x++)
                 {
                     for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - 0.5f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + 0.5f); y++)
                     {
-                        Gizmos.color = Color.grey;
-                        Gizmos.DrawWireCube(new Vector3(x, y), Vector3.one);
+                        CoordInt coord = new CoordInt(Mathf.RoundToInt(x / (float)ChunkSize), Mathf.RoundToInt(y / (float)ChunkSize));
+                        Gizmos.color = Color.white;
+                        Gizmos.DrawWireCube(new Vector3(coord.x * ChunkSize, coord.y * ChunkSize), Vector3.one * ChunkSize);
                     }
                 }
-
-            for (int x = Mathf.FloorToInt(pos.x - (Camera.main.orthographicSize * 16 / 9f) - 0.5f); x <= Mathf.CeilToInt(pos.x + (Camera.main.orthographicSize * 16 / 9f) + 0.5f); x++)
+            }//Grid
+            if (coords != null && coords.Count != 0)
             {
-                for (int y = Mathf.FloorToInt(pos.y - Camera.main.orthographicSize - 0.5f); y <= Mathf.CeilToInt(pos.y + Camera.main.orthographicSize + 0.5f); y++)
+                foreach (Chunk c in coords)
                 {
-                    CoordInt coord = new CoordInt(Mathf.RoundToInt(x / (float)ChunkSize), Mathf.RoundToInt(y / (float)ChunkSize));
-                    Gizmos.color = Color.white;
-                    Gizmos.DrawWireCube(new Vector3(coord.x * ChunkSize, coord.y * ChunkSize), Vector3.one * ChunkSize);
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 2f);
                 }
-            }
-        }//Grid
-        if (coords != null && coords.Count != 0)
-        {
-            foreach(Chunk c in coords)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 2f);
             }
         }
     }
