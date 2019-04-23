@@ -6,6 +6,7 @@ using Enums;
 
 public static class RoomHandler
 {
+    /*
     public static Dictionary<int, Room> SeparateRoomByRegion()
     {
 
@@ -14,7 +15,8 @@ public static class RoomHandler
     {
 
     }
-    public static Dictionary<CoordInt, Tile> OuterTiles(Room room)
+    */
+    public static Dictionary<CoordInt, Tile> EdgeTiles(Room room)
     {
         Dictionary<CoordInt, Tile> tiles = new Dictionary<CoordInt, Tile>();
             foreach (Tile tile in room.Map.Values)
@@ -26,7 +28,7 @@ public static class RoomHandler
                         CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
                         if (tile.Coord.isAdjacent(curCoord))
                         {
-                        if (room.Map.Contains(curCoord))
+                        if (room.Map.ContainsKey(curCoord))
                             if (room.Map[curCoord].Type == tileType.Wall)
                             {
                                 tiles.Add(tile.Coord, tile);
