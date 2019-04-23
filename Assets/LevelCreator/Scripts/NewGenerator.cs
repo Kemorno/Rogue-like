@@ -184,7 +184,7 @@ public class NewGenerator : MonoBehaviour
             {
                 room.SmoothChunks();
                 map.ApplyChunks(room.GetChunkList());
-                yield return new WaitForSeconds(0.3f);
+                yield return new WaitForSeconds(0.15f);
             }
             room.GetMap();
 
@@ -203,10 +203,6 @@ public class NewGenerator : MonoBehaviour
             }
             else
             {
-                foreach(Chunk c in Chunks)
-                {
-                    map.Chunks[c.Coordinates].RegenerateTiles();
-                }
                 if (Settings.RandomFillPercent < 90)
                     Settings.RandomFillPercent += 5;
                 else if (Settings.SmoothingMultiplier > 1)
@@ -216,6 +212,10 @@ public class NewGenerator : MonoBehaviour
                 }
                 else
                 {
+                    foreach (Chunk c in Chunks)
+                    {
+                        map.Chunks[c.Coordinates].RegenerateTiles();
+                    }
                     int FloorAmount = room.GetTilesByType(tileType.Floor).Count;
                     LogHandler.BlacklistSeed("\n" + room.Seed.ToString() + " Generated " + FloorAmount + " Tiles for " + room.Chunks.Count + " Chunks of size " + room.GetChunkSize()
                         + ". Expected at least " + (TilePercentageFilled * 100) + "% filled, got " + (room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) / (float)FloorAmount) + "%.");
