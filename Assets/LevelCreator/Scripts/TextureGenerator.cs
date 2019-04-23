@@ -19,14 +19,15 @@ public static class TextureGenerator
 }
 public static class Grid
 {
-    public static Texture2D ChunkGrid(int ChunkSize)
+    public static Texture2D ChunkGrid(int ChunkSize, int cellSize = 64)
     {
-        int cellSize = 64;
-
         Texture2D ChunkGrid = new Texture2D(cellSize * ChunkSize, cellSize * ChunkSize)
         {
             alphaIsTransparency = true,
-            filterMode = FilterMode.Point
+            filterMode = FilterMode.Point,
+            anisoLevel = 5,
+            wrapMode = TextureWrapMode.Clamp,
+            
         };
 
         Texture2D cell = new Texture2D(cellSize, cellSize);
@@ -42,19 +43,21 @@ public static class Grid
             }
         }
         cell.Apply();
-        for (int x = 0; x < ChunkGrid.width; x *= cellSize)
+        for (int x = 0; x < ChunkGrid.width; x += cellSize)
         {
-            for (int y = 0; y < ChunkGrid.height; y *= cellSize)
+            for (int y = 0; y < ChunkGrid.height; y += cellSize)
             {
-                cell.SetPixels(cell.GetPixels());
+                ChunkGrid.SetPixels(x,y, cellSize, cellSize, cell.GetPixels());
             }
         }
         for (int x = 0; x < ChunkGrid.width; x++)
         {
             for (int y = 0; y < ChunkGrid.height; y++)
             {
-                if (x == 0 || x == cell.width - 1 || y == 0 || y == cell.height - 1)
+                if (x == 0 || x == ChunkGrid.width - 1 || y == 0 || y == ChunkGrid.height - 1)
+                {
                     ChunkGrid.SetPixel(x, y, Color.white);
+                }
 
             }
         }
@@ -70,15 +73,15 @@ public static class Overlay
         {
             filterMode = FilterMode.Point,
             alphaIsTransparency = true
-        }
+        };
 
         for (int x = 0; x < chunk.Size; x++)
         {
             for (int y = 0; y < chunk.Size; y++)
             {
-                if (chunk.Tiles[new CoordInt(x, y)].Type == TileType.Wall)
+                if (chunk.Tiles[new CoordInt(x, y)].Type == tileType.Wall)
                     texture.SetPixels(x * cellSize, y * cellSize, cellSize, cellSize, Opaque(cellSize, Color.black).GetPixels());
-                if (chunk.Tiles[new CoordInt(x, y)].Type == TileType.Floor)
+                if (chunk.Tiles[new CoordInt(x, y)].Type == tileType.Floor)
                     texture.SetPixels(x * cellSize, y * cellSize, cellSize, cellSize, Opaque(cellSize, Color.white).GetPixels());
             }
         }
@@ -89,7 +92,7 @@ public static class Overlay
         return texture;
     }
 
-    private static Texture2D Opaque(int Size, Color color)
+    public static Texture2D Opaque(int Size, Color color)
     {
         Texture2D texture = new Texture2D(Size, Size);
         

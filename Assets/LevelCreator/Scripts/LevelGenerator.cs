@@ -458,32 +458,35 @@ public class LevelGenerator : MonoBehaviour {
     }
     void updateOverlay(Tile[,] Map)
     {
-        SpriteRenderer OverlaySprite = overlay.GetComponent<SpriteRenderer>();
-        SpriteRenderer GridSprite = grid.GetComponent<SpriteRenderer>();
+        /*
+    SpriteRenderer OverlaySprite = overlay.GetComponent<SpriteRenderer>();
+    SpriteRenderer GridSprite = grid.GetComponent<SpriteRenderer>();
 
-        switch (overlayType)
-        {
-            case Enums.OverlayType.Tile:
-                OverlaySprite.sprite = Sprite.Create(Overlay.Tiles(Map), new Rect(0,0, size, size), Vector2.one * .5f,1);
-                break;
-            case Enums.OverlayType.RoomTiles:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomTiles(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
-                break;
-            case Enums.OverlayType.RoomSize:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomSize(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
-                break;
-            case Enums.OverlayType.RoomClass:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomClass(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
-                break;
-            case Enums.OverlayType.RoomType:
-                OverlaySprite.sprite = Sprite.Create(Overlay.RoomType(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
-                break;
-        }
+    switch (overlayType)
+    {
+        case Enums.OverlayType.Tile:
+            OverlaySprite.sprite = Sprite.Create(Overlay.Tiles(Map), new Rect(0,0, size, size), Vector2.one * .5f,1);
+            break;
+        case Enums.OverlayType.RoomTiles:
+            OverlaySprite.sprite = Sprite.Create(Overlay.RoomTiles(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
+            break;
+        case Enums.OverlayType.RoomSize:
+            OverlaySprite.sprite = Sprite.Create(Overlay.RoomSize(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
+            break;
+        case Enums.OverlayType.RoomClass:
+            OverlaySprite.sprite = Sprite.Create(Overlay.RoomClass(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
+            break;
+        case Enums.OverlayType.RoomType:
+            OverlaySprite.sprite = Sprite.Create(Overlay.RoomType(Map, Rooms), new Rect(0, 0, size, size), Vector2.one * .5f, 1);
+            break;
+    }
         if (showGrid)
         {
             Texture2D gridCellTexture = TextureGenerator.textureFromSprite(gridCell);
             GridSprite.sprite = Sprite.Create(Grid.gridTexture(Map, gridCellTexture), new Rect(0, 0, 24, 24), Vector2.one * .5f, 1);
         }
+        
+            */
     }
     int GetSurroundingWallCount(int gridX, int gridY, Tile[,] Map)
     {
