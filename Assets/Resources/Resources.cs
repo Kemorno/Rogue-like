@@ -854,7 +854,7 @@ namespace Resources
         }
     }
 
-    public class Room : RoomSettings
+    public class Room: RoomSettings
     {
         public int ID;
         public Dictionary<CoordInt, Chunk> Chunks = new Dictionary<CoordInt, Chunk>();
@@ -868,6 +868,10 @@ namespace Resources
         public Room(int ID, List<Chunk> Chunks, RoomSettings settings) : base(settings)
         {
             this.ID = ID;
+            RemoveNotAdjacent(Chunks);
+        }
+        public Room(List<Chunk> Chunks, RoomSettings settings) : base(settings)
+        {
             RemoveNotAdjacent(Chunks);
         }
 
@@ -984,7 +988,7 @@ namespace Resources
                     }
                     if (newRegions[f.ID].Connection.Count < 2)
                     {
-                        CreateConnectionRegion(NearestTileBetweenRegions(f, NearestRegion));
+                        CreateConnection(NearestTileBetweenRegions(f, NearestRegion));
                         newRegions[f.ID].Connection.Add(NearestRegion.ID, NearestRegion);
                         newRegions[f.ID].ConnectionTile.Add(NearestRegion.ID, new Tuple<Tile, Tile>(FromTile, ToTile));
                         newRegions[NearestRegion.ID].Connection.Add(f.ID, f);
@@ -996,9 +1000,19 @@ namespace Resources
             RemoveCleanChunks();
             GetMap();
         }
-        private void CreateConnectionRegion(Dictionary<int, Tile> NearestTiles)
+        private void CreateConnections()
         {
+            foreach(Region from in Regions.Values)
+            {
+                int dist = 10000;
+                foreach(Region to in Regions.Values)
+                {
+                    if (from.ID == to.ID)
+                        continue;
+                    Tile[] connectionTiles = NearestTileBetweenRegions(from, to);
 
+                }
+            }
         }
         private void RemoveCleanChunks()
         {
@@ -1055,6 +1069,45 @@ namespace Resources
         {
             System.Random prng = new System.Random(Seed.GetHashCode());
             Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
+        }
+        public void CheckConnections()
+        {
+            Queue<Region> queue = new Queue<Region>(Conversion.DictionaryToList(Regions));
+            Dictionary<int, bool> ConnectionFlags = new Dictionary<int, bool>();
+            
+            List<List<Region>> MasterRegions = new List<List<Region>>();
+
+            while (queue.Count > 0)
+            {
+                Region region = queue.Dequeue();
+                if (!ConnectionFlags.ContainsKey(region.ID))
+                {
+                    List<Region> MasterRegionList = new List<Region>();
+                    MasterRegionList.Add(region);
+                    ConnectionFlags.Add(region.ID, true);
+
+                    Queue<Region> innerqueue = new Queue<Region>();
+                    innerqueue.Enqueue(region);
+
+                    while(innerqueue.Count > 0)
+                    {
+                        Region innerRegion = innerqueue.Dequeue();
+                        foreach(Region r in innerRegion.Connection.Values)
+                        {
+                            ConnectionFlags.Add(r.ID, true);
+                            MasterRegionList.Add(r);
+                            innerqueue.Enqueue(r);
+                        }
+                    }
+                    MasterRegions.Add(MasterRegionList);
+                }
+            }
+
+            float nearestdist = 1000000;
+
+            foreach(List<Region> list in )
+            {
+            }
         }
 
         #endregion
@@ -1134,40 +1187,34 @@ namespace Resources
                 Size = c.Size;
             return Size;
         }
-        public Dictionary<int, Tile> NearestTileBetweenRegions(Region FromWallTiles, Region ToWallTiles)
+        public Tile[] NearestTileBetweenRegions(Region FromTiles, Region ToTiles)
         {
-            Dictionary<int, Tile> Tiles = new Dictionary<int, Tile>(2);
+            Tile[] tiles = new Tile[2];
 
             float dist = 1000000;
-            Region FromRegion = FromWallTiles;
-            Region ToRegion = ToWallTiles;
-            Tile FromTile = null;
-            Tile ToTile = null;
 
-            foreach(Tile t in FromRegion.Tiles.Values)
+            Dictionary<CoordInt, Tile> FromOuterTiles = FromTiles.GetOuterTiles();
+            Dictionary<CoordInt, Tile> ToOuterTiles = ToTiles.GetOuterTiles();
+
+            foreach (Tile t in FromOuterTiles.Values)
             {
                 if (t.Type == tileType.Wall)
                 {
                     Vector2Int FromPos = t.Coord.GetVector2Int();
-                    foreach (Tile f in ToRegion.Tiles.Values)
+                    foreach (Tile f in ToOuterTiles.Values)
                     {
-                        if (t.Type == tileType.Wall)
+                        Vector2Int ToPos = f.Coord.GetVector2Int();
+                        if (Vector2Int.Distance(FromPos, ToPos) < dist)
                         {
-                            Vector2Int ToPos = f.Coord.GetVector2Int();
-                            if (Vector2Int.Distance(FromPos, ToPos) < dist)
-                            {
-                                dist = Vector2Int.Distance(FromPos, ToPos);
-                                FromTile = t;
-                                ToTile = f;
-                            }
+                            dist = Vector2Int.Distance(FromPos, ToPos);
+                            tiles[0] = t;
+                            tiles[1] = f;
                         }
                     }
                 }
             }
-            Tiles.Add(FromRegion.ID, FromTile);
-            Tiles.Add(ToRegion.ID, ToTile);
 
-            return Tiles;
+            return tiles;
         }
 
         #endregion
@@ -1208,14 +1255,75 @@ namespace Resources
     public class Region
     {
         public int ID;
-        public Dictionary<CoordInt, Tile> Tiles = new Dictionary<CoordInt, Tile>();
+        public Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
         public Dictionary<int, Region> Connection = new Dictionary<int, Region>();
         public Dictionary<int, Tuple<Tile, Tile>> ConnectionTile = new Dictionary<int, Tuple<Tile, Tile>>();
 
-        public Region(int ID, Dictionary<CoordInt, Tile> Tiles)
+        public Region(int ID, Dictionary<CoordInt, Tile> Map)
         {
             this.ID = ID;
-            this.Tiles = Tiles;
+            this.Map = Map;
+        }
+
+        public List<Chunk> GetChunks(Room room)
+        {
+            List<Chunk> chunks = new List<Chunk>();
+            List<CoordInt> mapFlags = new List<CoordInt>();
+
+            foreach (Tile t in Map.Values)
+            {
+                CoordInt chunkCoord = room.GetChunkCoord(t.Coord);
+                if (!mapFlags.Contains(chunkCoord))
+                {
+                    chunks.Add(room.Chunks[chunkCoord]);
+                }
+            }
+            return chunks;
+        }
+        public Dictionary<CoordInt, Tile> GetOuterTiles()
+        {
+            Dictionary<CoordInt, Tile> tiles = new Dictionary<CoordInt, Tile>();
+            foreach (Tile tile in Map.Values)
+            {
+                for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
+                {
+                    for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
+                    {
+                        CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
+                        if (tile.Coord.isAdjacent(curCoord))
+                            if (Map.ContainsKey(curCoord))
+                                if (Map[curCoord].Type == tileType.Wall)
+                                {
+                                    tiles.Add(tile.Coord, tile);
+                                    goto next;
+                                }
+                    }
+                }
+                next:
+                continue;
+            }
+
+            return tiles;
+        }
+
+        public float Distance(Region other)
+        {
+            float dist = 1000000;
+
+            Dictionary<CoordInt, Tile> thisOuter = GetOuterTiles();
+            Dictionary<CoordInt, Tile> otherOuter = other.GetOuterTiles();
+
+            foreach (Tile t in thisOuter.Values)
+            {
+                    Vector2Int FromPos = t.Coord.GetVector2Int();
+                    foreach (Tile f in otherOuter.Values)
+                    {
+                        Vector2Int ToPos = f.Coord.GetVector2Int();
+                        if (Vector2Int.Distance(FromPos, ToPos) < dist)
+                            dist = Vector2Int.Distance(FromPos, ToPos);
+                    }
+            }
+            return dist;
         }
     }
 
@@ -1552,6 +1660,92 @@ namespace Resources
         public List<Modifier> Modifiers = new List<Modifier>();
         public List<Mob> Mobs = new List<Mob>();
     }
+
+    public static class Conversion
+    {
+        public static Dictionary<CoordInt, Tile> ListToDictionary(List<Tile> List)
+        {
+            Dictionary<CoordInt, Tile> dict = new Dictionary<CoordInt, Tile>();
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                dict.Add(List[i].Coord,List[i]);
+            }
+            return dict;
+        }
+        public static Dictionary<CoordInt, Chunk> ListToDictionary(List<Chunk> List)
+        {
+            Dictionary<CoordInt, Chunk> dict = new Dictionary<CoordInt, Chunk>();
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                dict.Add(List[i].Coordinates, List[i]);
+            }
+            return dict;
+        }
+        public static Dictionary<int, Room> ListToDictionary(List<Room> List)
+        {
+            Dictionary<int, Room> dict = new Dictionary<int, Room>();
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                dict.Add(List[i].ID, List[i]);
+            }
+            return dict;
+        }
+        public static Dictionary<int, Region> ListToDictionary(List<Region> List)
+        {
+            Dictionary<int, Region> dict = new Dictionary<int, Region>();
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                dict.Add(List[i].ID, List[i]);
+            }
+            return dict;
+        }
+
+        public static List<Tile> DictionaryToList(Dictionary<CoordInt, Tile> dict)
+        {
+            List<Tile> List = new List<Tile>();
+
+            foreach (Tile t in dict.Values)
+            {
+                List.Add(t);
+            }
+
+            return List;
+        }
+        public static List<Chunk> DictionaryToList(Dictionary<CoordInt, Chunk> dict)
+        {
+            List<Chunk> List = new List<Chunk>();
+
+            foreach (Chunk t in dict.Values)
+            {
+                List.Add(t);
+            }
+            return List;
+        }
+        public static List<Room> DictionaryToList(Dictionary<int, Room> dict)
+        {
+            List<Room> List = new List<Room>();
+
+            foreach (Room t in dict.Values)
+            {
+                List.Add(t);
+            }
+            return List;
+        }
+        public static List<Region> DictionaryToList(Dictionary<int, Region> dict)
+        {
+            List<Region> List = new List<Region>();
+
+            foreach (Region t in dict.Values)
+            {
+                List.Add(t);
+            }
+            return List;
+        }
+    }
 }
 namespace Enums
 {
@@ -1689,6 +1883,7 @@ namespace Enums
 
     public enum OperatorType
     {
+
         LowerThan,
         LowerOrEqualsThan,
         EqualsTo,
