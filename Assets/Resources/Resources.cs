@@ -873,6 +873,7 @@ namespace Resources
         public Room(List<Chunk> Chunks, RoomSettings settings) : base(settings)
         {
             RemoveNotAdjacent(Chunks);
+            SetColor();
         }
 
         public void RemoveNotAdjacent(List<Chunk> ChunkListRaw)
@@ -947,71 +948,53 @@ namespace Resources
                     if (t.Type == tileType.Floor)
                     {
                         Region Region = new Region(nextRegionID, GetRegion(t));
-                        if (Region.Tiles.Count > Mathf.Pow(GetChunkSize(), 2))
+                        float threshold = Region.GetChunks(this).Count * Mathf.Pow(GetChunkSize(), 2) * 0.4f;
+                        if (Region.Map.Count > threshold)
                             AddRegion(Region);
                         else if (Regions.Count > 0)
-                            foreach (Tile tr in Region.Tiles.Values)
+                        {
+                            Debug.Log("Room has Tiles " + Region.Map.Count + ">=" + threshold);
+                            foreach (Tile tr in Region.Map.Values)
+                            {
                                 Chunks[GetChunkCoord(tr.Coord)].Tiles[tr.Coord].SetType(tileType.Wall);
+                            }
+                        }
                         else
                             AddRegion(Region);
 
-                        foreach (Tile tr in Region.Tiles.Values)
+                        foreach (Tile tr in Region.Map.Values)
                             MapFlags.Add(tr.Coord, tr);
                     }
+            Debug.Log("Found " + Regions.Count + " Regions");
+        }
+        public void CreateConnections()
+        {
             if (Regions.Count > 1)
             {
-                Dictionary<int, Region> newRegions = new Dictionary<int, Region>(Regions);
-                foreach (Region f in Regions.Values)
+                foreach (Region from in Regions.Values)
                 {
-                    Tile FromTile = null;
-                    Tile ToTile = null;
-
-                    if (newRegions[f.ID].Connection.Count > 2)
+                    if (from.Connection.Count >= 2)
                         continue;
-                    Region NearestRegion = null;
-                    float dist = 10000000;
-                    foreach(Region t in Regions.Values)
+                    float dist = 1000000;
+                    Region ToRegion = null;
+                    foreach (Region to in Regions.Values)
                     {
-                        if (newRegions[f.ID].ConnectionTile.ContainsKey(t.ID))
+                        if (from.ID == to.ID)
                             continue;
-                        if (t.ID != f.ID)
+                        if (from.Connection.ContainsKey(to.ID))
+                            continue;
+                        if (to.Connection.Count >= 2)
+                            continue;
+                        if (Region.Distance(from, to) < dist)
                         {
-                            Dictionary<int, Tile> tiles = NearestTileBetweenRegions(f, t);
-                            if (dist > Vector2Int.Distance(tiles[f.ID].Coord.GetVector2Int(), tiles[t.ID].Coord.GetVector2Int()))
-                            {
-                                NearestRegion = t;
-                                FromTile = tiles[t.ID];
-                                ToTile = tiles[f.ID];
-                                dist = Vector2Int.Distance(FromTile.Coord.GetVector2Int(), ToTile.Coord.GetVector2Int());
-                            }
+                            dist = Region.Distance(from, to);
+                            ToRegion = to;
                         }
                     }
-                    if (newRegions[f.ID].Connection.Count < 2)
-                    {
-                        CreateConnection(NearestTileBetweenRegions(f, NearestRegion));
-                        newRegions[f.ID].Connection.Add(NearestRegion.ID, NearestRegion);
-                        newRegions[f.ID].ConnectionTile.Add(NearestRegion.ID, new Tuple<Tile, Tile>(FromTile, ToTile));
-                        newRegions[NearestRegion.ID].Connection.Add(f.ID, f);
-                        newRegions[NearestRegion.ID].ConnectionTile.Add(f.ID, new Tuple<Tile, Tile>(ToTile, FromTile));
-                    }
+                    if(ToRegion != null)
+                        from.ConnectRegions(ToRegion, NearestTileBetweenRegions(from, ToRegion));
                 }
-                Regions = new Dictionary<int, Region>(newRegions);
-            }
-            RemoveCleanChunks();
-            GetMap();
-        }
-        private void CreateConnections()
-        {
-            foreach(Region from in Regions.Values)
-            {
-                int dist = 10000;
-                foreach(Region to in Regions.Values)
-                {
-                    if (from.ID == to.ID)
-                        continue;
-                    Tile[] connectionTiles = NearestTileBetweenRegions(from, to);
-
-                }
+                CheckConnections();
             }
         }
         private void RemoveCleanChunks()
@@ -1092,21 +1075,45 @@ namespace Resources
                     while(innerqueue.Count > 0)
                     {
                         Region innerRegion = innerqueue.Dequeue();
-                        foreach(Region r in innerRegion.Connection.Values)
+                        foreach(int r in innerRegion.Connection.Keys)
                         {
-                            ConnectionFlags.Add(r.ID, true);
-                            MasterRegionList.Add(r);
-                            innerqueue.Enqueue(r);
+                            if (ConnectionFlags.ContainsKey(r))
+                                continue;
+                            ConnectionFlags.Add(r, true);
+                            MasterRegionList.Add(Regions[r]);
+                            innerqueue.Enqueue(Regions[r]);
                         }
                     }
                     MasterRegions.Add(MasterRegionList);
                 }
             }
 
-            float nearestdist = 1000000;
-
-            foreach(List<Region> list in )
+            if (MasterRegions.Count > 1)
             {
+                foreach (List<Region> from in MasterRegions)
+                {
+                    float dist = 1000000;
+                    Region nearestToRegion = null;
+                    Region nearestFromRegion = null;
+                    for (int fromIndex = 0; fromIndex < from.Count; fromIndex++)
+                    {
+                        foreach (List<Region> to in MasterRegions)
+                        {
+                            if (from == to)
+                                continue;
+                            for (int toIndex = 0; toIndex < to.Count; toIndex++)
+                            {
+                                if (Region.Distance(from[fromIndex], to[toIndex]) < dist)
+                                {
+                                    nearestToRegion = to[toIndex];
+                                    nearestFromRegion = from[fromIndex];
+                                    dist = from[fromIndex].Distance(to[toIndex]);
+                                }
+                            }
+                        }
+                    }
+                    nearestFromRegion.ConnectRegions(nearestToRegion, NearestTileBetweenRegions(nearestFromRegion, nearestToRegion));
+                }
             }
         }
 
@@ -1191,7 +1198,7 @@ namespace Resources
         {
             Tile[] tiles = new Tile[2];
 
-            float dist = 1000000;
+            float dist = 25;
 
             Dictionary<CoordInt, Tile> FromOuterTiles = FromTiles.GetOuterTiles();
             Dictionary<CoordInt, Tile> ToOuterTiles = ToTiles.GetOuterTiles();
@@ -1256,8 +1263,7 @@ namespace Resources
     {
         public int ID;
         public Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
-        public Dictionary<int, Region> Connection = new Dictionary<int, Region>();
-        public Dictionary<int, Tuple<Tile, Tile>> ConnectionTile = new Dictionary<int, Tuple<Tile, Tile>>();
+        public Dictionary<int, Tuple<Tile, Tile>> Connection = new Dictionary<int, Tuple<Tile, Tile>>();
 
         public Region(int ID, Dictionary<CoordInt, Tile> Map)
         {
@@ -1275,6 +1281,7 @@ namespace Resources
                 CoordInt chunkCoord = room.GetChunkCoord(t.Coord);
                 if (!mapFlags.Contains(chunkCoord))
                 {
+                    mapFlags.Add(chunkCoord);
                     chunks.Add(room.Chunks[chunkCoord]);
                 }
             }
@@ -1305,6 +1312,12 @@ namespace Resources
 
             return tiles;
         }
+        public void ConnectRegions(Region other, Tile[] tiles)
+        {
+            Connection.Add(other.ID, new Tuple<Tile, Tile>(tiles[0], tiles[1]));
+            other.Connection.Add(ID, new Tuple<Tile, Tile>(tiles[1], tiles[0]));
+            Debug.Log("Created Connection from " + ID + " to " + other.ID + " on tiles " + tiles[0].Coord.ToString() + " to " + tiles[1].Coord.ToString() + " respectively");
+        }
 
         public float Distance(Region other)
         {
@@ -1322,6 +1335,25 @@ namespace Resources
                         if (Vector2Int.Distance(FromPos, ToPos) < dist)
                             dist = Vector2Int.Distance(FromPos, ToPos);
                     }
+            }
+            return dist;
+        }
+        public static float Distance(Region A, Region B)
+        {
+            float dist = 1000000;
+
+            Dictionary<CoordInt, Tile> AOuter = A.GetOuterTiles();
+            Dictionary<CoordInt, Tile> BOuter = B.GetOuterTiles();
+
+            foreach (Tile t in AOuter.Values)
+            {
+                Vector2Int FromPos = t.Coord.GetVector2Int();
+                foreach (Tile f in BOuter.Values)
+                {
+                    Vector2Int ToPos = f.Coord.GetVector2Int();
+                    if (Vector2Int.Distance(FromPos, ToPos) < dist)
+                        dist = Vector2Int.Distance(FromPos, ToPos);
+                }
             }
             return dist;
         }

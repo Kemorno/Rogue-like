@@ -31,6 +31,9 @@ public class NewGenerator : MonoBehaviour
 
     List<Chunk> coords;
 
+    public Vector2 start, end;
+    private Rect rect;
+
     private void Awake()
     {
         GlobalSeed = new Seed();
@@ -91,82 +94,133 @@ public class NewGenerator : MonoBehaviour
 
         if (!EventSystem.current.IsPointerOverGameObject())
         {
-            if(Input.GetMouseButtonDown(0))
-                switch (selected)
-                {
-                    case NewcameraGUI.selectedButton.None:
-                        break;
-                    case NewcameraGUI.selectedButton.Noise:
-                        break;
-                    case NewcameraGUI.selectedButton.Room:
-                        coords = new List<Chunk>();
-                        break;
-                    case NewcameraGUI.selectedButton.Connect:
-                        break;
-                    case NewcameraGUI.selectedButton.Erase:
-                        break;
-                }
-
-            if (Input.GetMouseButton(0))
-                switch (selected)
-                {
-                    case NewcameraGUI.selectedButton.None:
-                        break;
-                    case NewcameraGUI.selectedButton.Noise:
-                        if (!map.Chunks.ContainsKey(map.GetChunkCoord(Coord)))
-                            map.CreateChunk(Coord);
-                        break;
-                    case NewcameraGUI.selectedButton.Room:
-                        if (map.Chunks.ContainsKey(map.GetChunkCoord(mousePos)) && !coords.Contains(map.Chunks[map.GetChunkCoord(mousePos)]) && map.Chunks[map.GetChunkCoord(Coord)].room == null)
-                            coords.Add(map.Chunks[map.GetChunkCoord(mousePos)]);
-                        break;
-                    case NewcameraGUI.selectedButton.Connect:
-                        break;
-                    case NewcameraGUI.selectedButton.Erase:
-                        if (map.ContainsCoord(Coord))
-                        {
-                            Chunk c = map.Chunks[map.GetChunkCoord(Coord)];
-                            c.Tiles.Clear();
-                            if (c.room != null)
+            {
+                if (Input.GetMouseButtonDown(0))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            coords = new List<Chunk>();
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            break;
+                    }
+                if (Input.GetMouseButton(0))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            if (!map.Chunks.ContainsKey(map.GetChunkCoord(Coord)))
+                                map.CreateChunk(Coord);
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            if (map.Chunks.ContainsKey(map.GetChunkCoord(mousePos)) && !coords.Contains(map.Chunks[map.GetChunkCoord(mousePos)]) && map.Chunks[map.GetChunkCoord(Coord)].room == null)
+                                coords.Add(map.Chunks[map.GetChunkCoord(mousePos)]);
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            if (map.ContainsCoord(Coord))
                             {
-                                map.Rooms.Remove(c.room.ID);
-                                c.room.Chunks.Remove(c.Coordinates);
-                                foreach (Chunk cu in c.room.Chunks.Values)
+                                Chunk c = map.Chunks[map.GetChunkCoord(Coord)];
+                                c.Tiles.Clear();
+                                if (c.room != null)
                                 {
-                                    cu.room = null;
-                                    cu.RegenerateTiles();
+                                    map.Rooms.Remove(c.room.ID);
+                                    c.room.Chunks.Remove(c.Coordinates);
+                                    foreach (Chunk cu in c.room.Chunks.Values)
+                                    {
+                                        cu.room = null;
+                                        cu.RegenerateTiles();
+                                    }
                                 }
+                                map.Chunks.Remove(c.Coordinates);
                             }
-                            map.Chunks.Remove(c.Coordinates);
-                        }
-                        break;
-                }
+                            break;
+                    }
 
-            if (Input.GetMouseButtonUp(0))
-                switch (selected)
-                {
-                    case NewcameraGUI.selectedButton.None:
-                        break;
-                    case NewcameraGUI.selectedButton.Noise:
-                        break;
-                    case NewcameraGUI.selectedButton.Room:
-                        if (coords.Count > 0)
-                        {
-                            if (queue.Count == 0)
+                if (Input.GetMouseButtonUp(0))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            if (coords.Count > 0)
                             {
-                                queue.Enqueue(coords);
-                                RoomQueue();
+                                if (queue.Count == 0)
+                                {
+                                    queue.Enqueue(coords);
+                                    RoomQueue();
+                                }
+                                else
+                                    queue.Enqueue(coords);
+                                coords.Clear();
                             }
-                            else
-                                queue.Enqueue(coords);
-                            coords.Clear();
-                        }
-                        break;
-                    case NewcameraGUI.selectedButton.Connect:
-                        break;
-                    case NewcameraGUI.selectedButton.Erase:
-                        break;
-                }
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            break;
+                    }
+            }//0
+            {
+                if (Input.GetMouseButtonDown(1))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            start = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            break;
+                    }
+                if (Input.GetMouseButton(1))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            Rect rect = new Rect(start.x, start.y, Mathf.Abs(end.x - start.x), -Mathf.Abs(end.y - start.y));
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            break;
+                    }
+
+                if (Input.GetMouseButtonUp(1))
+                    switch (selected)
+                    {
+                        case NewcameraGUI.selectedButton.None:
+                            break;
+                        case NewcameraGUI.selectedButton.Noise:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            rect = new Rect(start.x, start.y, Mathf.Abs(end.x - start.x), -Mathf.Abs(end.y - start.y));
+                            break;
+                        case NewcameraGUI.selectedButton.Room:
+                            break;
+                        case NewcameraGUI.selectedButton.Connect:
+                            break;
+                        case NewcameraGUI.selectedButton.Erase:
+                            break;
+                    }
+            }//0
         }
     }
 
@@ -206,13 +260,16 @@ public class NewGenerator : MonoBehaviour
             room.GetMap();
 
             float check = room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) * TilePercentageFilled;
-
-            if ((Mathf.Pow(room.GetChunkSize(), 2)* room.Chunks.Count) * TilePercentageFilled > (Mathf.Pow(room.GetChunkSize(), 2) * room.Chunks.Count) - (room.GetChunkSize() - 1) * 4)
-                check = (Mathf.Pow(room.GetChunkSize(), 2)*room.Chunks.Count) - (room.GetChunkSize() - 1) * 4;
             
+            room.GetRegions();
+            yield return new WaitForSeconds(0.15f);
+            room.GetMap();
+
+            Debug.Log("Room has Tiles " + room.GetTilesByType(tileType.Floor).Count + ">=" + check);
             if (room.GetTilesByType(tileType.Floor).Count >= check)
             {
-                room.GetRegions();
+                room.SetColor();
+                room.CreateConnections();
                 map.ApplyChunks(room.GetChunkList());
                 yield return new WaitForSeconds(0.3f);
                 FinishRoom(room);
@@ -244,24 +301,40 @@ public class NewGenerator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (map != null && map.Chunks.Count != 0)
+        {
+            foreach (Chunk c in map.Chunks.Values)
+                foreach (Tile t in c.Tiles.Values)
+                {
+                    Gizmos.color = (t.Type == tileType.Floor) ? Color.white : Color.black;
+                    Gizmos.DrawCube(new Vector3(t.Coord.x, t.Coord.y), Vector3.one);
+                }
+            foreach (Room r in map.Rooms.Values)
+                foreach (Region rg in r.Regions.Values)
+                    foreach (System.Tuple<Tile, Tile> t in rg.Connection.Values)
+                    {
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
+                    }
+        }
+        if (coords != null && coords.Count != 0)
+        {
+            foreach (Chunk c in coords)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 2f);
+            }
+        }
+        if (start != null && end != null && rect != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(new Vector3(rect.x, rect.y), new Vector3(rect.width, rect.y));
+            Gizmos.DrawLine(new Vector3(rect.width, rect.yMin), new Vector3(rect.width, rect.height));
+            Gizmos.DrawLine(new Vector3(rect.width, rect.height), new Vector3(rect.xMin, rect.height));
+            Gizmos.DrawLine(new Vector3(rect.xMin, rect.height), new Vector3(rect.xMin, rect.yMin));
+        }
         if (drawGizmos)
         {
-            if (map != null && map.Chunks.Count != 0)
-            {
-                foreach (Chunk c in map.Chunks.Values)
-                    foreach (Tile t in c.Tiles.Values)
-                    {
-                        Gizmos.color = (t.Type == tileType.Floor) ? Color.white : Color.black;
-                        Gizmos.DrawCube(new Vector3(t.Coord.x, t.Coord.y), Vector3.one);
-                    }
-                foreach (Room r in map.Rooms.Values)
-                    foreach (Region rg in r.Regions.Values)
-                        foreach (System.Tuple<Tile, Tile> t in rg.ConnectionTile.Values)
-                        {
-                            Gizmos.color = Color.green;
-                            Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
-                        }
-            }
             {
                 Vector3 pos = Camera.main.transform.position;
                 if (Camera.main.orthographicSize < 50)
@@ -284,19 +357,10 @@ public class NewGenerator : MonoBehaviour
                     }
                 }
             }//Grid
-            if (coords != null && coords.Count != 0)
-            {
-                foreach (Chunk c in coords)
-                {
-                    Gizmos.color = Color.cyan;
-                    Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 2f);
-                }
-            }
         }
     }
     public void FinishRoom(Room room)
     {
-        room.SetColor();
         GameObject roomGo = new GameObject()
         {
             name = "Room #" + room.ID

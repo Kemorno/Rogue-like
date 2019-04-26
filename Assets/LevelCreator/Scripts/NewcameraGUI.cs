@@ -10,6 +10,25 @@ public class NewcameraGUI : MonoBehaviour
     public enum selectedButton { None, Noise , Room, Connect, Erase };
     selectedButton selected;
 
+    private void Awake()
+    {
+        switch (main.selected)
+        {
+            case selectedButton.Connect:
+                Connect();
+                break;
+            case selectedButton.Erase:
+                Erase();
+                break;
+            case selectedButton.Noise:
+                Noise();
+                break;
+            case selectedButton.Room:
+                Room();
+                break;
+        }
+    }
+
     private void Update()
     {
         main.selected = selected;
