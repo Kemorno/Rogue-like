@@ -22,6 +22,7 @@ public class NewGenerator : MonoBehaviour
     Map map;
 
     public bool drawGizmos;
+    public bool SeeProgress;
 
     public Vector2Int mousePos;
     public GameObject guide;
@@ -194,7 +195,7 @@ public class NewGenerator : MonoBehaviour
                             break;
                         case NewcameraGUI.selectedButton.Noise:
                             end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                            Rect rect = new Rect(start.x, start.y, Mathf.Abs(end.x - start.x), -Mathf.Abs(end.y - start.y));
+                            rect = FromDragPoints(start, end);
                             break;
                         case NewcameraGUI.selectedButton.Room:
                             break;
@@ -211,7 +212,16 @@ public class NewGenerator : MonoBehaviour
                             break;
                         case NewcameraGUI.selectedButton.Noise:
                             end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                            rect = new Rect(start.x, start.y, Mathf.Abs(end.x - start.x), -Mathf.Abs(end.y - start.y));
+                            rect = FromDragPoints(start, end);
+                            for (int x = Mathf.FloorToInt(rect.x); x <= Mathf.CeilToInt(rect.width); x++)
+                            {
+                                for (int y = Mathf.FloorToInt(rect.y); y <= Mathf.CeilToInt(rect.height); y++)
+                                {
+                                    CoordInt curCoord = new CoordInt(x, y);
+                                    if (!map.Chunks.ContainsKey(map.GetChunkCoord(curCoord)))
+                                        map.CreateChunk(curCoord);
+                                }
+                            }
                             break;
                         case NewcameraGUI.selectedButton.Room:
                             break;
@@ -249,20 +259,23 @@ public class NewGenerator : MonoBehaviour
 
             room.GenerateTiles();
             map.ApplyChunks(room.GetChunkList());
+            if(SeeProgress)
             yield return new WaitForSeconds(0.3f);
 
             for (int s = 0; s < room.SmoothingMultiplier; s++)
             {
                 room.SmoothChunks();
                 map.ApplyChunks(room.GetChunkList());
-                yield return new WaitForSeconds(0.15f);
+                if (SeeProgress)
+                    yield return new WaitForSeconds(0.15f);
             }
             room.GetMap();
 
             float check = room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) * TilePercentageFilled;
             
             room.GetRegions();
-            yield return new WaitForSeconds(0.15f);
+            if (SeeProgress)
+                yield return new WaitForSeconds(0.15f);
             room.GetMap();
 
             Debug.Log("Room has Tiles " + room.GetTilesByType(tileType.Floor).Count + ">=" + check);
@@ -271,7 +284,8 @@ public class NewGenerator : MonoBehaviour
                 room.SetColor();
                 room.CreateConnections();
                 map.ApplyChunks(room.GetChunkList());
-                yield return new WaitForSeconds(0.3f);
+                if (SeeProgress)
+                    yield return new WaitForSeconds(0.3f);
                 FinishRoom(room);
                 break;
             }
@@ -451,5 +465,15 @@ public class NewGenerator : MonoBehaviour
             array[coord.x - minX, coord.y - minY] = map[coord];
         }
         return array;
+    }
+
+    Rect FromDragPoints(Vector2 P1, Vector2 P2)
+    {
+        Rect R;
+        R.x = Mathf.Min(P1.x, P2.x);
+        R.y = Mathf.Min(P1.y, P2.y);
+        R.xMax = Mathf.Max(P1.x, P2.x);
+        R.xMax = Mathf.Max(P1.y, P2.y);
+        return R;
     }
 }
