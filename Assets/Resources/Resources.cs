@@ -952,7 +952,9 @@ namespace Resources
         {
             Dictionary<CoordInt, Tile> MapFlags = new Dictionary<CoordInt, Tile>();
             foreach (Tile t in Map.Values)
+            {
                 if (!MapFlags.ContainsKey(t.Coord))
+                    {
                     if (t.Type == tileType.Floor)
                     {
                         Region Region = new Region(nextRegionID, GetRegion(t));
@@ -961,7 +963,7 @@ namespace Resources
                             AddRegion(Region);
                         else if (Regions.Count > 0)
                         {
-                            Debug.Log("Room has Tiles " + Region.Map.Count + ">=" + threshold);
+                            Debug.Log("Region has Tiles below threshold");
                             foreach (Tile tr in Region.Map.Values)
                             {
                                 Chunks[GetChunkCoord(tr.Coord)].Tiles[tr.Coord].SetType(tileType.Wall);
@@ -971,8 +973,13 @@ namespace Resources
                             AddRegion(Region);
 
                         foreach (Tile tr in Region.Map.Values)
-                            MapFlags.Add(tr.Coord, tr);
+                            if (!MapFlags.ContainsKey(tr.Coord))
+                                MapFlags.Add(tr.Coord, tr);
                     }
+                    else
+                        MapFlags.Add(t.Coord, t);
+                }
+            }
             Debug.Log("Found " + Regions.Count + " Regions");
         }
         public void AddRegion(Region Region)
@@ -1075,78 +1082,32 @@ namespace Resources
         }
         public void GenerateRegionConnections()
         {
-            List<Tuple<int, int>> ConnectedRegions = new List<Tuple<int, int>>();
             foreach(Region r in Regions.Values)
             {
-                foreach(Tuple<Tile,Tile> t in r.Connection.Values)
+                foreach(Tuple<Tile, Tile> t in r.Connection.Values)
                 {
-                    float xGrowth = t.Item2.Coord.x - t.Item1.Coord.x;
-                    float yGrowth = (t.Item2.Coord.y - t.Item1.Coord.y) / (float)(t.Item2.Coord.x - t.Item1.Coord.x);
+                    List<CoordInt> tilestocreate = GetLine(t.Item1.Coord, t.Item2.Coord);
 
-                    if(xGrowth > 0)
+                    for (int i = 0; i < tilestocreate.Count; i++)
                     {
-                        xGrowth = 1;
-                    }
-                    else if (xGrowth < 0)
-                    {
-                        xGrowth = -1;
-                    }
-                    if (xGrowth == 0)
-                    {
-                        yGrowth = t.Item2.Coord.y - t.Item1.Coord.y;
-                        xGrowth = (t.Item2.Coord.x - t.Item1.Coord.x) / (float)(t.Item2.Coord.y - t.Item1.Coord.y);
-                        if (yGrowth > 0)
+                        CoordInt coord = tilestocreate[i];
+
+                        for (int neighbourX = (int)(coord.x -.5f); neighbourX <= (int)(coord.x + .5f); neighbourX++)
                         {
-                            yGrowth = 1;
-                        }
-                        else if (yGrowth < 0)
-                        {
-                            yGrowth = -1;
-                        }
-                        for (float y = t.Item1.Coord.y; y <= t.Item2.Coord.y; y += yGrowth)
-                        {
-                            for (float x = t.Item1.Coord.x; x <= t.Item2.Coord.x; x += xGrowth)
+                            for (int neighbourY = (int)(coord.y - .5f); neighbourY <= (int)(coord.y + .5f); neighbourY++)
                             {
-                                CoordInt curCoord = new CoordInt(x, y);
+                                CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
 
-                                for (int NeighbourX = curCoord.x - 1; NeighbourX <= curCoord.x + 1; NeighbourX++)
-                                {
-                                    for (float NeighbourY = curCoord.y - 1; NeighbourY <= curCoord.x + 1; NeighbourY++)
-                                    {
-                                        CoordInt adjacentCoord = new CoordInt(NeighbourX, (int)NeighbourY);
-                                        if (curCoord.isAdjacent(adjacentCoord))
-                                        {
-                                            Chunks[GetChunkCoord(adjacentCoord)].Tiles[adjacentCoord].SetType(tileType.Floor);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for (float x = t.Item1.Coord.x; x <= t.Item2.Coord.x; x += xGrowth)
-                        {
-                            for (float y = t.Item1.Coord.y; y <= t.Item2.Coord.y; y += yGrowth)
-                            {
-                                CoordInt curCoord = new CoordInt(x, y);
+                                Tile tile = Map[curCoord];
 
-                                for (int NeighbourX = curCoord.x - 1; NeighbourX <= curCoord.x + 1; NeighbourX++)
-                                {
-                                    for (float NeighbourY = curCoord.y - 1; NeighbourY <= curCoord.x + 1; NeighbourY++)
-                                    {
-                                        CoordInt adjacentCoord = new CoordInt(NeighbourX, (int)NeighbourY);
-                                        if (curCoord.isAdjacent(adjacentCoord))
-                                        {
-                                            Chunks[GetChunkCoord(adjacentCoord)].Tiles[adjacentCoord].SetType(tileType.Floor);
-                                        }
-                                    }
-                                }
+                                if (tile.Type != tileType.Floor)
+                                    Map[curCoord].SetType(tileType.Floor);
                             }
                         }
                     }
                 }
             }
+            RemoveCleanChunks();
         }
         private void RemoveCleanChunks()
         {
@@ -1340,8 +1301,8 @@ namespace Resources
         }
         public void SetConnection(Room toRoom)
         {
-            this.Connections.Add(this, toRoom);
-            toRoom.SetConnection(this);
+            this.Connections.Add(toRoom);
+            toRoom.Connections.Add(this);
         }
 
         #endregion
@@ -1367,7 +1328,65 @@ namespace Resources
                 return false;
             return true;
         }
+        public static List<CoordInt> GetLine(CoordInt from, CoordInt to)
+        {
+            List<CoordInt> line = new List<CoordInt>();
 
+            int x = from.x;
+            int y = from.y;
+
+            int dx = to.x - from.x;
+            int dy = to.y - from.y;
+
+            bool inverted = false;
+            int step = Math.Sign(dx);
+            int gradientStep = Math.Sign(dy);
+
+            int longest = Mathf.Abs(dx);
+            int shortest = Mathf.Abs(dy);
+
+            if (longest < shortest)
+            {
+                inverted = true;
+                longest = Mathf.Abs(dy);
+                shortest = Mathf.Abs(dx);
+
+                step = Math.Sign(dy);
+                gradientStep = Math.Sign(dx);
+            }
+
+            int gradientAccumulation = longest / 2;
+            for (int i = 0; i < longest; i++)
+            {
+                line.Add(new CoordInt(x, y));
+
+                if (inverted)
+                {
+                    y += step;
+                }
+                else
+                {
+                    x += step;
+                }
+
+                gradientAccumulation += shortest;
+                if (gradientAccumulation >= longest)
+                {
+                    if (inverted)
+                    {
+                        x += gradientStep;
+                    }
+                    else
+                    {
+                        y += gradientStep;
+                    }
+                    gradientAccumulation -= longest;
+                }
+            }
+
+            return line;
+        }
+        
         #endregion
     }
 
@@ -1426,6 +1445,22 @@ namespace Resources
         }
         public void ConnectRegions(Region other, Tile[] tiles)
         {
+
+            if (other == null)
+            {
+                Debug.Log("Other Region is Null, Cannot Create Connection");
+                return;
+            }
+            if (tiles[0] == null)
+            {
+                Debug.Log("Connection tile from origin Region is Null, Cannot Create Connection");
+                return;
+            }
+            if (tiles[1] == null)
+            {
+                Debug.Log("Connection tile from origin Region is Null, Cannot Create Connection");
+                return;
+            }
             Connection.Add(other.ID, new Tuple<Tile, Tile>(tiles[0], tiles[1]));
             other.Connection.Add(ID, new Tuple<Tile, Tile>(tiles[1], tiles[0]));
             Debug.Log("Created Connection from " + ID + " to " + other.ID + " on tiles " + tiles[0].Coord.ToString() + " to " + tiles[1].Coord.ToString() + " respectively");

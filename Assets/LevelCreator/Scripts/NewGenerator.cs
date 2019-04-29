@@ -182,10 +182,13 @@ public class NewGenerator : MonoBehaviour
                             start = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                             break;
                         case NewcameraGUI.selectedButton.Room:
+                            start = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            coords = new List<Chunk>();
                             break;
                         case NewcameraGUI.selectedButton.Connect:
                             break;
                         case NewcameraGUI.selectedButton.Erase:
+                            start = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                             break;
                     }
                 if (Input.GetMouseButton(1))
@@ -198,10 +201,14 @@ public class NewGenerator : MonoBehaviour
                             rect = FromDragPoints(start, end);
                             break;
                         case NewcameraGUI.selectedButton.Room:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            rect = FromDragPoints(start, end);
                             break;
                         case NewcameraGUI.selectedButton.Connect:
                             break;
                         case NewcameraGUI.selectedButton.Erase:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            rect = FromDragPoints(start, end);
                             break;
                     }
 
@@ -222,15 +229,72 @@ public class NewGenerator : MonoBehaviour
                                         map.CreateChunk(curCoord);
                                 }
                             }
+                            start = new Vector2();
+                            end = new Vector2();
+                            rect = new Rect();
                             break;
                         case NewcameraGUI.selectedButton.Room:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            rect = FromDragPoints(start, end);
+                            for (int x = Mathf.FloorToInt(rect.x); x <= Mathf.CeilToInt(rect.width); x++)
+                            {
+                                for (int y = Mathf.FloorToInt(rect.y); y <= Mathf.CeilToInt(rect.height); y++)
+                                {
+                                    CoordInt curCoord = new CoordInt(x, y);
+                                    if (map.Chunks.ContainsKey(map.GetChunkCoord(curCoord)))
+                                        if(map.Chunks[map.GetChunkCoord(curCoord)].room == null)
+                                            if(!coords.Contains(map.Chunks[map.GetChunkCoord(curCoord)]))
+                                            coords.Add(map.Chunks[map.GetChunkCoord(curCoord)]);
+                                }
+                            }
+                            if (coords.Count > 0)
+                            {
+                                if (queue.Count == 0)
+                                {
+                                    queue.Enqueue(coords);
+                                    RoomQueue();
+                                }
+                                else
+                                    queue.Enqueue(coords);
+                                coords.Clear();
+                            }
+                            start = new Vector2();
+                            end = new Vector2();
+                            rect = new Rect();
                             break;
                         case NewcameraGUI.selectedButton.Connect:
                             break;
                         case NewcameraGUI.selectedButton.Erase:
+                            end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            rect = FromDragPoints(start, end); for (int x = Mathf.FloorToInt(rect.x); x <= Mathf.CeilToInt(rect.width); x++)
+                            {
+                                for (int y = Mathf.FloorToInt(rect.y); y <= Mathf.CeilToInt(rect.height); y++)
+                                {
+                                    CoordInt curCoord = new CoordInt(x, y);
+                                    if (map.ContainsCoord(curCoord))
+                                    {
+                                        Chunk c = map.Chunks[map.GetChunkCoord(curCoord)];
+                                        c.Tiles.Clear();
+                                        if (c.room != null)
+                                        {
+                                            map.Rooms.Remove(c.room.ID);
+                                            c.room.Chunks.Remove(c.Coordinates);
+                                            foreach (Chunk cu in c.room.Chunks.Values)
+                                            {
+                                                cu.room = null;
+                                                cu.RegenerateTiles();
+                                            }
+                                        }
+                                        map.Chunks.Remove(c.Coordinates);
+                                    }
+                                }
+                            }
+                            start = new Vector2();
+                            end = new Vector2();
+                            rect = new Rect();
                             break;
                     }
-            }//0
+            }//1
         }
     }
 
@@ -243,7 +307,7 @@ public class NewGenerator : MonoBehaviour
     IEnumerator CreateRoom(List<Chunk> RoomChunks)
     {
         List<Chunk> Chunks = new List<Chunk>(RoomChunks);
-        RoomSettings Settings = new RoomSettings(3, 50, 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
+        RoomSettings Settings = new RoomSettings(3, 40, 4, roomSize.Tiny, roomType.None, roomClass.Neutral);
         while (true)
         {
             Room room = new Room(map.nextRoomID, Chunks, Settings);
@@ -283,6 +347,10 @@ public class NewGenerator : MonoBehaviour
             {
                 room.SetColor();
                 room.CreateConnections();
+                map.ApplyChunks(room.GetChunkList());
+                if(room.Regions.Count>1)
+                room.GenerateRegionConnections();
+                room.GetMap();
                 map.ApplyChunks(room.GetChunkList());
                 if (SeeProgress)
                     yield return new WaitForSeconds(0.3f);
@@ -335,8 +403,8 @@ public class NewGenerator : MonoBehaviour
         {
             foreach (Chunk c in coords)
             {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 2f);
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 1f);
             }
         }
         if (start != null && end != null && rect != null)
@@ -469,11 +537,11 @@ public class NewGenerator : MonoBehaviour
 
     Rect FromDragPoints(Vector2 P1, Vector2 P2)
     {
-        Rect R;
+        Rect R = new Rect();
         R.x = Mathf.Min(P1.x, P2.x);
         R.y = Mathf.Min(P1.y, P2.y);
-        R.xMax = Mathf.Max(P1.x, P2.x);
-        R.xMax = Mathf.Max(P1.y, P2.y);
+        R.width = Mathf.Max(P1.x, P2.x);
+        R.height = Mathf.Max(P1.y, P2.y);
         return R;
     }
 }
