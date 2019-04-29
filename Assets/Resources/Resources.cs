@@ -347,24 +347,33 @@ namespace Resources
         }
         #endregion
     }
-    public class Tile : CoordInt
+    public class Tile
     {
+        public int RoomId = -1;
+        public CoordInt Coord;
         public tileType Type { get; private set; } = tileType.Wall;
+        public roomClass Class = roomClass.Neutral;
+        public bool walkable { get; private set; }
+        public bool Collided { get; private set; } = false;
 
         #region Constructors
-        public Tile(Tile _Tile) : base(_Tile.GetCoordInt())
+        public Tile(Tile _Tile)
         {
             RoomId = _Tile.RoomId;
+            Coord = _Tile.Coord;
             Type = _Tile.Type;
             Class = _Tile.Class;
             walkable = _Tile.walkable;
         }
-        public Tile(CoordInt _Coord) : base(_Coord)
+        public Tile(CoordInt _Coord)
         {
+            Coord = _Coord;
         }
-        public Tile(CoordInt _Coord, tileType _Type) : base(_Coord)
+        public Tile(CoordInt _Coord, tileType _Type)
         {
+            Coord = _Coord;
             Type = _Type;
+            walkable = (Type == tileType.Floor) ? true : false;
         }
         #endregion
 
@@ -378,9 +387,15 @@ namespace Resources
         {
             return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
         }
-        public CoordInt GetCoordInt()
+        public bool IsValid()
         {
-            return this;
+            if (Coord == null || RoomId < -1)
+                return false;
+            return true;
+        }
+        public void hasCollided()
+        {
+            Collided = true;
         }
         #endregion
 
@@ -396,12 +411,17 @@ namespace Resources
         #endregion
 
         #region Conversion
+        public static implicit operator CoordInt(Tile other)
+        {
+            return other.Coord;
+        }
         #endregion
     }
     public class CoordInt
     {
         public int x { get; private set; }
         public int y { get; private set; }
+        public Tile tile { get; private set; }
 
         #region Constructors
         public CoordInt(int _x, int _y)
@@ -409,11 +429,23 @@ namespace Resources
             x = _x;
             y = _y;
         }
+        public CoordInt(int _x, int _y, Tile _tile)
+        {
+            x = _x;
+            y = _y;
+            tile = _tile;
+        }
         public CoordInt(CoordInt coord)
         {
             x = coord.x;
             y = coord.y;
             tile = coord.tile;
+        }
+        public CoordInt(CoordInt coord, Tile _tile)
+        {
+            x = coord.x;
+            y = coord.y;
+            tile = _tile;
         }
         #endregion
 
@@ -439,6 +471,21 @@ namespace Resources
             if (other == null)
                 return false;
             return (x == other.x || y == other.y);
+        }
+        public bool HasATile()
+        {
+            return tile != null;
+        }
+        public bool HasATile(Dictionary<CoordInt, Tile> map)
+        {
+            if (!map.ContainsKey(this))
+                return false;
+
+            return map[this].IsValid();
+        }
+        public void SetTile(Tile _tile)
+        {
+            tile = _tile;
         }
         #endregion
 
@@ -741,14 +788,16 @@ namespace Resources
             Rooms.Remove(room.ID);
         }
     }
-    public class Chunk : CoordInt
+    public class Chunk
     {
+        public CoordInt Coordinates;
         public Room room = null;
         public Dictionary<CoordInt, Tile> Tiles = new Dictionary<CoordInt, Tile>();
         public int Size;
 
-        public Chunk(CoordInt coord, int Size): base(coord)
+        public Chunk(CoordInt coord, int Size)
         {
+            Coordinates = coord;
             this.Size = Size;
             GenerateTiles();
         }
@@ -822,7 +871,6 @@ namespace Resources
     {
         public int ID;
         public Dictionary<CoordInt, Chunk> Chunks = new Dictionary<CoordInt, Chunk>();
-        private Dictionary<CoordInt, Chunk> OriginalChunksSelection = new Dictionary<CoordInt, Chunk>();
         public List<Room> Connections = new List<Room>();
         public Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
         public Color Color;
@@ -834,12 +882,11 @@ namespace Resources
         {
             this.ID = ID;
             RemoveNotAdjacent(Chunks);
-            OriginalChunksSelection = Conversion.ListToDictionary(Chunks);
         }
         public Room(List<Chunk> Chunks, RoomSettings settings) : base(settings)
         {
             RemoveNotAdjacent(Chunks);
-            OriginalChunksSelection = Conversion.ListToDictionary(Chunks);
+            SetColor();
         }
 
         public void RemoveNotAdjacent(List<Chunk> ChunkListRaw)
@@ -920,7 +967,6 @@ namespace Resources
                             foreach (Tile tr in Region.Map.Values)
                             {
                                 Chunks[GetChunkCoord(tr.Coord)].Tiles[tr.Coord].SetType(tileType.Wall);
-                                MapFlags.Add(t.Coord, t);
                             }
                         }
                         else
@@ -1052,12 +1098,8 @@ namespace Resources
                             {
                                 CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
 
-                                Tile tile = Map.ContainsKey(curCoord) ? Map[curCoord] : null;
-                                if(tile == null)
-                                {
-                                    if(OriginalChunksSelection.ContainsKey(GetChunkCoord(curCoord)))
-                                        tile = OriginalChunksSelection[GetChunkCoord(curCoord)].Tiles[curCoord];
-                                }
+                                Tile tile = Map[curCoord];
+
                                 if (tile.Type != tileType.Floor)
                                     Map[curCoord].SetType(tileType.Floor);
                             }
@@ -1074,31 +1116,11 @@ namespace Resources
             {
                 bool Clean = true;
                 foreach (Tile t in c.Tiles.Values)
-                {
-                    if (t.Type == tileType.Wall)
-                        for (int NeighbourX = t.Coord.x - 1; NeighbourX <= t.Coord.x + 1; NeighbourX++)
-                        {
-                            for (int NeighbourY = t.Coord.y - 1; NeighbourY <= t.Coord.y + 1; NeighbourY++)
-                            {
-                                CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
-
-                                if (!Chunks.ContainsKey(GetChunkCoord(curCoord)))
-                                    continue;
-                                if (GetChunkCoord(curCoord) == c.Coordinates)
-                                    continue;
-                                if (Chunks[GetChunkCoord(curCoord)].Tiles[curCoord].Type == tileType.Floor)
-                                {
-                                    Clean = false;
-                                    break;
-                                }
-                            }
-                        }
                     if (t.Type == tileType.Floor)
                     {
                         Clean = false;
                         break;
                     }
-                }
                 if (Clean)
                     toRemove.Add(c);
             }
@@ -1150,10 +1172,6 @@ namespace Resources
         public CoordInt GetChunkCoord(CoordInt TileCoord)
         {
             return new CoordInt(Mathf.RoundToInt(TileCoord.x / (float)GetChunkSize()), Mathf.RoundToInt(TileCoord.y / (float)GetChunkSize()));
-        }
-        public Tile GetTile(CoordInt TileCoord)
-        {
-            return Chunks.ContainsKey(GetChunkCoord(TileCoord)) ? Chunks[GetChunkCoord(TileCoord)].Tiles[TileCoord] : null;
         }
         public List<Chunk> GetChunkList()
         {
