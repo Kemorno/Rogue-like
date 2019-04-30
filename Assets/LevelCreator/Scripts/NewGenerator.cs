@@ -31,6 +31,7 @@ public class NewGenerator : MonoBehaviour
     Queue<List<Chunk>> queue = new Queue<List<Chunk>>();
 
     List<Chunk> coords;
+    Room[] roomsToConnect = new Room[2];
 
     public Vector2 start, end;
     private Rect rect;
@@ -107,6 +108,24 @@ public class NewGenerator : MonoBehaviour
                             coords = new List<Chunk>();
                             break;
                         case NewcameraGUI.selectedButton.Connect:
+                            if (map.ContainsCoord(Coord))
+                            {
+                                if (map.Rooms.ContainsKey(map.GetRoom(Coord).ID))
+                                {
+                                    Room clickedRoom = map.GetRoom(Coord);
+                                    if (roomsToConnect[0] == null)
+                                        roomsToConnect[0] = clickedRoom;
+                                    else if(roomsToConnect[0].ID != clickedRoom.ID)
+                                    {
+                                        roomsToConnect[1] = clickedRoom;
+                                        map.ConnectRooms(roomsToConnect[0], roomsToConnect[1]);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                roomsToConnect = new Room[2];
+                            }
                             break;
                         case NewcameraGUI.selectedButton.Erase:
                             break;
@@ -203,6 +222,17 @@ public class NewGenerator : MonoBehaviour
                         case NewcameraGUI.selectedButton.Room:
                             end = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                             rect = FromDragPoints(start, end);
+                            for (int x = Mathf.FloorToInt(rect.x); x <= Mathf.CeilToInt(rect.width); x++)
+                            {
+                                for (int y = Mathf.FloorToInt(rect.y); y <= Mathf.CeilToInt(rect.height); y++)
+                                {
+                                    CoordInt curCoord = new CoordInt(x, y);
+                                    if (map.Chunks.ContainsKey(map.GetChunkCoord(curCoord)))
+                                        if (map.Chunks[map.GetChunkCoord(curCoord)].room == null)
+                                            if (!coords.Contains(map.Chunks[map.GetChunkCoord(curCoord)]))
+                                                coords.Add(map.Chunks[map.GetChunkCoord(curCoord)]);
+                                }
+                            }
                             break;
                         case NewcameraGUI.selectedButton.Connect:
                             break;
@@ -333,24 +363,19 @@ public class NewGenerator : MonoBehaviour
                 if (SeeProgress)
                     yield return new WaitForSeconds(0.15f);
             }
-            room.GetMap();
 
             float check = room.Chunks.Count * Mathf.Pow(room.GetChunkSize(), 2) * TilePercentageFilled;
             
             room.GetRegions();
             if (SeeProgress)
                 yield return new WaitForSeconds(0.15f);
-            room.GetMap();
 
-            Debug.Log("Room has Tiles " + room.GetTilesByType(tileType.Floor).Count + ">=" + check);
+            Debug.Log("Room has Tiles " + room.GetTilesByType(tileType.Floor).Count + " >= " + check);
             if (room.GetTilesByType(tileType.Floor).Count >= check)
             {
                 room.SetColor();
-                room.CreateConnections();
-                map.ApplyChunks(room.GetChunkList());
-                if(room.Regions.Count>1)
-                room.GenerateRegionConnections();
-                room.GetMap();
+                if (room.Regions.Count > 1)
+                    room.SetConnections();
                 map.ApplyChunks(room.GetChunkList());
                 if (SeeProgress)
                     yield return new WaitForSeconds(0.3f);
@@ -392,19 +417,26 @@ public class NewGenerator : MonoBehaviour
                     Gizmos.DrawCube(new Vector3(t.Coord.x, t.Coord.y), Vector3.one);
                 }
             foreach (Room r in map.Rooms.Values)
+            {
+                foreach(System.Tuple<Tile, Tile> t in r.Connections.Values)
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
+                }
                 foreach (Region rg in r.Regions.Values)
                     foreach (System.Tuple<Tile, Tile> t in rg.Connection.Values)
                     {
                         Gizmos.color = Color.green;
                         Gizmos.DrawLine(new Vector3(t.Item1.Coord.GetVector2Int().x, t.Item1.Coord.GetVector2Int().y), new Vector3(t.Item2.Coord.GetVector2Int().x, t.Item2.Coord.GetVector2Int().y));
                     }
+            }
         }
         if (coords != null && coords.Count != 0)
         {
             foreach (Chunk c in coords)
             {
                 Gizmos.color = Color.magenta;
-                Gizmos.DrawSphere(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), 1f);
+                Gizmos.DrawCube(new Vector3(c.Coordinates.x * ChunkSize, c.Coordinates.y * ChunkSize), Vector3.one * 1.5f);
             }
         }
         if (start != null && end != null && rect != null)

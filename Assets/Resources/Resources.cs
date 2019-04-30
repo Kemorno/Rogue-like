@@ -7,265 +7,6 @@ using Enums;
 
 namespace Resources
 {
-    public class IRoom
-    {
-        public int RoomId { get; private set; }
-        public RoomSettings Settings { get; private set; }
-        public Rect Bound { get; private set; }
-        public Tile CenterTile { get; private set; }
-        public Color Color { get; private set; }
-
-        public List<Tile> FloorTiles { get; private set; } = new List<Tile>();
-        public List<Tile> WallTiles { get; private set; } = new List<Tile>();
-        public List<Tile> Tiles { get; private set; } = new List<Tile>();
-        public Dictionary<CoordInt, Tile> Map { get; private set; } = new Dictionary<CoordInt, Tile>();
-        public bool HasError { get; private set; } = false;
-        public string ErrorMessage { get; private set; } = null;
-        public List<string> ExtraInformation { get; private set; } = new List<string>();
-        public bool Finished { get; private set; } = false;
-        public GameObject roomGo { get; private set; } = null;
-        public bool FinishedGeneration = false;
-        public GameObject SpritesGrouper { get; private set; } = null;
-        public List<IRoom> Connections { get; private set; } = new List<IRoom>();
-
-        #region Constructors
-        public IRoom(int _RoomId, RoomSettings _RoomSettings)
-        {
-            RoomId = _RoomId;
-            Settings = _RoomSettings;
-        }
-        public IRoom(IRoom room)
-        {
-            RoomId = room.RoomId;
-            Settings = room.Settings;
-            Bound = room.Bound;
-            CenterTile = room.CenterTile;
-            FloorTiles = room.FloorTiles;
-            WallTiles = room.WallTiles;
-            Tiles = room.Tiles;
-            Color = room.Color;
-            Map = room.Map;
-            HasError = room.HasError;
-            ErrorMessage = room.ErrorMessage;
-            ExtraInformation = room.ExtraInformation;
-            Finished = room.Finished;
-            roomGo = room.roomGo;
-            FinishedGeneration = room.FinishedGeneration;
-        }
-        #endregion
-        #region Methods
-        void SetBounds()
-        {
-            Vector2Int Min = new Vector2Int(CenterTile.Coord.x, CenterTile.Coord.y);
-            Vector2Int Max = new Vector2Int(CenterTile.Coord.x, CenterTile.Coord.y);
-
-            foreach(Tile tile in FloorTiles)
-            {
-                if (tile.Coord.x < Min.x)
-                    Min.x = tile.Coord.x;
-                if (tile.Coord.y < Min.y)
-                    Min.y = tile.Coord.y;
-                if (tile.Coord.x > Max.x)
-                    Max.x = tile.Coord.x;
-                if (tile.Coord.y > Max.y)
-                    Max.y = tile.Coord.y;
-            }
-            Bound = new Rect(Min, (Max - Min));
-        }
-        public bool isValid()
-        {
-            if (Settings == null)
-            {
-                Debug.Log("Room Settings are Invalid. (null)");
-                return false;
-            }
-            if (Bound == null)
-            {
-                Debug.Log("Room bounds does not exist. (null)");
-                return false;
-            }
-            if (Bound == new Rect())
-            {
-                Debug.Log("Room bounds not set.");
-                return false;
-            }
-            if (CenterTile == null)
-            {
-                Debug.Log("Center Tile does not exist. (null)");
-                return false;
-            }
-            if (!Map.ContainsKey(CenterTile.Coord) || Map[CenterTile.Coord] != CenterTile)
-            {
-                Debug.Log("Center Tile is not present in room map.");
-                return false;
-            }
-            if (Color == null)
-            {
-                Debug.Log("Room has no color. (is null)");
-                return false;
-            }
-            if (Color == new Color())
-            {
-                Debug.Log("Room color not set.");
-                return false;
-            }
-            if (Color == new Color())
-            {
-                Debug.Log("Room color not set.");
-                return false;
-            }
-            if (FloorTiles.Count == 0 || FloorTiles == null)
-            {
-                Debug.Log("Room has no floor tiles.");
-                return false;
-            }
-            if (WallTiles.Count == 0 || WallTiles == null)
-            {
-                Debug.Log("Room has no wall tiles.");
-                return false;
-            }
-            if (Tiles.Count == 0 || Tiles == null)
-            {
-                Debug.Log("Room has no tiles.");
-                return false;
-            }
-            if (Map.Count == 0 || Map == null)
-            {
-                Debug.Log("Room map has no tiles or was not created.");
-                return false;
-            }
-            if (HasError == true && ErrorMessage != null)
-            {
-                Debug.Log("Room has an error.\n" + ErrorMessage);
-                return false;
-            }
-            if (Map.Count == 0 || Map == null)
-            {
-                Debug.Log("Room map has no tiles or was not created.");
-                return false;
-            }
-            if (Finished == false)
-            {
-                Debug.Log("Room was not finished.");
-                return false;
-            }
-            if (roomGo == null)
-            {
-                Debug.Log("Room has no GameObject thus having no mesh neither sprites.");
-                return false;
-            }
-            if (FinishedGeneration == false)
-            {
-                Debug.Log("Room Generation was not finalized.");
-                return false;
-            }
-            if (SpritesGrouper == null)
-            {
-                Debug.Log("Room has no Sprites GameObject thus having no sprites.");
-                return false;
-            }
-
-            return true;
-        }
-        public void SetColor()
-        {
-            System.Random prng = new System.Random(Settings.Seed.GetHashCode());
-            Color = new Color32((byte)prng.Next(0, 255), (byte)prng.Next(0, 255), (byte)prng.Next(0, 255), 255 / 2);
-        }
-        public void resetMap()
-        {
-            Map = new Dictionary<CoordInt, Tile>();
-        }
-        public void FinishRoom()
-        {
-            if (!Finished && !HasError)
-            {
-                Tiles.AddRange(FloorTiles);
-                Tiles.AddRange(WallTiles);
-                SetBounds();
-                SetColor();
-
-                Finished = true;
-                return;
-            }
-            if (HasError)
-                Debug.Log("Couldn't Finish Room\n" + ErrorMessage);
-            return;
-        }
-        public string ToLongString()
-        {
-            return "RoomID " + RoomId + "\nBounds: " + Bound.ToString() + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
-        }
-        public void ConnectRoom(IRoom other)
-        {
-            if (!Connections.Contains(other))
-                Connections.Add(other);
-            if (!other.Connections.Contains(this))
-                other.Connections.Add(this);
-        }
-        public List<GameObject> GetSprites()
-        {
-            List<GameObject> list = new List<GameObject>();
-
-            foreach (Transform transform in SpritesGrouper.transform)
-                list.Add(transform.gameObject);
-
-            return list;
-        }
-        public void SetError(string Message)
-        {
-            HasError = true;
-            ErrorMessage = Message;
-        }
-        public void SetGameObject(GameObject go)
-        {
-            roomGo = go;
-        }
-        public void SetCenterTile(Tile _CenterTile)
-        {
-            CenterTile = _CenterTile;
-        }
-        public void SetSpritesGrouper(GameObject GO)
-        {
-            SpritesGrouper = GO;
-        }
-        public void SetWallTiles(List<Tile> _WallTiles)
-        {
-            WallTiles = _WallTiles;
-        }
-        public void SetFloorTiles(List<Tile> _FloorTiles)
-        {
-            FloorTiles = _FloorTiles;
-        }
-        public void SetMap(Dictionary<CoordInt, Tile> _map)
-        {
-            Map = _map;
-        }
-        #endregion
-        #region overrides
-        public override string ToString()
-        {
-                return "RoomID "+ RoomId + "\nTile Count: " + Tiles.Count + "\n \nSettings \n" + Settings.ToString();
-        }
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return RoomId << 8 + Settings.GetHashCode() + Bound.GetHashCode() + CenterTile.GetHashCode() << 2 + ((FloorTiles.GetHashCode() + WallTiles.GetHashCode()) - Tiles.GetHashCode());
-            }
-        }
-        #endregion
-        #region Conversion
-        public static implicit operator CoordInt(IRoom other)
-        {
-            return other.CenterTile.Coord;
-        }
-        public static implicit operator Tile(IRoom other)
-        {
-            return other.CenterTile;
-        }
-        #endregion
-    }
     public class RoomSettings
     {
         public Seed Seed { get; private set; }
@@ -352,9 +93,6 @@ namespace Resources
         public int RoomId = -1;
         public CoordInt Coord;
         public tileType Type { get; private set; } = tileType.Wall;
-        public roomClass Class = roomClass.Neutral;
-        public bool walkable { get; private set; }
-        public bool Collided { get; private set; } = false;
 
         #region Constructors
         public Tile(Tile _Tile)
@@ -383,27 +121,9 @@ namespace Resources
             Type = _type;
             walkable = (Type == tileType.Floor) ? true : false;
         }
-        public string ToLongString()
-        {
-            return ("Tile at " + Coord.GetVector2Int().ToString() + " from room " + RoomId + " is a " + Type.ToString() + " and is " + Class.ToString() + "\nYou " + ((walkable) ? "CAN walk in it" : "CANNOT walk in it"));
-        }
-        public bool IsValid()
-        {
-            if (Coord == null || RoomId < -1)
-                return false;
-            return true;
-        }
-        public void hasCollided()
-        {
-            Collided = true;
-        }
         #endregion
 
         #region Overrides
-        public override string ToString()
-        {
-            return "RoomID " + RoomId + "\nCoord " + Coord.GetVector2Int().ToString() + "\nType: " + Type.ToString() + "\nClass: " + Class.ToString() + " \nsWalkable? " + walkable;
-        }
         public override int GetHashCode()
         {
             return RoomId << 3 + Coord.GetHashCode() + Type.ToString().GetHashCode() * 23 + Class.ToString().GetHashCode() * 17 + walkable.GetHashCode() << 4;
@@ -421,7 +141,6 @@ namespace Resources
     {
         public int x { get; private set; }
         public int y { get; private set; }
-        public Tile tile { get; private set; }
 
         #region Constructors
         public CoordInt(int _x, int _y)
@@ -429,23 +148,10 @@ namespace Resources
             x = _x;
             y = _y;
         }
-        public CoordInt(int _x, int _y, Tile _tile)
-        {
-            x = _x;
-            y = _y;
-            tile = _tile;
-        }
         public CoordInt(CoordInt coord)
         {
             x = coord.x;
             y = coord.y;
-            tile = coord.tile;
-        }
-        public CoordInt(CoordInt coord, Tile _tile)
-        {
-            x = coord.x;
-            y = coord.y;
-            tile = _tile;
         }
         #endregion
 
@@ -472,20 +178,41 @@ namespace Resources
                 return false;
             return (x == other.x || y == other.y);
         }
-        public bool HasATile()
+        public static float Distance(CoordInt A, CoordInt B)
         {
-            return tile != null;
+            return Vector2Int.Distance(A.GetVector2Int(), B.GetVector2Int());
         }
-        public bool HasATile(Dictionary<CoordInt, Tile> map)
+        public static CoordInt GetBiggest(List<CoordInt> List)
         {
-            if (!map.ContainsKey(this))
-                return false;
+            bool first = true;
 
-            return map[this].IsValid();
+            CoordInt biggest = null;
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (first)
+                    biggest = List[i];
+                else if (biggest < List[i])
+                    biggest = List[i];
+            }
+
+            return biggest;
         }
-        public void SetTile(Tile _tile)
+        public static CoordInt GetSmallest(List<CoordInt> List)
         {
-            tile = _tile;
+            bool first = true;
+
+            CoordInt Smallest = null;
+
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (first)
+                    Smallest = List[i];
+                else if (Smallest > List[i])
+                    Smallest = List[i];
+            }
+
+            return Smallest;
         }
         #endregion
 
@@ -753,6 +480,10 @@ namespace Resources
         {
             return Chunks[GetChunkCoord(TileCoord)].Tiles[TileCoord];
         }
+        public Room GetRoom(CoordInt TileCoord)
+        {
+            return Chunks[GetChunkCoord(TileCoord)].room;
+        }
         public bool ContainsCoord(CoordInt Coord)
         {
             return Chunks.ContainsKey(GetChunkCoord(Coord));
@@ -781,11 +512,66 @@ namespace Resources
         }
         public void RemoveRoom(Room room)
         {
-            foreach(Chunk c in Rooms[room.ID].Chunks.Values)
+            foreach (Chunk c in Rooms[room.ID].Chunks.Values)
                 if (Chunks.ContainsKey(c.Coordinates))
                     Chunks[c.Coordinates].ResetChunk();
 
             Rooms.Remove(room.ID);
+        }
+
+        #region Room Methods
+
+        public void ConnectRooms(Room A, Room B)
+        {
+            if (A.Connections.ContainsKey(B.ID))
+                return;
+            Region OriginRegion = null;
+            Region ToRegion = null;
+            float Distance = 0;
+            foreach (Region Aregion in A.Regions.Values)
+            {
+                foreach (Region Bregion in B.Regions.Values)
+                {
+                    if (Distance == 0)
+                    {
+                        Distance = Region.Distance(Aregion, Bregion);
+                        OriginRegion = Aregion;
+                        ToRegion = Bregion;
+                    }
+                    else if (Distance > Region.Distance(Aregion, Bregion))
+                    {
+                        Distance = Region.Distance(Aregion, Bregion);
+                        OriginRegion = Aregion;
+                        ToRegion = Bregion;
+                    }
+                }//Found nearest region between rooms
+                //TODO Connect Rooms
+            }
+            Tuple<Region, Region> NearestRegions = new Tuple<Region, Region>(OriginRegion, ToRegion);
+            Tuple<Tile, Tile> t = Region.NearestTileBetweenRegions(NearestRegions.Item1, NearestRegions.Item2);
+            A.SetConnection(B, t);
+
+            List<CoordInt> tilestocreate = Room.GetLine(t.Item1.Coord, t.Item2.Coord);
+
+            for (int i = 0; i < tilestocreate.Count; i++)
+            {
+                CoordInt coord = tilestocreate[i];
+
+                for (int neighbourX = (int)(coord.x - ((3 - 1) / 2f)); neighbourX <= (int)(coord.x + ((3 - 1) / 2f)); neighbourX++)
+                {
+                    for (int neighbourY = (int)(coord.y - ((3 - 1) / 2f)); neighbourY <= (int)(coord.y + ((3 - 1) / 2f)); neighbourY++)
+                    {
+                        CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
+
+                        Tile tile = GetTile(curCoord);
+
+                        if (tile.Type != tileType.Floor)
+                            GetTile(curCoord).SetType(tileType.Floor);
+                    }
+                }
+            }
+
+            #endregion
         }
     }
     public class Chunk
@@ -867,16 +653,15 @@ namespace Resources
         }
     }
 
-    public class Room: RoomSettings
+    public class Room : RoomSettings
     {
         public int ID;
         public Dictionary<CoordInt, Chunk> Chunks = new Dictionary<CoordInt, Chunk>();
-        public List<Room> Connections = new List<Room>();
+        public Dictionary<int, Tuple<Tile, Tile>> Connections = new Dictionary<int, Tuple<Tile, Tile>>();
         public Dictionary<CoordInt, Tile> Map = new Dictionary<CoordInt, Tile>();
         public Color Color;
         public Dictionary<int, Region> Regions = new Dictionary<int, Region>();
         public int nextRegionID = 0;
-        public GameObject GameObject = null;
 
         public Room(int ID, List<Chunk> Chunks, RoomSettings settings) : base(settings)
         {
@@ -888,10 +673,12 @@ namespace Resources
             RemoveNotAdjacent(Chunks);
             SetColor();
         }
+        
+        #region Create Room
 
         public void RemoveNotAdjacent(List<Chunk> ChunkListRaw)
         {
-            Dictionary<CoordInt, Chunk> ChunkDict = GetDictionaryFromList(ChunkListRaw);
+            Dictionary<CoordInt, Chunk> ChunkDict = Conversion.ListToDictionary(ChunkListRaw);
 
             Queue<Chunk> queue = new Queue<Chunk>();
             List<CoordInt> MapFlags = new List<CoordInt>();
@@ -929,236 +716,51 @@ namespace Resources
 
             SetChunks(AdjacentChunks);
         }
-
-        #region Create Room
-
         public void GenerateTiles()
         {
             foreach (Chunk c in Chunks.Values)
-                c.GenerateTiles(GetSettings());
+                c.GenerateTiles(this);
+            GetMap();
         }
         public void SmoothChunks()
         {
             SetChunks(TileHandler.Smooth(GetChunkList(), SmoothingMultiplier, ComparisonFactor, false));
+            GetMap();
         }
-        public void GetMap()
-        {
-            Map = new Dictionary<CoordInt, Tile>();
-            foreach (Chunk c in Chunks.Values)
-                foreach (Tile t in c.Tiles.Values)
-                    Map.Add(t.Coord, t);
-        }
-        public void GetRegions()
+        public void GetRegions(float ThresholdPercentage = 0.4f)
         {
             Dictionary<CoordInt, Tile> MapFlags = new Dictionary<CoordInt, Tile>();
-            foreach (Tile t in Map.Values)
+            GetMap();
+
+            foreach(Tile t in Map.Values)
             {
                 if (!MapFlags.ContainsKey(t.Coord))
+                {
+                    if(t.Type == tileType.Floor)
                     {
-                    if (t.Type == tileType.Floor)
-                    {
-                        Region Region = new Region(nextRegionID, GetRegion(t));
-                        float threshold = Region.GetChunks(this).Count * Mathf.Pow(GetChunkSize(), 2) * 0.4f;
-                        if (Region.Map.Count > threshold)
+                        //Found New Region
+                        Dictionary<CoordInt, Tile> RegionTiles = GetRegion(t);
+                        foreach (Tile tr in RegionTiles.Values)
+                            MapFlags.Add(tr.Coord,tr);
+
+                        //Added tiles to MapFlags
+                        Region Region = new Region(nextRegionID, RegionTiles);
+                        float threshold = Region.GetChunks(this).Count * Mathf.Pow(GetChunkSize(), 2) * ThresholdPercentage;
+
+                        //Verify the Region
+                        if (Regions.Count == 0)
                             AddRegion(Region);
-                        else if (Regions.Count > 0)
-                        {
-                            Debug.Log("Region has Tiles below threshold");
-                            foreach (Tile tr in Region.Map.Values)
-                            {
-                                Chunks[GetChunkCoord(tr.Coord)].Tiles[tr.Coord].SetType(tileType.Wall);
-                            }
-                        }
+                        else if (Region.Map.Count >= threshold)
+                            AddRegion(Region);
                         else
-                            AddRegion(Region);
-
-                        foreach (Tile tr in Region.Map.Values)
-                            if (!MapFlags.ContainsKey(tr.Coord))
-                                MapFlags.Add(tr.Coord, tr);
+                            foreach (Tile tr in Region.Map.Values)
+                                if (tr.Type == tileType.Floor)
+                                    GetTile(tr.Coord).SetType(tileType.Wall);
                     }
-                    else
-                        MapFlags.Add(t.Coord, t);
                 }
             }
+            GetMap();
             Debug.Log("Found " + Regions.Count + " Regions");
-        }
-        public void AddRegion(Region Region)
-        {
-            Regions.Add(Region.ID, Region);
-            nextRegionID++;
-        }
-        public void CreateConnections()
-        {
-            if (Regions.Count > 1)
-            {
-                foreach (Region from in Regions.Values)
-                {
-                    if (from.Connection.Count >= 2)
-                        continue;
-                    float dist = 1000000;
-                    Region ToRegion = null;
-                    foreach (Region to in Regions.Values)
-                    {
-                        if (from.ID == to.ID)
-                            continue;
-                        if (from.Connection.ContainsKey(to.ID))
-                            continue;
-                        if (to.Connection.Count >= 2)
-                            continue;
-                        if (Region.Distance(from, to) < dist)
-                        {
-                            dist = Region.Distance(from, to);
-                            ToRegion = to;
-                        }
-                    }
-                    if(ToRegion != null)
-                        from.ConnectRegions(ToRegion, NearestTileBetweenRegions(from, ToRegion));
-                }
-                CheckConnections();
-            }
-        }
-        public void CheckConnections()
-        {
-            Queue<Region> queue = new Queue<Region>(Conversion.DictionaryToList(Regions));
-            Dictionary<int, bool> ConnectionFlags = new Dictionary<int, bool>();
-
-            List<List<Region>> MasterRegions = new List<List<Region>>();
-
-            while (queue.Count > 0)
-            {
-                Region region = queue.Dequeue();
-                if (!ConnectionFlags.ContainsKey(region.ID))
-                {
-                    List<Region> MasterRegionList = new List<Region>();
-                    MasterRegionList.Add(region);
-                    ConnectionFlags.Add(region.ID, true);
-
-                    Queue<Region> innerqueue = new Queue<Region>();
-                    innerqueue.Enqueue(region);
-
-                    while (innerqueue.Count > 0)
-                    {
-                        Region innerRegion = innerqueue.Dequeue();
-                        foreach (int r in innerRegion.Connection.Keys)
-                        {
-                            if (ConnectionFlags.ContainsKey(r))
-                                continue;
-                            ConnectionFlags.Add(r, true);
-                            MasterRegionList.Add(Regions[r]);
-                            innerqueue.Enqueue(Regions[r]);
-                        }
-                    }
-                    MasterRegions.Add(MasterRegionList);
-                }
-            }
-
-            if (MasterRegions.Count > 1)
-            {
-                foreach (List<Region> from in MasterRegions)
-                {
-                    float dist = 1000000;
-                    Region nearestToRegion = null;
-                    Region nearestFromRegion = null;
-                    for (int fromIndex = 0; fromIndex < from.Count; fromIndex++)
-                    {
-                        foreach (List<Region> to in MasterRegions)
-                        {
-                            if (from == to)
-                                continue;
-                            for (int toIndex = 0; toIndex < to.Count; toIndex++)
-                            {
-                                if (Region.Distance(from[fromIndex], to[toIndex]) < dist)
-                                {
-                                    nearestToRegion = to[toIndex];
-                                    nearestFromRegion = from[fromIndex];
-                                    dist = from[fromIndex].Distance(to[toIndex]);
-                                }
-                            }
-                        }
-                    }
-                    nearestFromRegion.ConnectRegions(nearestToRegion, NearestTileBetweenRegions(nearestFromRegion, nearestToRegion));
-                }
-            }
-        }
-        public void GenerateRegionConnections()
-        {
-            foreach(Region r in Regions.Values)
-            {
-                foreach(Tuple<Tile, Tile> t in r.Connection.Values)
-                {
-                    List<CoordInt> tilestocreate = GetLine(t.Item1.Coord, t.Item2.Coord);
-
-                    for (int i = 0; i < tilestocreate.Count; i++)
-                    {
-                        CoordInt coord = tilestocreate[i];
-
-                        for (int neighbourX = (int)(coord.x -.5f); neighbourX <= (int)(coord.x + .5f); neighbourX++)
-                        {
-                            for (int neighbourY = (int)(coord.y - .5f); neighbourY <= (int)(coord.y + .5f); neighbourY++)
-                            {
-                                CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
-
-                                Tile tile = Map[curCoord];
-
-                                if (tile.Type != tileType.Floor)
-                                    Map[curCoord].SetType(tileType.Floor);
-                            }
-                        }
-                    }
-                }
-            }
-            RemoveCleanChunks();
-        }
-        private void RemoveCleanChunks()
-        {
-            List<Chunk> toRemove = new List<Chunk>();
-            foreach (Chunk c in Chunks.Values)
-            {
-                bool Clean = true;
-                foreach (Tile t in c.Tiles.Values)
-                    if (t.Type == tileType.Floor)
-                    {
-                        Clean = false;
-                        break;
-                    }
-                if (Clean)
-                    toRemove.Add(c);
-            }
-            foreach (Chunk c in toRemove)
-            {
-                c.RegenerateTiles();
-                c.room = null;
-                Chunks.Remove(c.Coordinates);
-            }
-        }
-        private Dictionary<CoordInt, Tile> GetRegion(Tile startTile)
-        {
-            Dictionary<CoordInt, Tile> Region = new Dictionary<CoordInt, Tile>();
-            Queue<Tile> queue = new Queue<Tile>();
-            queue.Enqueue(startTile);
-            Region.Add(startTile.Coord, startTile);
-
-            while (queue.Count > 0)
-            {
-                Tile tile = queue.Dequeue();
-
-                for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
-                {
-                    for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
-                    {
-                        CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
-                        if (curCoord.isAdjacent(tile.Coord))
-                            if (!Region.ContainsKey(curCoord) && Map.ContainsKey(curCoord))
-                            {
-                                Region.Add(curCoord, Map[curCoord]);
-                                Chunks[GetChunkCoord(curCoord)].Tiles[curCoord].RoomId = ID;
-                                if (Map[curCoord].Type == tileType.Floor)
-                                    queue.Enqueue(Map[curCoord]);
-                            }
-                    }
-                }
-            }
-            return Region;
         }
         public void SetColor()
         {
@@ -1179,17 +781,6 @@ namespace Resources
             foreach (Chunk c in Chunks.Values)
                 ChunkList.Add(c);
             return ChunkList;
-        }
-        private Dictionary<CoordInt, Chunk> GetDictionaryFromList(List<Chunk> list)
-        {
-            Dictionary<CoordInt, Chunk> dict = new Dictionary<CoordInt, Chunk>();
-
-            foreach(Chunk c in list)
-            {
-                dict.Add(c.Coordinates, c);
-            }
-
-            return dict;
         }
         public Dictionary<CoordInt, Tile> GetTilesByType(tileType Type)
         {
@@ -1243,36 +834,10 @@ namespace Resources
                 Size = c.Size;
             return Size;
         }
-        public Tile[] NearestTileBetweenRegions(Region FromTiles, Region ToTiles)
+        public Tile GetTile(CoordInt TileCoord)
         {
-            Tile[] tiles = new Tile[2];
-
-            float dist = 25;
-
-            Dictionary<CoordInt, Tile> FromOuterTiles = FromTiles.GetOuterTiles();
-            Dictionary<CoordInt, Tile> ToOuterTiles = ToTiles.GetOuterTiles();
-
-            foreach (Tile t in FromOuterTiles.Values)
-            {
-                if (t.Type == tileType.Wall)
-                {
-                    Vector2Int FromPos = t.Coord.GetVector2Int();
-                    foreach (Tile f in ToOuterTiles.Values)
-                    {
-                        Vector2Int ToPos = f.Coord.GetVector2Int();
-                        if (Vector2Int.Distance(FromPos, ToPos) < dist)
-                        {
-                            dist = Vector2Int.Distance(FromPos, ToPos);
-                            tiles[0] = t;
-                            tiles[1] = f;
-                        }
-                    }
-                }
-            }
-
-            return tiles;
+            return Chunks[GetChunkCoord(TileCoord)].Tiles[TileCoord];
         }
-
         #endregion
 
         #region Set Methods
@@ -1299,10 +864,10 @@ namespace Resources
                     Chunks[c.Coordinates] = c;
             }
         }
-        public void SetConnection(Room toRoom)
+        public void SetConnection(Room toRoom, Tuple<Tile, Tile> Tiles)
         {
-            this.Connections.Add(toRoom);
-            toRoom.Connections.Add(this);
+            this.Connections.Add(toRoom.ID, new Tuple<Tile, Tile>(Tiles.Item1, Tiles.Item2));
+            toRoom.Connections.Add(ID, new Tuple<Tile, Tile>(Tiles.Item2, Tiles.Item1));
         }
 
         #endregion
@@ -1386,7 +951,215 @@ namespace Resources
 
             return line;
         }
-        
+
+        #endregion
+
+        #region Private Methods
+
+        private void RemoveCleanChunks()
+        {
+            List<Chunk> toRemove = new List<Chunk>();
+            foreach (Chunk c in Chunks.Values)
+            {
+                bool Clean = true;
+                foreach (Tile t in c.Tiles.Values)
+                    if (t.Type == tileType.Floor)
+                    {
+                        Clean = false;
+                        break;
+                    }
+                if (Clean)
+                    toRemove.Add(c);
+            }
+            foreach (Chunk c in toRemove)
+            {
+                c.RegenerateTiles();
+                c.room = null;
+                Chunks.Remove(c.Coordinates);
+            }
+        }
+        private Dictionary<CoordInt, Tile> GetRegion(Tile startTile)
+        {
+            Dictionary<CoordInt, Tile> Region = new Dictionary<CoordInt, Tile>();
+            Queue<Tile> queue = new Queue<Tile>();
+            queue.Enqueue(startTile);
+            Region.Add(startTile.Coord, startTile);
+
+            while (queue.Count > 0)
+            {
+                Tile tile = queue.Dequeue();
+
+                for (int NeighbourX = tile.Coord.x - 1; NeighbourX <= tile.Coord.x + 1; NeighbourX++)
+                {
+                    for (int NeighbourY = tile.Coord.y - 1; NeighbourY <= tile.Coord.y + 1; NeighbourY++)
+                    {
+                        CoordInt curCoord = new CoordInt(NeighbourX, NeighbourY);
+                        if (curCoord.isAdjacent(tile.Coord))
+                            if (!Region.ContainsKey(curCoord) && Map.ContainsKey(curCoord))
+                            {
+                                Region.Add(curCoord, Map[curCoord]);
+                                Chunks[GetChunkCoord(curCoord)].Tiles[curCoord].RoomId = ID;
+                                if (Map[curCoord].Type == tileType.Floor)
+                                    queue.Enqueue(Map[curCoord]);
+                            }
+                    }
+                }
+            }
+            return Region;
+        }
+        private void AddRegion(Region Region)
+        {
+            Regions.Add(Region.ID, Region);
+            nextRegionID++;
+        }
+        private void GetMap()
+        {
+            Map = new Dictionary<CoordInt, Tile>();
+            foreach (Chunk c in Chunks.Values)
+                foreach (Tile t in c.Tiles.Values)
+                {
+                    Map.Add(t.Coord, t);
+                }
+        }
+        public void SetConnections()
+        {
+            if (Regions.Count > 1)
+            {
+                foreach (Region origin in Regions.Values)
+                {
+                    float Distance = 0;
+                    Region nearestRegion = null;
+                    foreach (Region to in Regions.Values)
+                    {
+                        if (origin == to)
+                            continue;
+
+                        if (Distance == 0)
+                        {
+                            Distance = Region.Distance(origin, to);
+                        }
+                        else if (Distance > Region.Distance(origin, to))
+                        {
+                            Distance = Region.Distance(origin, to);
+                            nearestRegion = to;
+                        }
+                    }
+                    if (nearestRegion != null)
+                        origin.ConnectRegions(nearestRegion, Region.NearestTileBetweenRegions(origin, nearestRegion));
+                    else
+                        Debug.Log("Could not find a Region.");
+                }
+            }
+            CheckConnections();
+            GetMap();
+        }
+        private void CheckConnections()
+        {
+            Queue<Region> queue = new Queue<Region>(Conversion.DictionaryToList(Regions));
+            List<int> ConnectionFlags = new List<int>();
+            List<List<Region>> MasterRegions = new List<List<Region>>();
+
+            while (queue.Count > 0)
+            {
+                Region region = queue.Dequeue();
+                if (!ConnectionFlags.Contains(region.ID))
+                {
+                    ConnectionFlags.Add(region.ID);
+
+                    Queue<Region> ConnectedTo = new Queue<Region>();
+                    ConnectedTo.Enqueue(region);
+                    List<Region> ConnectedRegions = new List<Region>();
+                    ConnectedRegions.Add(region);
+                    List<int> ConnectedFlags = new List<int>();
+                    ConnectedFlags.Add(region.ID);
+                    while (ConnectedTo.Count > 0)
+                    {
+                        Region CRegion = ConnectedTo.Dequeue();
+                        foreach (int ID in CRegion.Connection.Keys)
+                        {
+                            if (!ConnectedFlags.Contains(ID))
+                            {
+                                ConnectionFlags.Add(ID);
+                                ConnectedFlags.Add(ID);
+                                ConnectedRegions.Add(Regions[ID]);
+                                ConnectedTo.Enqueue(Regions[ID]);
+                            }
+                        }
+                    }
+                    MasterRegions.Add(ConnectedRegions);
+                }//Group all regions by connections
+            }
+            if (MasterRegions.Count > 1)
+            {
+                //Connect Grouped Regions
+                List<Tuple<List<Region>, List<Region>>> ConnectedMasterRegions = new List<Tuple<List<Region>, List<Region>>>();
+                foreach (List<Region> origin in MasterRegions)
+                {
+                    Region nearestOrigin = null;
+                    Region nearestTo = null;
+                    foreach (List<Region> To in MasterRegions)
+                    {
+                        if (origin == To)
+                            continue;
+                        if (ConnectedMasterRegions.Contains(new Tuple<List<Region>, List<Region>>(origin, To))
+                            || ConnectedMasterRegions.Contains(new Tuple<List<Region>, List<Region>>(To, origin)))
+                            continue;
+                        float Distance = 0
+                            foreach (Region originRegion in origin)
+                        {
+                            foreach (Region toRegion in To)
+                            {
+                                if (Distance == 0)
+                                {
+                                    Distance = Region.Distance(originRegion, toRegion);
+                                    nearestOrigin = originRegion;
+                                    nearestTo = toRegion;
+                                }
+                                else if (Region.Distance(originRegion, toRegion) < Distance)
+                                {
+                                    Distance = Region.Distance(originRegion, toRegion);
+                                    nearestOrigin = originRegion;
+                                    nearestTo = toRegion;
+                                }
+                            }
+                        }
+                        nearestOrigin.ConnectRegions(nearestTo, Region.NearestTileBetweenRegions(nearestOrigin, nearestTo));
+                        ConnectedMasterRegions.Add(new Tuple<List<Region>, List<Region>>(origin, To));
+                    }
+                }//Connect grouped regions
+            }
+            GenerateRegionConnectionTiles();
+        }
+        private void GenerateRegionConnectionTiles(float ConnectionWidth = 2f)
+        {
+            foreach (Region r in Regions.Values)
+            {
+                foreach (Tuple<Tile, Tile> t in r.Connection.Values)
+                {
+                    List<CoordInt> tilestocreate = GetLine(t.Item1.Coord, t.Item2.Coord);
+
+                    for (int i = 0; i < tilestocreate.Count; i++)
+                    {
+                        CoordInt coord = tilestocreate[i];
+
+                        for (int neighbourX = (int)(coord.x - ((ConnectionWidth-1)/2f)); neighbourX <= (int)(coord.x + ((ConnectionWidth - 1) / 2f)); neighbourX++)
+                        {
+                            for (int neighbourY = (int)(coord.y - ((ConnectionWidth - 1) / 2f)); neighbourY <= (int)(coord.y + ((ConnectionWidth - 1) / 2f)); neighbourY++)
+                            {
+                                CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
+
+                                Tile tile = Map[curCoord];
+
+                                if (tile.Type != tileType.Floor)
+                                    Map[curCoord].SetType(tileType.Floor);
+                            }
+                        }
+                    }
+                }
+            }
+            RemoveCleanChunks();
+        }
+
         #endregion
     }
 
@@ -1443,27 +1216,26 @@ namespace Resources
 
             return tiles;
         }
-        public void ConnectRegions(Region other, Tile[] tiles)
+        public void ConnectRegions(Region other, Tuple<Tile,Tile> Tiles)
         {
-
             if (other == null)
             {
                 Debug.Log("Other Region is Null, Cannot Create Connection");
                 return;
             }
-            if (tiles[0] == null)
+            if (Tiles.Item1 == null)
             {
                 Debug.Log("Connection tile from origin Region is Null, Cannot Create Connection");
                 return;
             }
-            if (tiles[1] == null)
+            if (Tiles.Item2 == null)
             {
                 Debug.Log("Connection tile from origin Region is Null, Cannot Create Connection");
                 return;
             }
-            Connection.Add(other.ID, new Tuple<Tile, Tile>(tiles[0], tiles[1]));
-            other.Connection.Add(ID, new Tuple<Tile, Tile>(tiles[1], tiles[0]));
-            Debug.Log("Created Connection from " + ID + " to " + other.ID + " on tiles " + tiles[0].Coord.ToString() + " to " + tiles[1].Coord.ToString() + " respectively");
+            Connection.Add(other.ID, new Tuple<Tile, Tile>(Tiles.Item1, Tiles.Item2));
+            other.Connection.Add(ID, new Tuple<Tile, Tile>(Tiles.Item2, Tiles.Item1));
+            Debug.Log("Created Connection from " + ID + " to " + other.ID + " on tiles " + Tiles.Item1.Coord.ToString() + " to " + Tiles.Item2.Coord.ToString() + " respectively");
         }
 
         public float Distance(Region other)
@@ -1503,6 +1275,37 @@ namespace Resources
                 }
             }
             return dist;
+        }
+        public static Tuple<Tile, Tile> NearestTileBetweenRegions(Region FromRegion, Region ToRegion)
+        {
+            Tile From = null;
+            Tile To = null;
+
+            float Distance = 0;
+
+            Dictionary<CoordInt, Tile> FromOuterTiles = FromRegion.GetOuterTiles();
+            Dictionary<CoordInt, Tile> ToOuterTiles = ToRegion.GetOuterTiles();
+
+            foreach (Tile f in FromOuterTiles.Values)
+            {
+                foreach (Tile t in ToOuterTiles.Values)
+                {
+                    if (Distance == 0)
+                    {
+                        Distance = CoordInt.Distance(f.Coord, t.Coord);
+                        From = f;
+                        To = t;
+                    }
+                    else if (CoordInt.Distance(f.Coord, t.Coord) < Distance)
+                    {
+                        Distance = CoordInt.Distance(f.Coord, t.Coord);
+                        From = f;
+                        To = t;
+                    }
+                }
+            }
+
+            return new Tuple<Tile, Tile>(From,To);
         }
     }
 
