@@ -100,8 +100,6 @@ namespace Resources
             RoomId = _Tile.RoomId;
             Coord = _Tile.Coord;
             Type = _Tile.Type;
-            Class = _Tile.Class;
-            walkable = _Tile.walkable;
         }
         public Tile(CoordInt _Coord)
         {
@@ -111,7 +109,6 @@ namespace Resources
         {
             Coord = _Coord;
             Type = _Type;
-            walkable = (Type == tileType.Floor) ? true : false;
         }
         #endregion
 
@@ -119,14 +116,13 @@ namespace Resources
         public void SetType(tileType _type)
         {
             Type = _type;
-            walkable = (Type == tileType.Floor) ? true : false;
         }
         #endregion
 
         #region Overrides
         public override int GetHashCode()
         {
-            return RoomId << 3 + Coord.GetHashCode() + Type.ToString().GetHashCode() * 23 + Class.ToString().GetHashCode() * 17 + walkable.GetHashCode() << 4;
+            return RoomId << 3 + Coord.GetHashCode() + Type.ToString().GetHashCode() * 23;
         }
         #endregion
 
@@ -516,6 +512,8 @@ namespace Resources
                 if (Chunks.ContainsKey(c.Coordinates))
                     Chunks[c.Coordinates].ResetChunk();
 
+            GameObject.Destroy(room.GameObject);
+
             Rooms.Remove(room.ID);
         }
 
@@ -557,15 +555,23 @@ namespace Resources
             {
                 CoordInt coord = tilestocreate[i];
 
-                for (int neighbourX = (int)(coord.x - ((3 - 1) / 2f)); neighbourX <= (int)(coord.x + ((3 - 1) / 2f)); neighbourX++)
+                int widht = 3;
+
+                for (int neighbourX = coord.x - 1; neighbourX <= coord.x + 1; neighbourX++)
                 {
-                    for (int neighbourY = (int)(coord.y - ((3 - 1) / 2f)); neighbourY <= (int)(coord.y + ((3 - 1) / 2f)); neighbourY++)
+                    for (int neighbourY = coord.y - 1; neighbourY <= coord.y +1; neighbourY++)
                     {
                         CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
 
                         Tile tile = GetTile(curCoord);
-
-                        if (tile.Type != tileType.Floor)
+                        if ((curCoord.x == coord.x - 1
+                            || curCoord.x == coord.x + 1)
+                            && (curCoord.y == coord.y - 1
+                            || curCoord.y == coord.y + 1))
+                        {
+                            GetTile(curCoord).SetType(tileType.Wall);
+                        }
+                        else
                             GetTile(curCoord).SetType(tileType.Floor);
                     }
                 }
@@ -613,7 +619,7 @@ namespace Resources
 
                     int random = Prng.Next(0, 100);
 
-                    Tile tile = new Tile(coord, (random > 50) ? tileType.Wall : tileType.Floor);
+                    Tile tile = new Tile(coord, tileType.Floor);
                     Generation.Add(coord, tile);
                 }
             }
@@ -662,6 +668,7 @@ namespace Resources
         public Color Color;
         public Dictionary<int, Region> Regions = new Dictionary<int, Region>();
         public int nextRegionID = 0;
+        public GameObject GameObject = null;
 
         public Room(int ID, List<Chunk> Chunks, RoomSettings settings) : base(settings)
         {
@@ -836,7 +843,13 @@ namespace Resources
         }
         public Tile GetTile(CoordInt TileCoord)
         {
+            if (!Chunks.ContainsKey(GetChunkCoord(TileCoord)))
+                return null;
             return Chunks[GetChunkCoord(TileCoord)].Tiles[TileCoord];
+        }
+        public bool ContainsTile(CoordInt TileCoord)
+        {
+            return Chunks.ContainsKey(GetChunkCoord(TileCoord));
         }
         #endregion
 
@@ -963,11 +976,24 @@ namespace Resources
             {
                 bool Clean = true;
                 foreach (Tile t in c.Tiles.Values)
-                    if (t.Type == tileType.Floor)
+                {
+                    for (int x = t.Coord.x - 1; x <= t.Coord.x+1; x++)
                     {
-                        Clean = false;
-                        break;
+                        if (!Clean)
+                            break;
+                        for (int y = t.Coord.y - 1; y <= t.Coord.y + 1; y++)
+                        {
+                            if (!Clean)
+                                break;
+                            CoordInt CurCoord = new CoordInt(x, y);
+                            if (ContainsTile(CurCoord))
+                                if (GetTile(CurCoord).Type == tileType.Floor)
+                                {
+                                    Clean = false;
+                                }
+                        }
                     }
+                }
                 if (Clean)
                     toRemove.Add(c);
             }
@@ -1104,8 +1130,8 @@ namespace Resources
                         if (ConnectedMasterRegions.Contains(new Tuple<List<Region>, List<Region>>(origin, To))
                             || ConnectedMasterRegions.Contains(new Tuple<List<Region>, List<Region>>(To, origin)))
                             continue;
-                        float Distance = 0
-                            foreach (Region originRegion in origin)
+                        float Distance = 0;
+                        foreach (Region originRegion in origin)
                         {
                             foreach (Region toRegion in To)
                             {

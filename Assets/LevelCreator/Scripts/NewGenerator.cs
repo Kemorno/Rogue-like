@@ -119,6 +119,7 @@ public class NewGenerator : MonoBehaviour
                                     {
                                         roomsToConnect[1] = clickedRoom;
                                         map.ConnectRooms(roomsToConnect[0], roomsToConnect[1]);
+                                        roomsToConnect = new Room[2];
                                     }
                                 }
                             }
@@ -152,15 +153,10 @@ public class NewGenerator : MonoBehaviour
                                 c.Tiles.Clear();
                                 if (c.room != null)
                                 {
-                                    map.Rooms.Remove(c.room.ID);
-                                    c.room.Chunks.Remove(c.Coordinates);
-                                    foreach (Chunk cu in c.room.Chunks.Values)
-                                    {
-                                        cu.room = null;
-                                        cu.RegenerateTiles();
-                                    }
+                                    map.RemoveRoom(c.room);
                                 }
-                                map.Chunks.Remove(c.Coordinates);
+                                else
+                                    map.Chunks.Remove(c.Coordinates);
                             }
                             break;
                     }
