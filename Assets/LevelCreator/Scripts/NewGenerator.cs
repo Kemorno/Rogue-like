@@ -572,4 +572,85 @@ public class NewGenerator : MonoBehaviour
         R.height = Mathf.Max(P1.y, P2.y);
         return R;
     }
+
+    public float EvaluateChunk(int RoomID, CoordInt ChunkToEvaluate)
+    {
+        Queue<CoordInt> queue = new Queue<CoordInt>();
+
+        queue.Enqueue(ChunkToEvaluate);
+
+        float Value = 0;
+
+        while (queue.Count > 0)
+        {
+
+            CoordInt coord = queue.Dequeue();
+
+            for (int NeighbourX = coord.x - 1; NeighbourX <= coord.x + 1; NeighbourX++)
+            {
+                for (int NeighbourY = coord.y - 1; NeighbourY <= coord.y + 1; NeighbourY++)
+                {
+                    CoordInt Neighbour = new CoordInt(NeighbourX, NeighbourY);
+
+                    if (Neighbour == coord)
+                        continue;
+                    if (coord.isAdjacent(Neighbour))
+                    {
+                        if (map.Chunks.ContainsKey(Neighbour))
+                        {
+                            Chunk neighbourChunk = map.Chunks[Neighbour];
+
+                            if (neighbourChunk.ContainsRoom())
+                            {
+                                if (neighbourChunk.room.ID == RoomID)
+                                {
+                                    Value += 10;
+                                    continue;
+                                }
+                                else if (neighbourChunk.room.ID != RoomID)
+                                {
+                                    Value -= 10;
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                Value += 10;
+                                continue;
+                            }
+                        }
+                        else
+                            Value += 5;
+                    }
+                    else
+                    {
+                        Chunk neighbourChunk = map.Chunks[Neighbour];
+
+                        if (neighbourChunk.ContainsRoom())
+                        {
+                            if (neighbourChunk.room.ID == RoomID)
+                            {
+                                Value += 5;
+                                continue;
+                            }
+                            else if (neighbourChunk.room.ID != RoomID)
+                            {
+                                Value -= 5;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            Value += 5;
+                            continue;
+                        }
+                    }
+                    else
+                        Value += 2.5f;
+                    continue;
+                }
+            }
+        }
+        return Value;
+    }
 }

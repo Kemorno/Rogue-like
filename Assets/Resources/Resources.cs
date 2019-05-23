@@ -280,7 +280,7 @@ namespace Resources
         #region Conversion
         public static implicit operator CoordInt(Vector3 other)
         {
-            return new CoordInt(Mathf.FloorToInt(other.x), Mathf.FloorToInt(other.y));
+            return new CoordInt((other.x > 0 ) ?Mathf.FloorToInt(other.x) : Mathf.CeilToInt(other.x), (other.y > 0) ? Mathf.FloorToInt(other.y) : Mathf.CeilToInt(other.y));
         }
         public static implicit operator CoordInt(Vector3Int other)
         {
@@ -545,40 +545,34 @@ namespace Resources
                 }//Found nearest region between rooms
                 //TODO Connect Rooms
             }
-            Tuple<Region, Region> NearestRegions = new Tuple<Region, Region>(OriginRegion, ToRegion);
-            Tuple<Tile, Tile> t = Region.NearestTileBetweenRegions(NearestRegions.Item1, NearestRegions.Item2);
+            Tuple<Tile, Tile> t = Region.NearestTileBetweenRegions(OriginRegion, ToRegion);
             A.SetConnection(B, t);
+            B.SetConnection(A, new Tuple<Tile, Tile>(t.Item2, t.Item1));
 
+            CreateConnectionTiles(t);
+
+        }
+        private void CreateConnectionTiles(Tuple<Tile, Tile> t, int width = 3)
+        {
             List<CoordInt> tilestocreate = Room.GetLine(t.Item1.Coord, t.Item2.Coord);
 
             for (int i = 0; i < tilestocreate.Count; i++)
             {
                 CoordInt coord = tilestocreate[i];
 
-                int widht = 3;
-
-                for (int neighbourX = coord.x - 1; neighbourX <= coord.x + 1; neighbourX++)
+                for (int neighbourX = Mathf.FloorToInt(coord.x - width * 0.5f); neighbourX <= Mathf.CeilToInt(coord.x + width * 0.5f); neighbourX++)
                 {
-                    for (int neighbourY = coord.y - 1; neighbourY <= coord.y +1; neighbourY++)
+                    for (int neighbourY = Mathf.FloorToInt(coord.y - width * 0.5f); neighbourY <= Mathf.CeilToInt(coord.y + width * 0.5f); neighbourY++)
                     {
                         CoordInt curCoord = new CoordInt(neighbourX, neighbourY);
-
-                        Tile tile = GetTile(curCoord);
-                        if ((curCoord.x == coord.x - 1
-                            || curCoord.x == coord.x + 1)
-                            && (curCoord.y == coord.y - 1
-                            || curCoord.y == coord.y + 1))
-                        {
-                            GetTile(curCoord).SetType(tileType.Wall);
-                        }
-                        else
+                        if (ContainsCoord(curCoord))
                             GetTile(curCoord).SetType(tileType.Floor);
                     }
                 }
             }
-
-            #endregion
         }
+
+        #endregion
     }
     public class Chunk
     {
@@ -619,7 +613,7 @@ namespace Resources
 
                     int random = Prng.Next(0, 100);
 
-                    Tile tile = new Tile(coord, tileType.Floor);
+                    Tile tile = new Tile(coord, tileType.Wall);
                     Generation.Add(coord, tile);
                 }
             }
@@ -656,6 +650,10 @@ namespace Resources
         {
             room = null;
             GenerateTiles();
+        }
+        public bool ContainsRoom()
+        {
+            return room != null;
         }
     }
 
@@ -1335,6 +1333,57 @@ namespace Resources
         }
     }
 
+    public class Entity
+    {
+        int ID;
+        float HP
+        {
+            set
+            {
+                if (value <= 0)
+                    value = 1;
+                else
+                    HP = value;
+            }
+            get { return HP; }
+        }
+        CoordInt Pos;
+
+        public Entity()
+        {
+
+        }
+        public Entity(int ID)
+        {
+            this.ID = ID;
+        }
+        public Entity(int ID, float HP)
+        {
+            this.ID = ID;
+            this.HP = HP;
+        }
+        public Entity(int ID, float HP, CoordInt Pos)
+        {
+            this.ID = ID;
+            this.HP = HP;
+            this.Pos = Pos;
+        }
+    }
+
+    public class Seller : Entity
+    {
+        float Trust = 50;
+        NPCType Type = NPCType.Shop;
+        Dictionary<CoordInt, Item> Selling = new Dictionary<CoordInt, Item>();
+        List<Effect> Effects = new List<Effect>();
+
+        public Seller(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        {
+            if (Invencible)
+                Effects.Add(new Effect());
+        }
+    }
+
     public class EffectItem : Item
     {
         public List<Effect> EffectsOnPickup;
@@ -1799,7 +1848,17 @@ namespace Enums
         RoomType
     }
 
-    public enum MobType
+    public enum NPCType
+    {
+        None,
+        Shop,
+        Challanger,
+        Buff,
+        Familiar,
+        Requester
+    }
+
+    public enum EntityType
     {
         Neutral,
         Player,
@@ -1902,4 +1961,12 @@ namespace Enums
     }
 
     #endregion
+
+    public enum Direction
+    {
+        Up,
+        Left,
+        Down,
+        Right
+    }
 }
