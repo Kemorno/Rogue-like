@@ -312,42 +312,80 @@ namespace Resources
         }
         #endregion
     }
-    public class Mob
+    public class Mob : Entity
     {
-        public int ID;
-        public int Health { get; private set; } = 1;
-        public int Mana { get; private set; } = 0;
-        public MobType Type { get; private set; } = MobType.Neutral;
+        public float MaxHP = 100;
+        public float HP
+        {
+            set
+            {
+                if (value < 0)
+                    HP = 0;
+                else if (value > MaxHP)
+                    HP = MaxHP;
+                else
+                    HP = value;
+            }
+            get { return HP; }
+        }
+        public float MaxMana = 100;
+        public float Mana
+        {
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                else if (value > MaxMana)
+                    Mana = MaxMana;
+                else
+                    Mana = value;
+            }
+            get { return Mana; }
+        }
+        public float ManaRegen = 0.5f;
         public AttackType AttackType { get; private set; } = AttackType.None;
+        public AIType AIType = AIType.None;
+        public AgroType AgroType = AgroType.None;
         public float AttackDamage { get; private set; } = 0.5f;
         public float AttackSpeed { get; private set; } = 3;
-        public List<AttackEffects> AttackEffects { get; private set; } = new List<AttackEffects>();
         public float MovementSpeed { get; private set; } = 1;
         public List<MobMovementEnv> MovementEnviroment { get; private set; } = new List<MobMovementEnv>();
         public MobMovementPattern MovementPattern { get; private set; } = MobMovementPattern.None;
         public float Height { get; private set; } = 2;
-        public Sprite Sprite { get; private set; } = null;
         public float Invencibility { get; private set; } = 0.5f;
 
         public Dictionary<string, Effect> Effects { get; private set; } = new Dictionary<string, Effect>();
         public Dictionary<string, Modifier> Modifiers { get; private set; } = new Dictionary<string, Modifier>();
 
         #region Constructor
-        public Mob(int _ID)
+        public Mob(int ID) : base(ID)
         {
-            ID = _ID;
+            Regen();
         }
-        public Mob(int _ID, int _Health, MobType _Type)
+        public Mob(int ID, float HP) :base(ID)
         {
-            ID = _ID;
-            Health = _Health;
-            Type = _Type;
+            this.HP = HP;
+            Regen();
         }
         #endregion
 
         public void RecieveDamage(int Damage)
         {
-            Health -= Damage;
+            HP -= Damage;
+            if(HP <= 0)
+            {
+                Die();
+            }
+        }
+        private void Die()
+        {
+
+        }
+
+        private IEnumerator Regen()
+        {
+            Mana += ManaRegen * .1f;
+            yield return new WaitForSeconds(0.1f);
         }
     }
     public class Seed
@@ -418,31 +456,6 @@ namespace Resources
         {
             return other.Value;
         }
-        #endregion
-    }
-    public class Item
-    {
-        public int ID;
-        public ISprite Sprite = null;
-        public GameObject gameObject = null;
-        public int rarity = 1;
-
-        #region Constructor
-
-        public Item()
-        {
-
-        }
-        public Item(int ID)
-        {
-            this.ID = ID;
-        }
-        public Item(int ID, int rarity)
-        {
-            this.ID = ID;
-            this.rarity = rarity;
-        }
-
         #endregion
     }
 
@@ -1335,70 +1348,195 @@ namespace Resources
 
     public class Entity
     {
-        int ID;
-        float HP
+        public int ID { get; private set; }
+        public float Y { get; private set; } = 0;
+        public CoordInt Pos;
+        public Sprite Sprite = null;
+        
+        public Entity(int ID)
+        {
+            this.ID = ID;
+        }
+        public Entity(int ID, CoordInt Pos)
+        {
+            this.ID = ID;
+            this.Pos = Pos;
+        }
+
+        public override int GetHashCode()
+        {
+            return ID*100000;
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals(obj as Entity);
+        }
+        public override string ToString()
+        {
+            return "ID " + ID + "\tPos " + Pos.ToString();
+        }
+    }
+
+    public class Item : Entity
+    {
+        public GameObject gameObject = null;
+        public int rarity = 1;
+
+        #region Constructor
+
+        public Item(int ID) : base(ID)
+        {
+        }
+        public Item(int ID, int rarity) : base(ID)
+        {
+            this.rarity = rarity;
+        }
+
+        #endregion
+    }
+    public class Seller : Mob
+    {
+        float Trust = 50;
+        Dictionary<CoordInt, Item> Selling = new Dictionary<CoordInt, Item>();
+
+        public Seller(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        {
+            if (Invencible)
+                Effects.Add(new Effect("INVENCIBLE"));
+        }
+    }
+    public class Requester : Mob
+    {
+        float Trust = 50;
+
+        public Requester(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        {
+            if (Invencible)
+                Effects.Add(new Effect("INVENCIBLE"));
+        }
+    }
+    public class Enemy : Mob
+    {
+        public Enemy(int ID, float HP) : base(ID, HP)
+        {
+
+        }
+    }
+    public class Boss : Mob
+    {
+        public Boss(int ID, float HP) : base(ID, HP)
+        {
+
+        }
+    }
+    public class Familiar : Mob
+    {
+        NPCType Type = NPCType.Familiar;
+        public Familiar(int ID, float HP) : base(ID, HP)
+        {
+
+        }
+    }
+    public class Player : Mob
+    {
+        public Player(int ID, float HP) : base(ID, HP)
+        {
+
+        }
+    }
+    public class Breakable : Entity
+    {
+        public float HP
         {
             set
             {
                 if (value <= 0)
-                    value = 1;
+                    value = 0;
                 else
                     HP = value;
             }
             get { return HP; }
         }
-        CoordInt Pos;
+        public List<Effect> Effects = new List<Effect>();
+        public List<Modifier> Modifiers = new List<Modifier>();
 
-        public Entity()
+        public Breakable(int ID, float HP) : base(ID)
         {
-
-        }
-        public Entity(int ID)
-        {
-            this.ID = ID;
-        }
-        public Entity(int ID, float HP)
-        {
-            this.ID = ID;
             this.HP = HP;
         }
-        public Entity(int ID, float HP, CoordInt Pos)
+
+        List<object> Contents = new List<object>();
+
+        public void onBreak(object Breaker)
         {
-            this.ID = ID;
+            foreach (object o in Contents)
+            {
+                if(o.GetType() == typeof(Effect))
+                {
+
+                }
+                else if (o.GetType() == typeof(Modifier))
+                {
+
+                }
+                else if (o.GetType() == typeof(Item))
+                {
+
+                }
+                else if (o.GetType() == typeof(Enemy))
+                {
+
+                }
+                else if (o.GetType() == typeof(Item))
+                {
+
+                }
+                else
+                {
+                    Debug.Log("Breakable of ID " + ID + " had a content that wasn't supost to have of type " + o.GetType());
+                }
+            }
+        }
+    }
+    public class Container : Entity
+    {
+        public Container(int ID) : base(ID)
+        {
+
+        }
+    }
+    public class Interactable : Entity
+    {
+        public float HP
+        {
+            set
+            {
+                if (value <= 0)
+                    value = 0;
+                else
+                    HP = value;
+            }
+            get { return HP; }
+        }
+        public List<Effect> Effects = new List<Effect>();
+        public List<Modifier> Modifiers = new List<Modifier>();
+
+        public Interactable(int ID, float HP) : base(ID)
+        {
             this.HP = HP;
-            this.Pos = Pos;
         }
     }
-
-    public class Seller : Entity
+    public class Unbreakable : Entity
     {
-        float Trust = 50;
-        NPCType Type = NPCType.Shop;
-        Dictionary<CoordInt, Item> Selling = new Dictionary<CoordInt, Item>();
-        List<Effect> Effects = new List<Effect>();
-
-        public Seller(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        public Unbreakable(int ID) : base(ID)
         {
-            if (Invencible)
-                Effects.Add(new Effect());
+
         }
     }
-
-    public class EffectItem : Item
-    {
-        public List<Effect> EffectsOnPickup;
-
-        public EffectItem(int id, Effect effect) : base(id)
-        {
-            EffectsOnPickup = new List<Effect>();
-            EffectsOnPickup.Add(effect);
-        }
-        public EffectItem(int id, List<Effect> effects) : base(id)
-        {
-            EffectsOnPickup = new List<Effect>(effects);
-        }
-    }
-
+    
     public class Effect
     {
         public string Name { get; private set; } = "";
@@ -1418,6 +1556,10 @@ namespace Resources
 
         public Effect()
         {
+        }
+        public Effect(string Name)
+        {
+            this.Name = Name;
         }
         #region Methods
         public void SetName(string newName)
@@ -1715,7 +1857,6 @@ namespace Resources
     {
         public Dictionary<string, Effect> Effects { get; private set; } = new Dictionary<string, Effect>();
         public List<Modifier> Modifiers = new List<Modifier>();
-        public List<Mob> Mobs = new List<Mob>();
     }
 
     public static class Conversion
@@ -1848,44 +1989,12 @@ namespace Enums
         RoomType
     }
 
-    public enum NPCType
-    {
-        None,
-        Shop,
-        Challanger,
-        Buff,
-        Familiar,
-        Requester
-    }
-
-    public enum EntityType
-    {
-        Neutral,
-        Player,
-        SmallEnemy,
-        Enemy,
-        BigEnemy,
-        MiniBoss,
-        Boss,
-        Static,
-        Friendly
-    }
     public enum AttackType
     {
         None,
         Ranged,
         Meele,
         Universal
-    }
-    public enum AttackEffects
-    {
-        Poison,
-        Bleed,
-        Dilaceration,
-        Blunt,
-        Contagious,
-        Slow,
-        Confusion
     }
     public enum MobMovementPattern
     {
@@ -1898,7 +2007,21 @@ namespace Enums
     {
         Ground,
         Sky,
-        Water
+        Liquid,
+        Any
+    }
+    public enum AIType
+    {
+        None,
+        Simple
+    }
+    public enum AgroType
+    {
+        None,
+        See,
+        Touch,
+        Atacked,
+        EffectInflicted
     }
 
     public enum ItemType
@@ -1950,7 +2073,6 @@ namespace Enums
 
     public enum OperatorType
     {
-
         LowerThan,
         LowerOrEqualsThan,
         EqualsTo,
