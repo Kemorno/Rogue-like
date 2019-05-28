@@ -343,6 +343,7 @@ namespace Resources
             get { return Mana; }
         }
         public float ManaRegen = 0.5f;
+
         public AttackType AttackType { get; private set; } = AttackType.None;
         public AIType AIType = AIType.None;
         public AgroType AgroType = AgroType.None;
@@ -1352,6 +1353,7 @@ namespace Resources
         public float Y { get; private set; } = 0;
         public CoordInt Pos;
         public Sprite Sprite = null;
+        public GameObject GameObject = null;
         
         public Entity(int ID)
         {
@@ -1379,6 +1381,49 @@ namespace Resources
             return "ID " + ID + "\tPos " + Pos.ToString();
         }
     }
+    public class NPC : Mob
+    {
+        public Dictionary<int, Item> Inventory = new Dictionary<int, Item>(128);
+        public float Trust
+        {
+            get
+            {
+                return Trust;
+            }
+            set
+            {
+                if (value < 0)
+                    Trust = 0;
+                else if (value > 100)
+                    Trust = 100;
+                else
+                    Trust = value;
+            }
+        }//Clamp between 0 and 100
+        public bool CanBeDamaged = false;
+        public bool AgroOnAttack = false;
+        public bool isAvailable = true;
+
+        public NPC(int ID, float HP) : base(ID, HP)
+        {
+
+        }
+        public NPC(int ID, float HP, bool CanBeDamaged = true) : base(ID, HP)
+        {
+            this.CanBeDamaged = CanBeDamaged;
+            if (CanBeDamaged)
+                Effects.Add(new Effect("INVENCIBLE"));
+        }
+
+        public void AddItem(Item Item)
+        {
+            Inventory.Add(Inventory.Count, Item);
+        }
+        public void ClearInventory()
+        {
+            Inventory.Clear();
+        }
+    }
 
     public class Item : Entity
     {
@@ -1397,39 +1442,55 @@ namespace Resources
 
         #endregion
     }
-    public class Seller : Mob
+    public class Seller : NPC
     {
-        float Trust = 50;
-        Dictionary<CoordInt, Item> Selling = new Dictionary<CoordInt, Item>();
-
-        public Seller(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        public Seller(int ID, float HP) : base(ID, HP)
         {
-            if (Invencible)
-                Effects.Add(new Effect("INVENCIBLE"));
+
         }
     }
-    public class Requester : Mob
+    public class Requester : NPC
     {
-        float Trust = 50;
-
-        public Requester(int ID, float HP, bool Invencible = true) : base(ID, HP)
+        public List<Item> RequestedItems = new List<Item>(32);
+        public Requester(int ID, float HP) : base(ID, HP)
         {
-            if (Invencible)
-                Effects.Add(new Effect("INVENCIBLE"));
+
+        }
+
+        public void AddRequestedItem(Item Item)
+        {
+            RequestedItems.Add(Item);
+        }
+        public bool HasItems()
+        {
+            foreach(Item i in RequestedItems)
+                if (!Inventory.ContainsValue(i))
+                    return false;
+            return true;
         }
     }
     public class Enemy : Mob
     {
+        public GameObject Target = null;
+
         public Enemy(int ID, float HP) : base(ID, HP)
         {
+            AIType = AIType.Simple;
+        }
 
+        public void SetTarget(GameObject Target)
+        {
+            if (Target.Equals(this.GameObject))
+                return;
+
+            this.Target = Target;
         }
     }
     public class Boss : Mob
     {
         public Boss(int ID, float HP) : base(ID, HP)
         {
-
+            AIType = AIType.TestBoss;
         }
     }
     public class Familiar : Mob
@@ -2013,7 +2074,12 @@ namespace Enums
     public enum AIType
     {
         None,
-        Simple
+        Simple,
+        Wanderer,
+        Seeker,
+        Ranged,
+        Meele,
+        TestBoss
     }
     public enum AgroType
     {
