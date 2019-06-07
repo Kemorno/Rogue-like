@@ -402,6 +402,28 @@ public class NewGenerator : MonoBehaviour
         }
     }
 
+    public void SelectChunks(Chunk StartingChunk, roomSize Size)
+    {
+        CoordInt LastCoord = StartingChunk.Coordinates;
+
+        for (int i = 0; i < (int)Size; i++)
+        {
+            float value = 0;
+            Chunk SelectedChunk = null;
+            for (int NeighbourX = LastCoord.x - 1; NeighbourX <= LastCoord.x + 1; NeighbourX++)
+            {
+                for (int NeighbourY = LastCoord.y - 1; NeighbourY <= LastCoord.y + 1; NeighbourY++)
+                {
+                    if (value < EvaluateChunk(map.nextRoomID, new CoordInt(NeighbourX, NeighbourY)))
+                    {
+                        value = EvaluateChunk(map.nextRoomID, new CoordInt(NeighbourX, NeighbourY));
+                        SelectedChunk = 
+                    }
+                }
+            }
+        }
+    }
+
     private void OnDrawGizmos()
     {
         if (map != null && map.Chunks.Count != 0)
