@@ -1476,6 +1476,7 @@ namespace Resources
         public Enemy(int ID, float HP) : base(ID, HP)
         {
             AIType = AIType.Simple;
+            WhileAlive();
         }
 
         public void SetTarget(GameObject Target)
@@ -1484,6 +1485,14 @@ namespace Resources
                 return;
 
             this.Target = Target;
+        }
+        public void WhileAlive()
+        {
+            while (true)
+            {
+                if (Target == null)
+                    return;
+            }
         }
     }
     public class Boss : Mob
