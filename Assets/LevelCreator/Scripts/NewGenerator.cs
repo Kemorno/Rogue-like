@@ -19,6 +19,8 @@ public class NewGenerator : MonoBehaviour
     [Range(0,1)]
     public float TilePercentageFilled = 0.333f;
 
+    public roomSize roomSize = roomSize.Medium;
+
     Map map;
 
     public bool drawGizmos;
@@ -402,25 +404,52 @@ public class NewGenerator : MonoBehaviour
         }
     }
 
-    public void SelectChunks(Chunk StartingChunk, roomSize Size)
+    public List<Chunk> SelectChunks(Chunk StartingChunk, roomSize Size)
     {
+        List<Chunk> SelectedChunks = new List<Chunk>((int)Size);
         CoordInt LastCoord = StartingChunk.Coordinates;
 
         for (int i = 0; i < (int)Size; i++)
         {
             float value = 0;
+            bool first = true;
             Chunk SelectedChunk = null;
             for (int NeighbourX = LastCoord.x - 1; NeighbourX <= LastCoord.x + 1; NeighbourX++)
             {
                 for (int NeighbourY = LastCoord.y - 1; NeighbourY <= LastCoord.y + 1; NeighbourY++)
                 {
-                    if (value < EvaluateChunk(map.nextRoomID, new CoordInt(NeighbourX, NeighbourY)))
+                    CoordInt nextCoord = new CoordInt(NeighbourX, NeighbourY);
+                    if (LastCoord.isAdjacent(nextCoord) && nextCoord != LastCoord)
                     {
-                        value = EvaluateChunk(map.nextRoomID, new CoordInt(NeighbourX, NeighbourY));
-                        SelectedChunk = 
+                        if (value < EvaluateChunk(map.nextRoomID, nextCoord) || first)
+                        {
+                            first = false;
+                            value = EvaluateChunk(map.nextRoomID, nextCoord);
+                            SelectedChunk = map.Chunks[nextCoord];
+                        }
                     }
+
                 }
             }
+            SelectedChunks.Add(SelectedChunk);
+        }
+        return SelectedChunks;
+    }
+
+    public void CreateRoomRandom(CoordInt StartingCoord)
+    {
+        List<Chunk> Chunks = SelectChunks(map.Chunks[StartingCoord], roomSize);
+
+        if (coords.Count > 0)
+        {
+            if (queue.Count == 0)
+            {
+                queue.Enqueue(Chunks);
+                RoomQueue();
+            }
+            else
+                queue.Enqueue(Chunks);
+            coords.Clear();
         }
     }
 
