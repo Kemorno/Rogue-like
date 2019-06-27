@@ -1606,6 +1606,20 @@ namespace Resources
 
         }
     }
+
+    public class Projectile : Entity
+    {
+        Vector2 Force;
+        GameObject Origin;
+        GameObject Target;
+        ProjectileAI AI;
+        float Speed;
+
+        public Projectile(int ID) : base(ID)
+        {
+
+        }
+    }
     
     public class Effect
     {
@@ -2097,6 +2111,13 @@ namespace Enums
         Touch,
         Atacked,
         EffectInflicted
+    }
+    public enum ProjectileAI
+    {
+        None,
+        Linear,
+        Curved,
+        Seeker
     }
 
     public enum ItemType
