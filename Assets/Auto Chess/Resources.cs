@@ -8,26 +8,66 @@ namespace AutoChess
     {
         public class Player
         {
-            public Hero[] Inventory = new Hero[9];
+            public int ExperienceToNextLevel = 1;
+            public int Experience
+            {
+                get
+                {
+                    return Experience;
+                }
+                set
+                {
+                    if (value + Experience >= ExperienceToNextLevel)
+                        LevelUp();
+                    else
+                        Experience = Mathf.Clamp(value, 0, ExperienceToNextLevel);
+                }
+            }
+            public Hero[] HeroInventory = new Hero[9];
+            public Item[] ItemInventory = new Item[8];
             public List<Hero> onField = new List<Hero>();
+            public int Level = 1;
+            public int MaxHeroes;
 
             public void CheckForUpgrades()
             {
-                List<Hero> FullList = new List<Hero>(onField);
-                Dictionary<int, List<Hero>> Grouped = new Dictionary<int, List<Hero>>();
-                FullList.AddRange(Inventory);
+                List<Hero> List = AllHeroes();
+                Dictionary<string, List<Hero>> ToCheck = new Dictionary<string, List<Hero>>();
 
-                foreach(Hero h in FullList)
+                foreach(Hero h in List)
                 {
-                    if (!Grouped.ContainsKey(h.ID))
-                        Grouped.Add(h.ID, new List<Hero>(h));
-                    else
-                        Grouped[h.ID].Add(h);
+                    if (!ToCheck.ContainsKey(h.HeroID))
+                        ToCheck.Add(h.HeroID, new List<Hero>());
+                    ToCheck[h.HeroID].Add(h);
                 }
-                foreach(List<Hero> h in Grouped.Values)
+
+                foreach(List<Hero> l in ToCheck.Values)
                 {
-                    
+                    string currentHero = l[0].HeroID;
+                    Dictionary<int, List<Hero>> TierCount = new Dictionary<int, List<Hero>>();
+                    foreach(Hero h in l)
+                    {
+                        if(!TierCount.ContainsKey(h.Tier))
+                            TierCount.Add(h.Tier, new List<Hero>());
+
+                        TierCount[h.Tier].Add(h);
+                    }
                 }
+            }
+
+            public void LevelUp()
+            {
+                Experience = Experience-ExperienceToNextLevel;
+                Level++;
+                MaxHeroes++;
+                ExperienceToNextLevel = (int)Mathf.Pow(Level, 2);
+            }
+
+            public List<Hero> AllHeroes()
+            {
+                List<Hero> list = new List<Hero>(HeroInventory);
+                list.AddRange(onField);
+                return list;
             }
         }
 
@@ -75,8 +115,9 @@ namespace AutoChess
 
         public class Hero : Unit
         {
-            public int ID;
-            public int Level;
+            public int UniqueID;
+            public string HeroID;
+            public int Tier;
         }
 
         public class Monster : Unit
